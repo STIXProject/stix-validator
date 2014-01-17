@@ -13,7 +13,7 @@ To see what version of libxml2 you have installed, execute the `xml2-config --ve
 and make sure you are running at least v2.9.1.
 
 ## Use
-The STIX Document Validator can validate a STIX v1.0 instance document against STIX v1.0 schemas
+The STIX Document Validator can validate a STIX v1.0.1 instance document against STIX v1.0.1 schemas
 found locally or referenced remotely through the schemaLocation attribute. It can also perform
 some 'best practice' guidance checks.
 
@@ -30,7 +30,7 @@ Check 'best practice' guidance
 `python sdv.py --input-file <stix_document.xml> --schema-dir schema --best-practices`
 
 ## All STIX Documents?
-The STIX Document Validator bundles a schema directory with it, which includes all STIX v1.0 
+The STIX Document Validator bundles a schema directory with it, which includes all STIX v1.0.1 
 schema files. If an instance document uses constructs or languages defined by other schemas
 a user must point the STIX Document Validator at those schemas in order to validate.
 
