@@ -3,7 +3,7 @@
 # Copyright (c) 2013, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 '''
-STIX Document Validator (sdv) - validates STIX v1.0 instance documents.
+STIX Document Validator (sdv) - validates STIX v1.0.1 instance documents.
 '''
 
 import os
