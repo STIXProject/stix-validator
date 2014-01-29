@@ -12,6 +12,8 @@ The STIX Document Validator has the following dependencies:
 To see what version of libxml2 you have installed, execute the `xml2-config --version` command
 and make sure you are running at least v2.9.1.
 
+For a Windows installer of lxml, we recommend looking here: http://www.lfd.uci.edu/~gohlke/pythonlibs/
+
 ## Use
 The STIX Document Validator can validate a STIX v1.0.1 instance document against STIX v1.0.1 schemas
 found locally or referenced remotely through the schemaLocation attribute. It can also perform
