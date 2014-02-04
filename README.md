@@ -1,5 +1,5 @@
 # STIX Document Validator (sdv) BETA
-A python tool used to validate STIX v1.0 instance documents. For more information about the
+A python tool used to validate STIX v1.0.1 instance documents. For more information about the
 Structured Thread Information eXpression, see http://stix.mitre.org.
 
 ## Dependencies
