@@ -9,6 +9,7 @@ STIX Document Validator (sdv) - validates STIX v1.0.1 instance documents.
 import os
 import argparse
 from validator import STIXValidator 
+from schematron import SchematronValidator
 
 def get_files_to_validate(dir):
     '''Return a list of xml files under a directory'''
@@ -17,6 +18,7 @@ def get_files_to_validate(dir):
         if fn.endswith('.xml'):
             fp = os.path.join(dir, fn)
             to_validate.append(fp)
+            True
     
     return to_validate
 
@@ -27,7 +29,7 @@ def error(msg):
 
 def print_result(fp, isvalid, validation_error, warnings):
     if isvalid:
-        print "[+] %s : VALID" % (fp)
+        print "[+] %s : VALID\n" % (fp)
         
         if warnings:
             root_element = warnings.get('root_element')
@@ -85,6 +87,10 @@ def main():
     parser.add_argument("--input-dir", dest="indir", default=None, help="Path to directory containing STIX instance documents to validate")
     parser.add_argument("--use-schemaloc", dest="use_schemaloc", action='store_true', default=False, help="Use schemaLocation attribute to determine schema locations.")
     parser.add_argument("--best-practices", dest="best_practices", action='store_true', default=False, help="Check that the document follows authoring best practices")
+    parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
+    parser.add_argument("--store-xslt", dest="store_xslt", action='store_true', default=False, help="Store the schematron xsl transform")
+    parser.add_argument("--store-schematron", dest="store_schematron", action='store_true', default=False, help="Store the schematron schema")
+    parser.add_argument("--store-report", dest="store_report", action='store_true', default=False, help="Store the schematron validation report")
     
     args = parser.parse_args()
     
@@ -98,7 +104,11 @@ def main():
         error("Must provide either --use-schemaloc or --schema-dir")
         
     if args.schema_dir and args.use_schemaloc:
-        error("Most provide either --use-schemaloc or --schema-dir, but not both")
+        error("Must provide either --use-schemaloc or --schema-dir, but not both")
+        
+    if not(args.profile):
+        if args.store_schematron or args.store_xslt or args.store_report:
+            error("Must provide schematron profile")
          
     if args.infile:
         to_validate = [args.infile]
@@ -110,8 +120,16 @@ def main():
         ssv = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
         for fp in to_validate:
             with open(fp, 'rb') as f:
+                print "Validating STIX document: " + fp
                 (isvalid, validation_error, best_practice_warnings) = ssv.validate(f)
                 print_result(fp, isvalid, validation_error, best_practice_warnings)
+                if args.profile and isvalid:
+                        print "Validating STIX document against Schematron profile: " + fp
+                        sv = SchematronValidator(fp, profile=args.profile)
+                        (isvalid, validation_error, best_practice_warnings) = sv.validate_schematron(fp, store_schematron=args.store_schematron, store_xslt=args.store_xslt, store_report=args.store_report)
+                        print_result(fp, isvalid, validation_error, best_practice_warnings)
+                elif args.profile and not(isvalid): 
+                    print "\tThe STIX document was invalid, so it was not validated against the Schematron profile"
 
 if __name__ == '__main__':
     main()
