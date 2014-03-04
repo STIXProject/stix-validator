@@ -8,8 +8,7 @@ STIX Document Validator (sdv) - validates STIX v1.0.1 instance documents.
 
 import os
 import argparse
-from validators import STIXValidator
-from schematron import ProfileValidator
+from validators import STIXValidator, ProfileValidator
 
 def get_files_to_validate(dir):
     '''Return a list of xml files under a directory'''
