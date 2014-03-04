@@ -395,8 +395,7 @@ class SchematronValidator(object):
             tree = etree.parse(schematron)
         else:
             tree = schematron
-        
-        print etree.tostring(tree, pretty_print=True)
+            
         self.schematron = isoschematron.Schematron(tree, store_report=True)
     
     def _element_to_file(self, tree, fn):    
