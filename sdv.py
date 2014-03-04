@@ -8,8 +8,8 @@ STIX Document Validator (sdv) - validates STIX v1.0.1 instance documents.
 
 import os
 import argparse
-from validator import STIXValidator 
-from schematron import SchematronValidator
+from validators import STIXValidator
+from schematron import ProfileValidator
 
 def get_files_to_validate(dir):
     '''Return a list of xml files under a directory'''
@@ -118,16 +118,17 @@ def main():
     if len(to_validate) > 0:
         print "[-] Processing %s files" % (len(to_validate))
         ssv = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
-        for fp in to_validate:
-            with open(fp, 'rb') as f:
-                print "Validating STIX document: " + fp
+        for fn in to_validate:
+            with open(fn, 'rb') as f:
+                print "Validating STIX document: " + fn
                 (isvalid, validation_error, best_practice_warnings) = ssv.validate(f)
-                print_result(fp, isvalid, validation_error, best_practice_warnings)
+                print_result(fn, isvalid, validation_error, best_practice_warnings)
                 if args.profile and isvalid:
-                        print "Validating STIX document against Schematron profile: " + fp
-                        sv = SchematronValidator(fp, profile=args.profile)
-                        (isvalid, validation_error, best_practice_warnings) = sv.validate_schematron(fp, store_schematron=args.store_schematron, store_xslt=args.store_xslt, store_report=args.store_report)
-                        print_result(fp, isvalid, validation_error, best_practice_warnings)
+                        print "Validating STIX document against Schematron profile: " + fn
+                        profile_validator = ProfileValidator(args.profile)
+                        results = profile_validator.validate(fn)
+                        print results
+                        #print_result(fp, isvalid, validation_error, best_practice_warnings)
                 elif args.profile and not(isvalid): 
                     print "\tThe STIX document was invalid, so it was not validated against the Schematron profile"
 
