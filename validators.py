@@ -114,6 +114,12 @@ class XmlValidator(object):
         
         return schemaloc_dict
     
+    def _build_result_dict(self, result, errors=None):
+        d = {}
+        d['result'] = result
+        d['errors'] = errors
+        return d
+    
     def validate(self, instance_doc):
         '''Validates an instance documents.
         
@@ -121,17 +127,22 @@ class XmlValidator(object):
         result and the second is the validation error if there was one.
         
         Keyword Arguments
-        instance_doc - a file-like object to be validated
+        instance_doc - a filename, file-like object, etree._Element, or etree._ElementTree to be validated
         '''
         if not(self.__use_schemaloc or self.__imports):
             return (False, "No schemas to validate against! Try instantiating XmlValidator with use_schemaloc=True or setting the schema_dir")
         
-        try:
-            instance_doc = etree.parse(instance_doc)
-        except etree.XMLSyntaxError as e:
-            return (False, str(e))
-        
-        instance_root = instance_doc.getroot()
+        if isinstance(instance_doc, etree._Element):
+            instance_root = instance_doc
+        elif isinstance(instance_doc, etree._ElementTree):
+            instance_root = instance_doc.getroot()
+        else:
+            try:
+                et = etree.parse(instance_doc)
+                instance_root = et.getroot()
+            except etree.XMLSyntaxError as e:
+                return self._build_result_dict(False, str(e))
+            
         if self.__use_schemaloc:
             try:
                 required_imports = self._extract_schema_locations(instance_root)
@@ -151,10 +162,10 @@ class XmlValidator(object):
         xmlschema = etree.XMLSchema(wrapper_schema_doc)
         
         try: 
-            xmlschema.assertValid(instance_doc)
-            return (True, None)
+            xmlschema.assertValid(instance_root)
+            return self._build_result_dict(True)
         except Exception as e:
-            return (False, str(e))
+            return self._build_result_dict(False, str(e))
 
 
 class STIXValidator(XmlValidator):
@@ -211,9 +222,9 @@ class STIXValidator(XmlValidator):
             for e in elements:
                 try:
                     if not re.match(r'\w+:\w+-', e.attrib['id']): # not the best regex
-                        return_dict['format'].append(e)
+                        return_dict['format'].append({'tag':e.tag, 'id':e.attrib['id'], 'line_number':e.sourceline})
                 except KeyError as ex:
-                    return_dict['no_id'].append(e)
+                    return_dict['no_id'].append({'tag':e.tag, 'line_number':e.sourceline})
             
         return return_dict
     
@@ -235,9 +246,9 @@ class STIXValidator(XmlValidator):
         for node in all_nodes_with_ids:
             dict_id_nodes[node.attrib['id']].append(node)
         
-        for k,v in dict_id_nodes.iteritems():
-            if len(v) > 1:
-                dup_dict[k] = v
+        for id,node_list in dict_id_nodes.iteritems():
+            if len(node_list) > 1:
+                dup_dict[id] = [{'tag':node.tag, 'line_number':node.sourceline} for node in node_list]
         
         return dup_dict
     
@@ -257,7 +268,10 @@ class STIXValidator(XmlValidator):
         
         for node in all_idrefs:
             if node.attrib['idref'] not in all_ids:
-                list_unresolved_ids.append(node)
+                d = {'tag': node.tag,
+                     'idref': node.attrib['idref'],
+                     'line_number' : node.sourceline}
+                list_unresolved_ids.append(d)
                 
         return list_unresolved_ids
                 
@@ -274,6 +288,9 @@ class STIXValidator(XmlValidator):
         
         for node in nodes:
             if node.text or len(node) > 0:
+                d = {'tag' : node.tag,
+                     'idref' : node.attrib['idref'],
+                     'line_number' : node.sourceline}
                 list_nodes.append(node)
                 
         return list_nodes
@@ -288,7 +305,7 @@ class STIXValidator(XmlValidator):
         missing - a list of constructs missing from the indicator
         
         Keyword Arguments
-        instance_doc - etree Element for a STIX instance document
+        instance_doc - etree Element for a STIX sinstance document
         '''
         list_indicators = []
         xpath = "//%s:Indicator | %s:Indicator" % (self.PREFIX_STIX_CORE, self.PREFIX_STIX_INDICATOR)
@@ -312,16 +329,17 @@ class STIXValidator(XmlValidator):
                 
                 if dict_indicator:
                     dict_indicator['id'] = node.attrib.get('id')
-                    dict_indicator['node'] = node
+                    dict_indicator['line_number'] = node.sourceline
                     list_indicators.append(dict_indicator)
                 
         return list_indicators
  
     def _check_root_element(self, instance_doc):
+        d = {}
         if instance_doc.tag != "{%s}STIX_Package" % (self.NS_STIX_CORE):
-            return instance_doc
-        else:
-            return None
+            d['tag'] = instance_doc.tag
+            d['line_number'] = instance_doc.sourceline
+        return d
             
  
     def check_best_practices(self, instance_doc):
@@ -339,9 +357,18 @@ class STIXValidator(XmlValidator):
         Keyword Arguments
         instance_doc - a file-like object for a STIX instance document
         '''
-        instance_doc.seek(0)
-        tree = etree.parse(instance_doc)
-        root = tree.getroot()
+        
+        if isinstance(instance_doc, etree._Element):
+            root = instance_doc
+        elif isinstance(instance_doc, etree._ElementTree):
+            root = instance_doc.getroot()
+        elif isinstance(instance_doc, basestring):
+            tree = etree.parse(instance_doc)
+            root = tree.getroot()
+        else:
+            instance_doc.seek(0)
+            tree = etree.parse(instance_doc)
+            root = tree.getroot()
         
         root_element = self._check_root_element(root)
         list_unresolved_idrefs = self._check_idref_resolution(root)
@@ -350,13 +377,24 @@ class STIXValidator(XmlValidator):
         list_idref_with_content = self._check_idref_with_content(root)
         list_indicators = self._check_indicator_practices(root)
         
-        return {'root_element' : root_element,
-                'unresolved_idrefs' : list_unresolved_idrefs,
-                'duplicate_ids' : dict_duplicate_ids,
-                'missing_ids' : dict_presence_and_format['no_id'],
-                'id_format' : dict_presence_and_format['format'],
-                'idref_with_content' : list_idref_with_content,
-                'indicator_suggestions' : list_indicators }
+        d = {}
+        if root_element:
+            d['root_element'] = root_element
+        if list_unresolved_idrefs:
+            d['unresolved_idrefs'] = list_unresolved_idrefs
+        if dict_duplicate_ids:
+            d['duplicate_ids'] = dict_duplicate_ids
+        if dict_presence_and_format:
+            if dict_presence_and_format.get('no_id'):
+                d['missing_ids'] = dict_presence_and_format['no_id']
+            if dict_presence_and_format.get('format'):
+                d['id_format'] = dict_presence_and_format['format']
+        if list_idref_with_content:
+            d['idref_with_content'] = list_idref_with_content
+        if list_indicators:
+            d['indicator_suggestions'] = list_indicators
+        
+        return d
     
     def validate(self, instance_doc):
         '''Validates a STIX document and checks best practice guidance if STIXValidator
@@ -369,14 +407,18 @@ class STIXValidator(XmlValidator):
         Keyword Arguments
         instance_doc - a file-like object for a STIX instance document
         '''
-        (isvalid, validation_error) = super(STIXValidator, self).validate(instance_doc)
+        result_dict = super(STIXValidator, self).validate(instance_doc)
         
+        isvalid = result_dict['result']
         if self.best_practices and isvalid:
             best_practice_warnings = self.check_best_practices(instance_doc)
         else:
             best_practice_warnings = None
-            
-        return (isvalid, validation_error, best_practice_warnings)
+        
+        if best_practice_warnings:
+            result_dict['best_practice_warnings'] = best_practice_warnings
+             
+        return result_dict
 
 class SchematronValidator(object):
     NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
@@ -585,7 +627,7 @@ class ProfileValidator(SchematronValidator):
         else:
             tree_in = etree.parse(instance)
             root = tree_in.getroot()
-        
+
         working_schema = self._get_schema_copy()
         self._map_ns(root, working_schema)
         
