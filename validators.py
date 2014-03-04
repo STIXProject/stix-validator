@@ -379,6 +379,9 @@ class STIXValidator(XmlValidator):
         return (isvalid, validation_error, best_practice_warnings)
 
 class SchematronValidator(object):
+    NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
+    NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
+    
     def __init__(self, schematron=None):
         self.schematron = None
         self.init_schematron(schematron)
@@ -393,22 +396,35 @@ class SchematronValidator(object):
         else:
             tree = schematron
         
-        self.schematron = isoschematron.Schematron(tree)
+        print etree.tostring(tree, pretty_print=True)
+        self.schematron = isoschematron.Schematron(tree, store_report=True)
     
     def _element_to_file(self, tree, fn):    
         with open(fn, "wb") as f:
             f.write(etree.tostring(tree, pretty_print=True))
     
-    def _build_result_dict(self, result, errors=None):
+    def _build_result_dict(self, result, report=None):
         d = {}
         d['result'] = result
-        if errors:
-            d['errors'] = errors
+        
+        if 'error' in report:
+            d['errors'] = report['error']
+        
+        if 'warning' in report:
+            d['warnings'] = report['warning']
+        
         return d
     
-    def _build_error_list(self, validation_report):
+    def _build_error_report_dict(self, validation_report):
         errors = isoschematron.svrl_validation_errors(validation_report)
-        return [etree.tounicode(x) for x in errors]
+        report_dict = defaultdict(list)
+        
+        for error in errors:
+            role = error.attrib['role']
+            text_node = error.find("{%s}text" % self.NS_SVRL)
+            report_dict[role].append(text_node.text)
+        
+        return report_dict
     
     def validate(self, instance):
         if not self.schematron:
@@ -424,8 +440,8 @@ class SchematronValidator(object):
             
             result = self.schematron.validate(tree)
             if not result:
-                errors = self._build_error_list(self.schematron.validation_report)
-                return self._build_result_dict(result, errors)
+                report = self._build_error_report_dict(self.schematron.validation_report)
+                return self._build_result_dict(result, report)
             else:
                 return self._build_result_dict(result)
             
@@ -434,71 +450,89 @@ class SchematronValidator(object):
 
 
 class ProfileValidator(SchematronValidator):
-    NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
-    PREFIX_SCHEMATRON = "sch"
-    
     def __init__(self, profile_fn):
         super(ProfileValidator, self).__init__()
         self.sheets = {}
         self.profile_workbook = self._open_profile(profile_fn)
         self.schema = self._parse_profile()
+    
+    def _build_rule_dict(self, worksheet):
+        d = defaultdict(list)
+        for i in range(1, worksheet.nrows):
+            if self._get_cell_value(worksheet, i, 2) != "":
+                field = self._get_cell_value(worksheet, i, 0)
+                context = self._get_cell_value(worksheet, i, 1)
+                occurrence = self._get_cell_value(worksheet, i, 2)
+                xsi_type = self._get_cell_value(worksheet, i, 3)
+                allowed_value = self._get_cell_value(worksheet, i, 4)
+                
+                if occurrence == "required":
+                    text = "%s required for this STIX profile. " % field
+                    if xsi_type:
+                        text += "The allowed xsi:type is: '%s'. " % xsi_type
+                    if allowed_value:
+                        text += "The only allowed value is '%s'. " % allowed_value
+                elif occurrence == "optional":
+                    text = "%s is optional for this STIX profile." % field
+                elif occurrence == "prohibited":
+                    text = "%s is prohibited for this STIX profile." % field
+                else:
+                    raise Exception("Found unknown 'occurence' value: %s. Aborting." % occurrence)
+                
+                
+                d[context].append({'field' : field,
+                                       'text' : text.strip(),
+                                       'occurrence' : occurrence,
+                                       'xsi_type' : xsi_type,
+                                       'allowed_value' : allowed_value})
+        return d
+    
+    def _build_schematron_xml(self, rules):
+        root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
+        pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
         
+        for context, tests in rules.iteritems():
+            rule_element = self._add_element(pattern, "rule", context=context)
+            for test in tests:
+                test_element = self._add_element(node=rule_element, name="assert", text=test['text'])
+                self._cell_to_node(test_element, test)
+        
+        return root
     
     def _parse_profile(self):
-        root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
-        
         for s in self.profile_workbook.sheet_names():
             self.sheets[self._convert_to_string(s)] = self.profile_workbook.sheet_by_name(s)
         
-        
-        pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
-        for i in range(1, self.sheets["Sheet2"].nrows):
-            if self._get_cell_value("Sheet2", col=2, row=i) != "":
-                rule = self._add_element(pattern, "rule")
-                if self._get_cell_value("Sheet2", col=0, row=i)[0] == "@":
-                    self._cell_to_node(rule, "Sheet2", col=1, row=i, attr_name="context", type="attribute", type_arg=self._get_cell_value("Sheet2", col=0, row=i))
-                else:
-                    self._cell_to_node(rule, "Sheet2", col=1, row=i, attr_name="context")
-                if self._get_cell_value("Sheet2", col=2, row=i) == "required":
-                    test = self._add_element(rule, "assert", text="This field is required for this STIX profile.")
-                    self._cell_to_node(test, "Sheet2", col=0, row=i, attr_name="test", type="required", role="error")
-                    if self._get_cell_value("Sheet2", col=3, row=i) != "":
-                        test = self._add_element(rule, "assert", text="The required xsi:type for this field is: "+self._get_cell_value("Sheet2", col=3, row=i))
-                        self._cell_to_node(test, "Sheet2", col=3, row=i, attr_name="test", type="xsi", type_arg=self._get_cell_value("Sheet2", col=0, row=i))
-                    if self._get_cell_value("Sheet2", col=4, row=i) != "":
-                        test = self._add_element(rule, "assert", text="The required value for this field is: "+self._get_cell_value("Sheet2", col=4, row=i))
-                        self._cell_to_node(test, "Sheet2", col=4, row=i, attr_name="test", type="value", type_arg=self._get_cell_value("Sheet2", col=0, row=i))
-                        
-                if self._get_cell_value("Sheet2", col=2, row=i) == "prohibited":
-                    test = self._add_element(rule, "assert", text="This field is prohibited for this STIX profile.")
-                    self._cell_to_node(test, "Sheet2", col=0, row=i, attr_name="test", type="prohibited")
-                
-                if self._get_cell_value("Sheet2", col=2, row=i) == "optional":
-                    test = self._add_element(rule, "assert", text="This field is optional for this STIX profile.")
-                    self._cell_to_node(test, "Sheet2", col=0, row=i, attr_name="test", type="required", role="warning")
-
+        worksheet = self.sheets["Sheet2"]
+        rules = self._build_rule_dict(worksheet)
+        schema = self._build_schematron_xml(rules)
         self._unload_workbook()
-        return root
         
-    def _cell_to_node(self, par, sheet, col, row, attr_name=None, type=None, type_arg=None, role=None):
-        s = self.sheets.get(sheet)
-        if not s:
-            raise Exception("%s not in workbook." % sheet)
-        v = self._convert_to_string(s.row_values(row)[col])
-        if role:
-            par.set("role", role)
-        if type=="required":
-            par.set(attr_name, v)
-        elif type=="prohibited":
-            par.set(attr_name, "not(" + v + ")")
-        elif type=="xsi":
-            par.set(attr_name, "//"+type_arg+"[@xsi:type='" + v + "']")
-        elif type=="value":
-            par.set(attr_name, type_arg+"='"+v+"'")
-        elif type=="attribute":
-            par.set(attr_name, v+"["+type_arg+"]")
+        return schema
+        
+    def _cell_to_node(self, node, d):
+        field = d['field']
+        occurrence = d['occurrence']
+        allowed_value = d['allowed_value']
+        xsi_type = d['xsi_type']
+        
+        if occurrence == "required":
+            node.set("role", "error")
+            node.set("test", field)
+        elif occurrence == "prohibited":
+            node.set("role", "error")
+            node.set("test", "not(%s)" % field)
         else:
-            par.set(attr_name, v)
+            node.set("role", "warning")
+            node.set("test", field)
+        
+        if allowed_value:
+            test_str = "%s='%s'" % (field, allowed_value)
+            node.set("test", test_str)
+        
+        if xsi_type:
+            test_str = "//%s[@xsi:type='%s']" % (field, xsi_type)
+            node.set("test", test_str)
             
     def _map_ns(self, instance, schematron):
         nsmap = instance.nsmap
@@ -508,8 +542,8 @@ class ProfileValidator(SchematronValidator):
             ns_element.set("uri", ns)
             schematron.insert(0, ns_element)
             
-    def _add_element(self, node, sub, text=None, **kwargs):
-        child = etree.SubElement(node, "{%s}%s" % (self.NS_SCHEMATRON, sub))
+    def _add_element(self, node, name, text=None, **kwargs):
+        child = etree.SubElement(node, "{%s}%s" % (self.NS_SCHEMATRON, name))
         if text:
             child.text = text
         for k,v in kwargs.iteritems():
@@ -520,11 +554,10 @@ class ProfileValidator(SchematronValidator):
         for k,v in self.sheets.iteritems():
             self.profile_workbook.unload_sheet(k)
             
-    def _get_cell_value(self, sheet, col, row):
-        s = self.sheets.get(sheet)
-        if not s:
-            raise Exception("%s not in workbook." % sheet)
-        value = s.cell_value(row, col)
+    def _get_cell_value(self, worksheet, row, col):
+        if not worksheet:
+            raise Exception("worksheet value was NoneType")
+        value = str(worksheet.cell_value(row, col))
         return value
     
     def _convert_to_string(self, value):
@@ -558,7 +591,7 @@ class ProfileValidator(SchematronValidator):
         self._map_ns(root, working_schema)
         
         super(ProfileValidator, self).init_schematron(working_schema)
-        return super(ProfileValidator, self).validate(tree_in)
+        return super(ProfileValidator, self).validate(root)
 
  
  
