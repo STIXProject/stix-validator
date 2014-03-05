@@ -18,8 +18,7 @@ def get_files_to_validate(dir):
         if fn.endswith('.xml'):
             fp = os.path.join(dir, fn)
             to_validate.append(fp)
-            True
-    
+            
     return to_validate
 
 def error(msg):
@@ -27,12 +26,16 @@ def error(msg):
     print "[!] %s" % (msg)
     exit(1)
 
+def info(msg):
+    '''Prints an info message'''
+    print "[-] %s" % msg
+
 def print_schema_results(fn, results):
     if results['result']:
-        print "[+] %s : VALID\n" % (fn)
-        
+        print "[+] %s : VALID" % (fn)
         warnings = results.get('best_practice_warnings')
         if warnings:
+            print "[-] Best Practice Warnings"
             root_element = warnings.get('root_element')
             if root_element:
                 print '    [#] Root element not STIX_Package: [%s]' % (root_element['tag'])
@@ -72,13 +75,15 @@ def print_schema_results(fn, results):
             indicator_suggestions = warnings.get('indicator_suggestions')
             if indicator_suggestions:
                 print '    [#] Indicator suggestions'
-                for indicator_dict in indicator_suggestions:               
+                for node in indicator_suggestions:               
                     print '    [~] id: [%s] line: [%s] missing: %s' % (node['id'], node['line_number'], node.get('missing'))
                     
     else:
         print "[!] %s : INVALID : [%s]" % (fn, results['errors'])
                     
-
+def print_profile_results(fn, results):
+    info("Schematron Results")
+    pprint(results)
 
 def main():
     parser = argparse.ArgumentParser(description="STIX Document Validator")
@@ -116,7 +121,7 @@ def main():
         to_validate = get_files_to_validate(args.indir)
     
     if len(to_validate) > 0:
-        print "[-] Processing %s files" % (len(to_validate))
+        info("Processing %s files" % (len(to_validate)))
         stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
         for fn in to_validate:
             print "Validating STIX document: " + fn
@@ -124,10 +129,9 @@ def main():
             isvalid = results['result']
             print_schema_results(fn, results)
             if args.profile and isvalid:
-                    print "Validating STIX document against Schematron profile: " + fn
                     profile_validator = ProfileValidator(args.profile)
                     profile_results = profile_validator.validate(fn)
-                    pprint(profile_results)
+                    print_profile_results(fn, profile_results)
             elif args.profile and not(isvalid): 
                 print "\tThe STIX document was invalid, so it was not validated against the Schematron profile"
 
