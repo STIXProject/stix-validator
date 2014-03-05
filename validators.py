@@ -520,12 +520,11 @@ class ProfileValidator(SchematronValidator):
                 else:
                     raise Exception("Found unknown 'occurence' value: %s. Aborting." % occurrence)
                 
-                
                 d[context].append({'field' : field,
-                                       'text' : text.strip(),
-                                       'occurrence' : occurrence,
-                                       'xsi_type' : xsi_type,
-                                       'allowed_value' : allowed_value})
+                                   'text' : text.strip(),
+                                   'occurrence' : occurrence,
+                                   'xsi_type' : xsi_type,
+                                   'allowed_value' : allowed_value})
         return d
     
     def _build_schematron_xml(self, rules):
@@ -592,7 +591,7 @@ class ProfileValidator(SchematronValidator):
         return child
     
     def _unload_workbook(self):
-        for k,v in self.sheets.iteritems():
+        for k,_ in self.sheets.iteritems():
             self.profile_workbook.unload_sheet(k)
             
     def _get_cell_value(self, worksheet, row, col):
