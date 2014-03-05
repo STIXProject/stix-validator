@@ -84,7 +84,7 @@ def print_schema_results(fn, results):
 def print_profile_results(fn, results):
     info("Schematron Results")
     pprint(results)
-
+    
 def main():
     parser = argparse.ArgumentParser(description="STIX Document Validator")
     parser.add_argument("--schema-dir", dest="schema_dir", default=None, help="Path to directory containing all necessary schemas for validation")
@@ -93,20 +93,34 @@ def main():
     parser.add_argument("--use-schemaloc", dest="use_schemaloc", action='store_true', default=False, help="Use schemaLocation attribute to determine schema locations.")
     parser.add_argument("--best-practices", dest="best_practices", action='store_true', default=False, help="Check that the document follows authoring best practices")
     parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
+    parser.add_argument("--output-schematron", dest="schematron", default=None, help="Path to converted STIX profile schematron file")
+    parser.add_argument("--output-xslt", dest="xslt", default=None, help="Path to converted STIX profile schematron xslt")
     
     args = parser.parse_args()
-    if not(args.infile or args.indir):
-        error("Must provide either --input-file or --input-dir argument")
+    schema_validation = False
+    profile_validation = False
+    profile_conversion = False
+            
+    if (args.infile or args.indir) and (args.schema_dir or args.use_schemaloc):
+        schema_validation = True
+        if args.profile:
+            profile_validation = True
+        
+    if args.profile and (args.schematron or args.xslt):
+        profile_conversion = True
+    
     if args.infile and args.indir:
         error('Must provide either --input-file or --input-dir argument, but not both')
-    if not(args.schema_dir or args.use_schemaloc):
-        error("Must provide either --use-schemaloc or --schema-dir")
     if args.schema_dir and args.use_schemaloc:
         error("Must provide either --use-schemaloc or --schema-dir, but not both")
-    
+    if (args.infile or args.indir) and not (args.schema_dir or args.use_schemaloc):
+        error("Must provide either --use-schemaloc or --schema-dir when --input-file or input-dir declared")
+    if args.profile and not (profile_validation or profile_conversion):
+        error("Profile specified but no conversion options or validation options specified")
+        
     if args.infile:
         to_validate = [args.infile]
-    else:
+    if args.indir:
         to_validate = get_files_to_validate(args.indir)
     
     if len(to_validate) > 0:
@@ -122,7 +136,7 @@ def main():
                     profile_results = profile_validator.validate(fn)
                     print_profile_results(fn, profile_results)
             elif args.profile and not(isvalid): 
-                print "\tThe STIX document was invalid, so it was not validated against the Schematron profile"
+                info("The STIX document was invalid, so it was not validated against the Schematron profile")
 
 if __name__ == '__main__':
     main()
