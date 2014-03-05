@@ -445,10 +445,8 @@ class SchematronValidator(object):
     def _build_result_dict(self, result, report=None):
         d = {}
         d['result'] = result
-        
         if 'error' in report:
             d['errors'] = report['error']
-        
         if 'warning' in report:
             d['warnings'] = report['warning']
         
@@ -486,12 +484,11 @@ class SchematronValidator(object):
         except etree.ParseError as e:
             return self._build_result_dict(False, [str(e)])    
 
-
 class ProfileValidator(SchematronValidator):
     def __init__(self, profile_fn):
         profile = self._open_profile(profile_fn)
-        self.schema = self._parse_profile(profile) # schematron schema etree
-        super(ProfileValidator, self).__init__(schematron=self.schema)
+        schema = self._parse_profile(profile) # schematron schema etree
+        super(ProfileValidator, self).__init__(schematron=schema)
         
     def _build_rule_dict(self, worksheet):
         d = defaultdict(list)
@@ -630,6 +627,3 @@ class ProfileValidator(SchematronValidator):
     
     def validate(self, instance_doc):
         return super(ProfileValidator, self).validate(instance_doc)
-
- 
- 
