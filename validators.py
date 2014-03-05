@@ -355,7 +355,7 @@ class STIXValidator(XmlValidator):
         Returns a dictionary of lists and other dictionaries. This is maybe not ideal but workable.
         
         Keyword Arguments
-        instance_doc - a file-like object for a STIX instance document
+        instance_doc - a filename, file-like object, etree._Element or etree.ElementTree for a STIX instance document
         '''
         
         if isinstance(instance_doc, etree._Element):
@@ -402,10 +402,8 @@ class STIXValidator(XmlValidator):
         
         Best practices will not be checked if the document is schema-invalid.
         
-        Returns a tuple of (bool, str, dict) for (is valid, validation error, best practice suggestions).
-        
         Keyword Arguments
-        instance_doc - a file-like object for a STIX instance document
+        instance_doc - a filename, file-like object, etree._Element or etree.ElementTree for a STIX instance document
         '''
         result_dict = super(STIXValidator, self).validate(instance_doc)
         
@@ -425,7 +423,7 @@ class SchematronValidator(object):
     NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
     
     def __init__(self, schematron=None):
-        self.schematron = None
+        self.schematron = None # isoschematron.Schematron instance
         self.init_schematron(schematron)
         
     def init_schematron(self, schematron):
@@ -438,7 +436,7 @@ class SchematronValidator(object):
         else:
             tree = schematron
             
-        self.schematron = isoschematron.Schematron(tree, store_report=True)
+        self.schematron = isoschematron.Schematron(tree, store_report=True, store_xslt=True, store_schematron=True)
     
     def _element_to_file(self, tree, fn):    
         with open(fn, "wb") as f:
@@ -470,7 +468,6 @@ class SchematronValidator(object):
     def validate(self, instance):
         if not self.schematron:
             raise Exception('Schematron document not set. Cannot validate. Call init_schematron(...) and retry.')
-        
         try:
             if isinstance(instance, etree._Element):
                 tree = etree.ElementTree(instance)
@@ -492,11 +489,10 @@ class SchematronValidator(object):
 
 class ProfileValidator(SchematronValidator):
     def __init__(self, profile_fn):
-        super(ProfileValidator, self).__init__()
-        self.sheets = {}
-        self.profile_workbook = self._open_profile(profile_fn)
-        self.schema = self._parse_profile()
-    
+        profile = self._open_profile(profile_fn)
+        self.schema = self._parse_profile(profile) # schematron schema etree
+        super(ProfileValidator, self).__init__(schematron=self.schema)
+        
     def _build_rule_dict(self, worksheet):
         d = defaultdict(list)
         for i in range(1, worksheet.nrows):
@@ -527,7 +523,7 @@ class ProfileValidator(SchematronValidator):
                                    'allowed_value' : allowed_value})
         return d
     
-    def _build_schematron_xml(self, rules):
+    def _build_schematron_xml(self, rules, nsmap):
         root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
         pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
         
@@ -537,17 +533,32 @@ class ProfileValidator(SchematronValidator):
                 test_element = self._add_element(node=rule_element, name="assert", text=test['text'])
                 self._cell_to_node(test_element, test)
         
+        self._map_ns(root, nsmap) # add namespaces to the schematron document
         return root
     
-    def _parse_profile(self):
-        for s in self.profile_workbook.sheet_names():
-            self.sheets[self._convert_to_string(s)] = self.profile_workbook.sheet_by_name(s)
+    def _parse_namespace_worksheet(self, worksheet):
+        nsmap = {}
+        for i in range(1, worksheet.nrows): # skip the first row
+            ns = self._get_cell_value(worksheet, i, 0)
+            alias = self._get_cell_value(worksheet, i, 1)
+            nsmap[ns] = alias
+        return nsmap      
+    
+    def _parse_profile(self, profile):
+        overview_worksheet = profile.sheet_by_name("Overview")
+        namespace_worksheet = profile.sheet_by_name("Namespaces")
+                
+        all_rules = defaultdict(list)
+        for worksheet in profile.sheets():
+            if worksheet.name not in ("Overview", "Namespaces"):
+                rules = self._build_rule_dict(worksheet)
+                for context,d in rules.iteritems():
+                    all_rules[context].extend(d)
+
+        namespaces = self._parse_namespace_worksheet(namespace_worksheet)
+        schema = self._build_schematron_xml(all_rules, namespaces)
         
-        worksheet = self.sheets["Sheet2"]
-        rules = self._build_rule_dict(worksheet)
-        schema = self._build_schematron_xml(rules)
-        self._unload_workbook()
-        
+        self._unload_workbook(profile)
         return schema
         
     def _cell_to_node(self, node, d):
@@ -574,9 +585,8 @@ class ProfileValidator(SchematronValidator):
             test_str = "//%s[@xsi:type='%s']" % (field, xsi_type)
             node.set("test", test_str)
             
-    def _map_ns(self, instance, schematron):
-        nsmap = instance.nsmap
-        for prefix, ns in nsmap.iteritems():
+    def _map_ns(self, schematron, nsmap):
+        for ns, prefix in nsmap.iteritems():
             ns_element = etree.Element("{%s}ns" % self.NS_SCHEMATRON)
             ns_element.set("prefix", prefix)
             ns_element.set("uri", ns)
@@ -590,9 +600,9 @@ class ProfileValidator(SchematronValidator):
             child.set(k, v)
         return child
     
-    def _unload_workbook(self):
-        for k,_ in self.sheets.iteritems():
-            self.profile_workbook.unload_sheet(k)
+    def _unload_workbook(self, workbook):
+        for worksheet in workbook.sheets():
+            workbook.unload_sheet(worksheet.name)
             
     def _get_cell_value(self, worksheet, row, col):
         if not worksheet:
@@ -618,20 +628,8 @@ class ProfileValidator(SchematronValidator):
         copy = etree.ElementTree(self.schema)
         return copy.getroot()
     
-    def validate(self, instance):
-        if isinstance(instance, etree._Element):
-            root = instance
-        elif isinstance(instance, etree._ElementTree):
-            root = instance.getroot()
-        else:
-            tree_in = etree.parse(instance)
-            root = tree_in.getroot()
-
-        working_schema = self._get_schema_copy()
-        self._map_ns(root, working_schema)
-        
-        super(ProfileValidator, self).init_schematron(working_schema)
-        return super(ProfileValidator, self).validate(root)
+    def validate(self, instance_doc):
+        return super(ProfileValidator, self).validate(instance_doc)
 
  
  
