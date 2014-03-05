@@ -93,28 +93,17 @@ def main():
     parser.add_argument("--use-schemaloc", dest="use_schemaloc", action='store_true', default=False, help="Use schemaLocation attribute to determine schema locations.")
     parser.add_argument("--best-practices", dest="best_practices", action='store_true', default=False, help="Check that the document follows authoring best practices")
     parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
-    parser.add_argument("--store-xslt", dest="store_xslt", action='store_true', default=False, help="Store the schematron xsl transform")
-    parser.add_argument("--store-schematron", dest="store_schematron", action='store_true', default=False, help="Store the schematron schema")
-    parser.add_argument("--store-report", dest="store_report", action='store_true', default=False, help="Store the schematron validation report")
     
     args = parser.parse_args()
-    
     if not(args.infile or args.indir):
         error("Must provide either --input-file or --input-dir argument")
-    
     if args.infile and args.indir:
         error('Must provide either --input-file or --input-dir argument, but not both')
-    
     if not(args.schema_dir or args.use_schemaloc):
         error("Must provide either --use-schemaloc or --schema-dir")
-        
     if args.schema_dir and args.use_schemaloc:
         error("Must provide either --use-schemaloc or --schema-dir, but not both")
-        
-    if not(args.profile):
-        if args.store_schematron or args.store_xslt or args.store_report:
-            error("Must provide schematron profile")
-         
+    
     if args.infile:
         to_validate = [args.infile]
     else:
