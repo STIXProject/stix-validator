@@ -20,22 +20,22 @@ The STIX Document Validator can validate a STIX v1.0.1 instance document against
 found locally or referenced remotely through the schemaLocation attribute. It can also perform
 some 'best practice' guidance checks and STIX Profile validation and conversion to XSLT/Schematron.
 
-Validate against local schemas:
+**Validate using local schemas**  
 `python sdv.py --input-file <stix_document.xml> --schema-dir schema`
 
-Validate using schemaLocation:
+**Validate using schemaLocation**  
 `python sdv.py --input-file <stix_document.xml> --use-schemaloc`
 
-Validate a directory of STIX documents:
+**Validate a directory of STIX documents**  
 `python sdv.py --input-dir <stix_dir> --schema-dir schema`
 
-Check 'best practice' guidance
+**Check "best practice" guidance**  
 `python sdv.py --input-file <stix_document.xml> --schema-dir schema --best-practices`
 
-Validate with STIX Profile:
+**Validate using STIX Profile**  
 `python sdv.py --input-file <stix_document.xml> --schema-dir schema --profile <stix_profile.xlsx>`
 
-Translate STIX Profile to XSLT/Schematron
+**Translate STIX Profile to XSLT/Schematron**  
 `python sdv.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>`
 
 ## All STIX Documents?
