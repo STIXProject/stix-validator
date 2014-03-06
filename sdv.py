@@ -108,10 +108,10 @@ def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
     schematron = validator.get_schematron()
     
     if schematron_out_fn:
-        info("Writing schematron conversion of profile %s" % schematron_out_fn)
+        info("Writing schematron conversion of profile to %s" % schematron_out_fn)
         schematron.write(schematron_out_fn, pretty_print=True, xml_declaration=True, encoding="UTF-8")
     if xslt_out_fn:
-        info("Writing xslt conversion of profile: %s" % xslt_out_fn)
+        info("Writing xslt conversion of profile to %s" % xslt_out_fn)
         xslt.write(xslt_out_fn, pretty_print=True, xml_declaration=True, encoding="UTF-8")
         
 def main():
