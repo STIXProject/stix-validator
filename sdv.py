@@ -83,7 +83,7 @@ def print_schema_results(fn, results):
         print "[!] %s : INVALID : [%s]" % (fn, results['errors'])
                     
 def print_profile_results(fn, results):
-    info("Profile validation results")
+    info("Profile validation results: %s" % fn)
     errors = results.get('errors')
     warnings = results.get('warnings')
     
@@ -165,8 +165,8 @@ def main():
                 isvalid = results['result']
                 print_schema_results(fn, results)
                 if profile_validation and isvalid:
-                        profile_results = profile_validator.validate(fn)
-                        print_profile_results(fn, profile_results)
+                    profile_results = profile_validator.validate(fn)
+                    print_profile_results(fn, profile_results)
                 elif args.profile and not(isvalid): 
                     info("The STIX document was invalid, so it was not validated against the Schematron profile")
     
