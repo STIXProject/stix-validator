@@ -563,34 +563,47 @@ class ProfileValidator(SchematronValidator):
         
         self._unload_workbook(profile)
         return schema
+    
+    def _build_assertion_test(self, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+        test = ""
         
+        if allowed_values:
+            list_allowed_values = allowed_values.split(',')
+            value_str = " or ".join(["%s='%s'" % (field, value.strip()) for value in list_allowed_values])
+        
+        if allowed_xsi_types:
+            list_xsi_types = allowed_xsi_types.split(',')
+            xsi_type_str = " or ".join(["%s/@xsi:type='%s'" % (field, xsi_type.strip()) for xsi_type in list_xsi_types])
+        
+        if allowed_values and allowed_xsi_types:
+            test = "(%s) and (%s)" % (value_str, xsi_type_str)
+        elif allowed_values:
+            test = value_str
+        elif allowed_xsi_types:
+            test = xsi_type_str
+        else:
+            test = field
+        
+        if occurrence == "prohibited":
+            test = "not(%s)" % test
+        
+        return test
+    
     def _cell_to_node(self, node, d):
         field = d['field']
         occurrence = d['occurrence']
         allowed_values = d['allowed_values']
-        xsi_types = d['xsi_types']
+        allowed_xsi_types = d['xsi_types']
         
-        if occurrence == "required":
+        assertion_test = self._build_assertion_test(field, occurrence, allowed_values, allowed_xsi_types)
+        node.set("test", assertion_test)
+        
+        if occurrence in ("required", "prohibited"):
             node.set("role", "error")
-            node.set("test", field)
-        elif occurrence == "prohibited":
-            node.set("role", "error")
-            node.set("test", "not(%s)" % field)
         else:
             node.set("role", "warning")
-            node.set("test", field)
-        
-        if allowed_values:
-            list_allowed_values = allowed_values.split(',')
-            test_str = " or ".join(["%s='%s'" % (field, value.strip()) for value in list_allowed_values])
-            node.set("test", test_str)
-        
-        if xsi_types:
-            list_xsi_types = xsi_types.split(',')
-            test_str = " or ".join(["%s/@xsi:type='%s'" % (field, xsi_type.strip()) for xsi_type in list_xsi_types])
-            node.set("test", test_str)
             
-    def _map_ns(self, schematron, nsmap):
+    def _map_ns(self, schematron, nsmap):   
         for ns, prefix in nsmap.iteritems():
             ns_element = etree.Element("{%s}ns" % self.NS_SCHEMATRON)
             ns_element.set("prefix", prefix)
