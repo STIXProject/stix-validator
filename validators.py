@@ -554,7 +554,6 @@ class ProfileValidator(SchematronValidator):
         all_rules = defaultdict(list)
         for worksheet in profile.sheets():
             if worksheet.name not in ("Overview", "Namespaces", "Instance Mapping"):
-                print worksheet.name
                 rules = self._build_rule_dict(worksheet)
                 for context,d in rules.iteritems():
                     all_rules[context].extend(d)
