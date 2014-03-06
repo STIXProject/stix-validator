@@ -499,7 +499,7 @@ class ProfileValidator(SchematronValidator):
     def _build_rule_dict(self, worksheet):
         d = defaultdict(list)
         for i in range(1, worksheet.nrows):
-            if self._get_cell_value(worksheet, i, 2) != "":
+            if self._get_cell_value(worksheet, i, 2) != "": # skip the row if no second column value found
                 field = self._get_cell_value(worksheet, i, 0)
                 context = self._get_cell_value(worksheet, i, 1)
                 occurrence = self._get_cell_value(worksheet, i, 2)
