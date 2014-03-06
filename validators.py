@@ -495,7 +495,7 @@ class ProfileValidator(SchematronValidator):
         profile = self._open_profile(profile_fn)
         schema = self._parse_profile(profile) # schematron schema etree
         super(ProfileValidator, self).__init__(schematron=schema)
-        
+    
     def _build_rule_dict(self, worksheet):
         d = defaultdict(list)
         for i in range(1, worksheet.nrows):
@@ -503,15 +503,15 @@ class ProfileValidator(SchematronValidator):
                 field = self._get_cell_value(worksheet, i, 0)
                 context = self._get_cell_value(worksheet, i, 1)
                 occurrence = self._get_cell_value(worksheet, i, 2)
-                xsi_type = self._get_cell_value(worksheet, i, 3)
-                allowed_value = self._get_cell_value(worksheet, i, 4)
+                xsi_types = self._get_cell_value(worksheet, i, 3)
+                allowed_values = self._get_cell_value(worksheet, i, 4)
                 
                 if occurrence == "required":
                     text = "%s required for this STIX profile. " % field
-                    if xsi_type:
-                        text += "The allowed xsi:type is: '%s'. " % xsi_type
-                    if allowed_value:
-                        text += "The only allowed value is '%s'. " % allowed_value
+                    if xsi_types:
+                        text += "The allowed xsi:types are: '%s'. " % xsi_types
+                    if allowed_values:
+                        text += "The only allowed values are '%s'. " % allowed_values
                 elif occurrence == "optional":
                     text = "%s is optional for this STIX profile." % field
                 elif occurrence == "prohibited":
@@ -522,8 +522,8 @@ class ProfileValidator(SchematronValidator):
                 d['/'].append({'field' : context + "/" + field,
                                'text' : text.strip(),
                                'occurrence' : occurrence,
-                               'xsi_type' : xsi_type,
-                               'allowed_value' : allowed_value})
+                               'xsi_types' : xsi_types,
+                               'allowed_values' : allowed_values})
         return d
     
     def _build_schematron_xml(self, rules, nsmap):
@@ -567,8 +567,8 @@ class ProfileValidator(SchematronValidator):
     def _cell_to_node(self, node, d):
         field = d['field']
         occurrence = d['occurrence']
-        allowed_value = d['allowed_value']
-        xsi_type = d['xsi_type']
+        allowed_values = d['allowed_values']
+        xsi_types = d['xsi_types']
         
         if occurrence == "required":
             node.set("role", "error")
@@ -580,12 +580,14 @@ class ProfileValidator(SchematronValidator):
             node.set("role", "warning")
             node.set("test", field)
         
-        if allowed_value:
-            test_str = "%s='%s'" % (field, allowed_value)
+        if allowed_values:
+            list_allowed_values = allowed_values.split(',')
+            test_str = " or ".join(["%s='%s'" % (field, value.strip()) for value in list_allowed_values])
             node.set("test", test_str)
         
-        if xsi_type:
-            test_str = "//%s[@xsi:type='%s']" % (field, xsi_type)
+        if xsi_types:
+            list_xsi_types = xsi_types.split(',')
+            test_str = " or ".join(["%s/@xsi:type='%s'" % (field, xsi_type.strip()) for xsi_type in list_xsi_types])
             node.set("test", test_str)
             
     def _map_ns(self, schematron, nsmap):
