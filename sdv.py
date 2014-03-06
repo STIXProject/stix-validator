@@ -155,6 +155,8 @@ def main():
             to_validate = [args.infile]
         elif args.indir:
             to_validate = get_files_to_validate(args.indir)
+        else:
+            to_validate = []
         
         if len(to_validate) > 0:
             info("Processing %s files" % (len(to_validate)))
