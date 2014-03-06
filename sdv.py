@@ -83,8 +83,25 @@ def print_schema_results(fn, results):
         print "[!] %s : INVALID : [%s]" % (fn, results['errors'])
                     
 def print_profile_results(fn, results):
-    info("Schematron Results")
-    pprint(results)
+    info("Profile validation results")
+    errors = results.get('errors')
+    warnings = results.get('warnings')
+    
+    if not (errors or warnings):
+        print("    Document is VALID")
+    elif warnings and not errors:
+        print("    [#] Validation produced warnings but no errors:")
+    else:
+        print("    [#] Validation produced errors:")
+        
+    if errors:
+        print "    [#] Profile Errors"
+        for error in errors:
+            print "        [!] %s" % error
+    if warnings:
+        print "    [#] Profile Warnings:"
+        for warning in warnings:
+            print "        [~] %s" % warning 
 
 def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
     xslt = validator.get_xslt()
