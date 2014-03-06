@@ -498,73 +498,93 @@ class ProfileValidator(SchematronValidator):
     
     def _build_rule_dict(self, worksheet):
         d = defaultdict(list)
-        for i in range(1, worksheet.nrows):
-            if self._get_cell_value(worksheet, i, 2) != "": # skip the row if no second column value found
-                field = self._get_cell_value(worksheet, i, 0)
-                context = self._get_cell_value(worksheet, i, 1)
-                occurrence = self._get_cell_value(worksheet, i, 2)
-                xsi_types = self._get_cell_value(worksheet, i, 3)
-                allowed_values = self._get_cell_value(worksheet, i, 4)
-                
-                context_list = [x.strip() for x in context.split(',')] # cells may have comma-delimited values
-                for ctx in context_list:
-                    d[ctx].append({'field' : field,
-                                   'occurrence' : occurrence,
-                                   'xsi_types' : xsi_types,
-                                   'allowed_values' : allowed_values})
+        for i in xrange(1, worksheet.nrows):
+            if not any(self._get_cell_value(worksheet, i, x) for x in xrange(0, worksheet.ncols)):
+                continue
+            if not self._get_cell_value(worksheet, i, 1): # assume this is a label row
+                context = self._get_cell_value(worksheet, i, 0)
+                continue
+
+            field = self._get_cell_value(worksheet, i, 0)
+            occurrence = self._get_cell_value(worksheet, i, 1)
+            xsi_types = self._get_cell_value(worksheet, i, 2)
+            allowed_values = self._get_cell_value(worksheet, i, 3)
+            
+            d[context].append({'field' : field,
+                               'occurrence' : occurrence,
+                               'xsi_types' : xsi_types,
+                               'allowed_values' : allowed_values})
         return d
     
-    def _build_schematron_xml(self, rules, nsmap):
+    def _build_schematron_xml(self, rules, nsmap, instance_map):
         root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
         pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
         
-        for context, tests in rules.iteritems():
-            rule_element = self._add_element(pattern, "rule", context=context)
-            for test in tests:
-                assert_element = self._add_element(node=rule_element, name="assert")
-                self._add_test_to_assert(assert_element, test, context)
+        for label, tests in rules.iteritems():
+            for context in instance_map[label]:
+                rule_element = self._add_element(pattern, "rule", context=context)
+                for test in tests:
+                    assert_element = self._add_element(node=rule_element, name="assert")
+                    self._add_test_to_assert(assert_element, test, context)
         
         self._map_ns(root, nsmap) # add namespaces to the schematron document
         return root
     
     def _parse_namespace_worksheet(self, worksheet):
         nsmap = {}
-        for i in range(1, worksheet.nrows): # skip the first row
+        for i in xrange(1, worksheet.nrows): # skip the first row
             ns = self._get_cell_value(worksheet, i, 0)
             alias = self._get_cell_value(worksheet, i, 1)
             nsmap[ns] = alias
         return nsmap      
     
+    def _parse_instance_mapping_worksheet(self, worksheet):
+        instance_map = defaultdict(list)
+        for i in xrange(1, worksheet.nrows):
+            label = self._get_cell_value(worksheet, i, 0)
+            instances = [x.strip() for x in self._get_cell_value(worksheet, i, 1).split(",")]
+            instance_map[label] = instances
+        return instance_map
+    
     def _parse_profile(self, profile):
-        overview_worksheet = profile.sheet_by_name("Overview")
-        namespace_worksheet = profile.sheet_by_name("Namespaces")
+        overview_ws = profile.sheet_by_name("Overview")
+        namespace_ws = profile.sheet_by_name("Namespaces")
+        instance_mapping_ws = profile.sheet_by_name("Instance Mapping")
                 
         all_rules = defaultdict(list)
         for worksheet in profile.sheets():
-            if worksheet.name not in ("Overview", "Namespaces"):
+            if worksheet.name not in ("Overview", "Namespaces", "Instance Mapping"):
+                print worksheet.name
                 rules = self._build_rule_dict(worksheet)
                 for context,d in rules.iteritems():
                     all_rules[context].extend(d)
 
-        namespaces = self._parse_namespace_worksheet(namespace_worksheet)
-        schema = self._build_schematron_xml(all_rules, namespaces)
+        namespaces = self._parse_namespace_worksheet(namespace_ws)
+        instance_mapping = self._parse_instance_mapping_worksheet(instance_mapping_ws)
+        schema = self._build_schematron_xml(all_rules, namespaces, instance_mapping)
         
         self._unload_workbook(profile)
         return schema
     
-    def _build_assert_test(self, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+    def _build_assert_test(self, context, field, occurrence, allowed_values=None, allowed_xsi_types=None):
         test = ""
+        
+        if field.startswith("@"):
+            entity = field
+        else:
+            ns_alias = context.split(':')[0]
+            entity = "%s:%s" % (ns_alias, field)
         
         if allowed_values:
             list_allowed_values = allowed_values.split(',')
-            value_str = " or ".join(["%s='%s'" % (field, value.strip()) for value in list_allowed_values])
+            value_str = " or ".join(["%s='%s'" % (entity, value.strip()) for value in list_allowed_values])
         
         if allowed_xsi_types:
             list_xsi_types = allowed_xsi_types.split(',')
-            xsi_type_str = " or ".join(["%s/@xsi:type='%s'" % (field, xsi_type.strip()) for xsi_type in list_xsi_types])
+            xsi_type_str = " or ".join(["%s/@xsi:type='%s'" % (entity, xsi_type.strip()) for xsi_type in list_xsi_types])
         
         if occurrence == "prohibited": # ignore allowed values/xsi:types
-            test = "not(%s)" % field
+            test = "not(%s)" % entity
         elif allowed_values and allowed_xsi_types:
             test = "(%s) and (%s)" % (value_str, xsi_type_str)
         elif allowed_values:
@@ -572,7 +592,7 @@ class ProfileValidator(SchematronValidator):
         elif allowed_xsi_types:
             test = xsi_type_str
         else:
-            test = field
+            test = entity
          
         return test
     
@@ -600,7 +620,7 @@ class ProfileValidator(SchematronValidator):
         allowed_values = d['allowed_values']
         allowed_xsi_types = d['xsi_types']
         
-        test = self._build_assert_test(field, occurrence, allowed_values, allowed_xsi_types)
+        test = self._build_assert_test(context, field, occurrence, allowed_values, allowed_xsi_types)
         text = self._build_assert_text(context, field, occurrence, allowed_values, allowed_xsi_types)
         assert_element.set("test", test)
         assert_element.text = text
