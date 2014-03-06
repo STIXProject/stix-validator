@@ -506,24 +506,12 @@ class ProfileValidator(SchematronValidator):
                 xsi_types = self._get_cell_value(worksheet, i, 3)
                 allowed_values = self._get_cell_value(worksheet, i, 4)
                 
-                if occurrence == "required":
-                    text = "%s required for this STIX profile. " % field
-                    if xsi_types:
-                        text += "The allowed xsi:types are: [%s]. " % xsi_types
-                    if allowed_values:
-                        text += "The allowed values are [%s]. " % allowed_values
-                elif occurrence == "optional":
-                    text = "%s is optional for this STIX profile." % field
-                elif occurrence == "prohibited":
-                    text = "%s is prohibited for this STIX profile." % field
-                else:
-                    raise Exception("Found unknown 'occurrence' value: %s. Aborting." % occurrence)
-                
-                d['/'].append({'field' : context + "/" + field,
-                               'text' : text.strip(),
-                               'occurrence' : occurrence,
-                               'xsi_types' : xsi_types,
-                               'allowed_values' : allowed_values})
+                context_list = [x.strip() for x in context.split(',')] # cells may have comma-delimited values
+                for ctx in context_list:
+                    d[ctx].append({'field' : field,
+                                   'occurrence' : occurrence,
+                                   'xsi_types' : xsi_types,
+                                   'allowed_values' : allowed_values})
         return d
     
     def _build_schematron_xml(self, rules, nsmap):
@@ -533,8 +521,8 @@ class ProfileValidator(SchematronValidator):
         for context, tests in rules.iteritems():
             rule_element = self._add_element(pattern, "rule", context=context)
             for test in tests:
-                assert_element = self._add_element(node=rule_element, name="assert", text=test['text'])
-                self._add_test_to_assert(assert_element, test)
+                assert_element = self._add_element(node=rule_element, name="assert")
+                self._add_test_to_assert(assert_element, test, context)
         
         self._map_ns(root, nsmap) # add namespaces to the schematron document
         return root
@@ -588,14 +576,34 @@ class ProfileValidator(SchematronValidator):
          
         return test
     
-    def _add_test_to_assert(self, assert_element, d):
+    def _build_assert_text(self, context, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+        full_path = context + "/" + field
+        
+        if occurrence == "required":
+            text = "%s is required for this STIX profile. " % full_path
+            if allowed_xsi_types:
+                text += "The allowed xsi:types are: [%s]. " % allowed_xsi_types
+            if allowed_values:
+                text += "The allowed values are [%s]." % allowed_values
+        elif occurrence == "optional":
+            text = "%s is optional for this STIX profile." % full_path
+        elif occurrence == "prohibited":
+            text = "%s is prohibited for this STIX profile." % full_path
+        else:
+            raise Exception("Found unknown 'occurrence' value: %s. Aborting." % occurrence)
+        
+        return text
+    
+    def _add_test_to_assert(self, assert_element, d, context):
         field = d['field']
         occurrence = d['occurrence']
         allowed_values = d['allowed_values']
         allowed_xsi_types = d['xsi_types']
         
         test = self._build_assert_test(field, occurrence, allowed_values, allowed_xsi_types)
+        text = self._build_assert_text(context, field, occurrence, allowed_values, allowed_xsi_types)
         assert_element.set("test", test)
+        assert_element.text = text
         
         if occurrence in ("required", "prohibited"):
             assert_element.set("role", "error")
