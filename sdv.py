@@ -10,6 +10,7 @@ import os
 import argparse
 from validators import STIXValidator, ProfileValidator
 from pprint import pprint
+from lxml import etree
 
 def get_files_to_validate(dir):
     '''Return a list of xml files under a directory'''
@@ -84,7 +85,18 @@ def print_schema_results(fn, results):
 def print_profile_results(fn, results):
     info("Schematron Results")
     pprint(results)
+
+def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
+    xslt = validator.get_xslt()
+    schematron = validator.get_schematron()
     
+    if schematron_out_fn:
+        info("Writing schematron conversion of profile %s" % schematron_out_fn)
+        schematron.write(schematron_out_fn, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+    if xslt_out_fn:
+        info("Writing xslt conversion of profile: %s" % xslt_out_fn)
+        xslt.write(xslt_out_fn, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        
 def main():
     parser = argparse.ArgumentParser(description="STIX Document Validator")
     parser.add_argument("--schema-dir", dest="schema_dir", default=None, help="Path to directory containing all necessary schemas for validation")
@@ -93,8 +105,8 @@ def main():
     parser.add_argument("--use-schemaloc", dest="use_schemaloc", action='store_true', default=False, help="Use schemaLocation attribute to determine schema locations.")
     parser.add_argument("--best-practices", dest="best_practices", action='store_true', default=False, help="Check that the document follows authoring best practices")
     parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
-    parser.add_argument("--output-schematron", dest="schematron", default=None, help="Path to converted STIX profile schematron file")
-    parser.add_argument("--output-xslt", dest="xslt", default=None, help="Path to converted STIX profile schematron xslt")
+    parser.add_argument("--schematron-out", dest="schematron", default=None, help="Path to converted STIX profile schematron file output")
+    parser.add_argument("--xslt-out", dest="xslt", default=None, help="Path to converted STIX profile schematron xslt output")
     
     args = parser.parse_args()
     schema_validation = False
@@ -117,27 +129,33 @@ def main():
         error("Must provide either --use-schemaloc or --schema-dir when --input-file or input-dir declared")
     if args.profile and not (profile_validation or profile_conversion):
         error("Profile specified but no conversion options or validation options specified")
-        
-    if args.infile:
-        to_validate = [args.infile]
-    if args.indir:
-        to_validate = get_files_to_validate(args.indir)
     
-    if len(to_validate) > 0:
-        info("Processing %s files" % (len(to_validate)))
-        stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
-        for fn in to_validate:
-            print "Validating STIX document: " + fn
-            results = stix_validator.validate(fn)
-            isvalid = results['result']
-            print_schema_results(fn, results)
-            if args.profile and isvalid:
-                    profile_validator = ProfileValidator(args.profile)
-                    profile_results = profile_validator.validate(fn)
-                    print_profile_results(fn, profile_results)
-            elif args.profile and not(isvalid): 
-                info("The STIX document was invalid, so it was not validated against the Schematron profile")
-
+    if profile_validation or profile_conversion:
+        profile_validator = ProfileValidator(args.profile)
+    
+    if schema_validation:
+        if args.infile:
+            to_validate = [args.infile]
+        elif args.indir:
+            to_validate = get_files_to_validate(args.indir)
+        
+        if len(to_validate) > 0:
+            info("Processing %s files" % (len(to_validate)))
+            stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
+            for fn in to_validate:
+                print "Validating STIX document: " + fn
+                results = stix_validator.validate(fn)
+                isvalid = results['result']
+                print_schema_results(fn, results)
+                if profile_validation and isvalid:
+                        profile_results = profile_validator.validate(fn)
+                        print_profile_results(fn, profile_results)
+                elif args.profile and not(isvalid): 
+                    info("The STIX document was invalid, so it was not validated against the Schematron profile")
+    
+    if profile_conversion:
+        convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
+    
 if __name__ == '__main__':
     main()
 
