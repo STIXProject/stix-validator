@@ -437,10 +437,16 @@ class SchematronValidator(object):
             tree = schematron
             
         self.schematron = isoschematron.Schematron(tree, store_report=True, store_xslt=True, store_schematron=True)
+        
+    def get_xslt(self):
+        if not self.schematron:
+            return None
+        return self.schematron.validator_xslt
     
-    def _element_to_file(self, tree, fn):    
-        with open(fn, "wb") as f:
-            f.write(etree.tostring(tree, pretty_print=True))
+    def get_schematron(self):
+        if not self.schematron:
+            return None
+        return self.schematron.schematron
     
     def _build_result_dict(self, result, report=None):
         d = {}
@@ -513,11 +519,11 @@ class ProfileValidator(SchematronValidator):
                 else:
                     raise Exception("Found unknown 'occurence' value: %s. Aborting." % occurrence)
                 
-                d[context].append({'field' : field,
-                                   'text' : text.strip(),
-                                   'occurrence' : occurrence,
-                                   'xsi_type' : xsi_type,
-                                   'allowed_value' : allowed_value})
+                d['/'].append({'field' : context + "/" + field,
+                               'text' : text.strip(),
+                               'occurrence' : occurrence,
+                               'xsi_type' : xsi_type,
+                               'allowed_value' : allowed_value})
         return d
     
     def _build_schematron_xml(self, rules, nsmap):
