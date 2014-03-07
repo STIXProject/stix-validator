@@ -499,7 +499,7 @@ class ProfileValidator(SchematronValidator):
     def _build_rule_dict(self, worksheet):
         d = defaultdict(list)
         for i in xrange(1, worksheet.nrows):
-            if not any(self._get_cell_value(worksheet, i, x) for x in xrange(0, worksheet.ncols)):
+            if not any(self._get_cell_value(worksheet, i, x) for x in xrange(0, worksheet.ncols)): # empty row
                 continue
             if not self._get_cell_value(worksheet, i, 1): # assume this is a label row
                 context = self._get_cell_value(worksheet, i, 0)
