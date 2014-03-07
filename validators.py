@@ -517,9 +517,19 @@ class ProfileValidator(SchematronValidator):
                                    'allowed_values' : allowed_values})
         return d
     
+    def _add_root_test(self, pattern, nsmap):
+        '''Adds a root-level test that requires the root element of a STIX
+        document be a STIX_Package'''
+        ns_stix = "http://stix.mitre.org/stix-1"
+        rule_element = self._add_element(pattern, "rule", context="/")
+        assert_element = self._add_element(node=rule_element, name="assert")
+        assert_element.set("test", "%s:STIX_Package" % (nsmap.get(ns_stix, 'stix')))
+        assert_element.text = "The root element must be a STIX_Package instance"
+    
     def _build_schematron_xml(self, rules, nsmap, instance_map):
         root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
         pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
+        self._add_root_test(pattern, nsmap)
         
         for label, tests in rules.iteritems():
             for context in instance_map[label]:
