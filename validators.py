@@ -568,10 +568,10 @@ class ProfileValidator(SchematronValidator):
     def _build_assert_test(self, context, field, occurrence, allowed_values=None, allowed_xsi_types=None):
         test = ""
         
-        if field.startswith("@"):
+        if field.startswith("@"): # field is an attribute
             entity = field
         else:
-            ns_alias = context.split(':')[0]
+            ns_alias = context.split(':')[0] 
             entity = "%s:%s" % (ns_alias, field)
         
         if allowed_values:

@@ -147,33 +147,37 @@ def main():
     if args.profile and not (profile_validation or profile_conversion):
         error("Profile specified but no conversion options or validation options specified")
     
-    if profile_validation or profile_conversion:
-        profile_validator = ProfileValidator(args.profile)
-    
-    if schema_validation:
-        if args.infile:
-            to_validate = [args.infile]
-        elif args.indir:
-            to_validate = get_files_to_validate(args.indir)
-        else:
-            to_validate = []
+    try:
+        if profile_validation or profile_conversion:
+            profile_validator = ProfileValidator(args.profile)
         
-        if len(to_validate) > 0:
-            info("Processing %s files" % (len(to_validate)))
-            stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
-            for fn in to_validate:
-                print "Validating STIX document: " + fn
-                results = stix_validator.validate(fn)
-                isvalid = results['result']
-                print_schema_results(fn, results)
-                if profile_validation and isvalid:
-                    profile_results = profile_validator.validate(fn)
-                    print_profile_results(fn, profile_results)
-                elif args.profile and not(isvalid): 
-                    info("The STIX document was invalid, so it was not validated against the Schematron profile")
+        if schema_validation:
+            if args.infile:
+                to_validate = [args.infile]
+            elif args.indir:
+                to_validate = get_files_to_validate(args.indir)
+            else:
+                to_validate = []
+            
+            if len(to_validate) > 0:
+                info("Processing %s files" % (len(to_validate)))
+                stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
+                for fn in to_validate:
+                    print "Validating STIX document: " + fn
+                    results = stix_validator.validate(fn)
+                    isvalid = results['result']
+                    print_schema_results(fn, results)
+                    if profile_validation and isvalid:
+                        profile_results = profile_validator.validate(fn)
+                        print_profile_results(fn, profile_results)
+                    elif args.profile and not(isvalid): 
+                        info("The STIX document was invalid, so it was not validated against the Schematron profile")
+        
+        if profile_conversion:
+            convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
     
-    if profile_conversion:
-        convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
+    except Exception as ex:
+        error("Fatal error occurred: %s" % str(ex))
     
 if __name__ == '__main__':
     main()
