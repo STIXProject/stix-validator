@@ -31,7 +31,7 @@ def info(msg):
 
 def print_schema_results(fn, results):
     if results['result']:
-        print "[+] %s : VALID" % (fn)
+        print "[+] XML schema validation results: %s : VALID" % fn
         warnings = results.get('best_practice_warnings')
         if warnings:
             print "[-] Best Practice Warnings"
@@ -78,28 +78,18 @@ def print_schema_results(fn, results):
                     print '    [~] id: [%s] line: [%s] missing: %s' % (node['id'], node['line_number'], node.get('missing'))
                     
     else:
-        print "[!] %s : INVALID : [%s]" % (fn, results['errors'])
-                    
+        print "[!] XML schema validation results: %s : INVALID" % fn
+        print "[!] Validation errors: [%s]" % results['errors']
+                 
 def print_profile_results(fn, results):
-    info("Profile validation results: %s" % fn)
     errors = results.get('errors')
-    warnings = results.get('warnings')
-    
-    if not (errors or warnings):
-        print("    Document is VALID")
-    elif warnings and not errors:
-        print("    [#] Validation produced warnings but no errors:")
+    if not errors:
+        print "[+] Profile validation results: %s : VALID" % fn
     else:
-        print("    [#] Validation produced errors:")
-        
-    if errors:
-        print "    [#] Profile Errors"
+        print "[!] Profile validation results: %s : INVALID" % fn
+        print "[!] Profile Errors"
         for error in errors:
-            print "        [!] %s" % error
-    if warnings:
-        print "    [#] Profile Warnings:"
-        for warning in warnings:
-            print "        [~] %s" % warning 
+            print "    [!] %s" % error
 
 def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
     xslt = validator.get_xslt()
@@ -161,16 +151,18 @@ def main():
                 info("Processing %s files" % (len(to_validate)))
                 stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
                 for fn in to_validate:
-                    print "Validating STIX document: " + fn
+                    info("Validating STIX document %s... " % fn)
                     results = stix_validator.validate(fn)
                     isvalid = results['result']
                     print_schema_results(fn, results)
-                    if profile_validation and isvalid:
-                        profile_results = profile_validator.validate(fn)
-                        print_profile_results(fn, profile_results)
-                    elif args.profile and not(isvalid): 
-                        info("The STIX document was invalid, so it was not validated against the Schematron profile")
-        
+                    if profile_validation:
+                        if isvalid:
+                            profile_results = profile_validator.validate(fn)
+                            print_profile_results(fn, profile_results)
+                        else: 
+                            info("The document %s was schema-invalid. Skipping profile validation" % fn)
+                    print "" 
+                    
         if profile_conversion:
             convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
     

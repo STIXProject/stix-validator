@@ -507,13 +507,14 @@ class ProfileValidator(SchematronValidator):
 
             field = self._get_cell_value(worksheet, i, 0)
             occurrence = self._get_cell_value(worksheet, i, 1)
-            xsi_types = self._get_cell_value(worksheet, i, 2)
-            allowed_values = self._get_cell_value(worksheet, i, 3)
+            xsi_types = self._get_cell_value(worksheet, i, 3)
+            allowed_values = self._get_cell_value(worksheet, i, 4)
             
-            d[context].append({'field' : field,
-                               'occurrence' : occurrence,
-                               'xsi_types' : xsi_types,
-                               'allowed_values' : allowed_values})
+            if occurrence in ('required', 'prohibited'): # ignore 'optional' and 'suggested'
+                d[context].append({'field' : field,
+                                   'occurrence' : occurrence,
+                                   'xsi_types' : xsi_types,
+                                   'allowed_values' : allowed_values})
         return d
     
     def _build_schematron_xml(self, rules, nsmap, instance_map):
@@ -604,12 +605,10 @@ class ProfileValidator(SchematronValidator):
                 text += "The allowed xsi:types are: [%s]. " % allowed_xsi_types
             if allowed_values:
                 text += "The allowed values are [%s]." % allowed_values
-        elif occurrence == "optional":
-            text = "%s is optional for this STIX profile." % full_path
         elif occurrence == "prohibited":
             text = "%s is prohibited for this STIX profile." % full_path
         else:
-            raise Exception("Found unknown 'occurrence' value: %s. Aborting." % occurrence)
+            text = ""
         
         return text
     
@@ -626,8 +625,6 @@ class ProfileValidator(SchematronValidator):
         
         if occurrence in ("required", "prohibited"):
             assert_element.set("role", "error")
-        else:
-            assert_element.set("role", "warning")
             
     def _map_ns(self, schematron, nsmap):   
         for ns, prefix in nsmap.iteritems():
