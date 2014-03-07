@@ -451,10 +451,11 @@ class SchematronValidator(object):
     def _build_result_dict(self, result, report=None):
         d = {}
         d['result'] = result
-        if 'error' in report:
-            d['errors'] = report['error']
-        if 'warning' in report:
-            d['warnings'] = report['warning']
+        if report:
+            if 'error' in report:
+                d['errors'] = report['error']
+            if 'warning' in report:
+                d['warnings'] = report['warning']
         
         return d
     
@@ -481,6 +482,7 @@ class SchematronValidator(object):
                 tree = etree.parse(instance)
             
             result = self.schematron.validate(tree)
+
             if not result:
                 report = self._build_error_report_dict(self.schematron.validation_report)
                 return self._build_result_dict(result, report)
