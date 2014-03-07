@@ -117,7 +117,7 @@ class XmlValidator(object):
     def _build_result_dict(self, result, errors=None):
         d = {}
         d['result'] = result
-        d['errors'] = errors
+        if errors: d['errors'] = errors
         return d
     
     def validate(self, instance_doc):

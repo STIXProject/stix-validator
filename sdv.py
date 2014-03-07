@@ -79,7 +79,7 @@ def print_schema_results(fn, results):
                     
     else:
         print "[!] XML schema validation results: %s : INVALID" % fn
-        print "[!] Validation errors: [%s]" % results['errors']
+        print "[!] Validation errors: [%s]" % results.get('errors')
                  
 def print_profile_results(fn, results):
     errors = results.get('errors')
