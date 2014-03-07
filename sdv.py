@@ -3,14 +3,12 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 '''
-STIX Document Validator (sdv) - validates STIX v1.0.1 instance documents.
+STIX Document Validator (sdv) - validates STIX v1.1 instance documents.
 '''
 
 import os
 import argparse
 from validators import STIXValidator, ProfileValidator
-from pprint import pprint
-from lxml import etree
 
 def get_files_to_validate(dir):
     '''Return a list of xml files under a directory'''
