@@ -460,12 +460,12 @@ class SchematronValidator(object):
     
     def _build_error_report_dict(self, validation_report):
         errors = isoschematron.svrl_validation_errors(validation_report)
-        report_dict = defaultdict(list)
+        report_dict = defaultdict(set)
         
         for error in errors:
             role = error.attrib['role']
             text_node = error.find("{%s}text" % self.NS_SVRL)
-            report_dict[role].append(text_node.text)
+            report_dict[role].add(text_node.text)
         
         return report_dict
     
@@ -491,6 +491,8 @@ class SchematronValidator(object):
             return self._build_result_dict(False, [str(e)])    
 
 class ProfileValidator(SchematronValidator):
+    NS_STIX = "http://stix.mitre.org/stix-1"
+    
     def __init__(self, profile_fn):
         profile = self._open_profile(profile_fn)
         schema = self._parse_profile(profile)
@@ -529,32 +531,51 @@ class ProfileValidator(SchematronValidator):
     def _build_schematron_xml(self, rules, nsmap, instance_map):
         root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
         pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
-        self._add_root_test(pattern, nsmap)
+        self._add_root_test(pattern, nsmap) # check the root element of the document
         
         for label, tests in rules.iteritems():
-            for context in instance_map[label]:
-                rule_element = self._add_element(pattern, "rule", context=context)
+            d = instance_map[label]
+            selectors = d['selectors']
+            field_ns_alias = d['ns_alias']
+            for selector in selectors:
+                rule_element = self._add_element(pattern, "rule", context=selector)
                 for test in tests:
                     assert_element = self._add_element(node=rule_element, name="assert")
-                    self._add_test_to_assert(assert_element, test, context)
+                    self._add_test_to_assert(assert_element, test, selector, field_ns_alias)
         
         self._map_ns(root, nsmap) # add namespaces to the schematron document
         return root
     
     def _parse_namespace_worksheet(self, worksheet):
-        nsmap = {}
+        nsmap = {self.NS_STIX : 'stix'}
         for i in xrange(1, worksheet.nrows): # skip the first row
+            if not any(self._get_cell_value(worksheet, i, x) for x in xrange(0, worksheet.ncols)): # empty row
+                continue
+            
             ns = self._get_cell_value(worksheet, i, 0)
             alias = self._get_cell_value(worksheet, i, 1)
+
+            if not (ns or alias):
+                raise Exception("Missing namespace or alias: unable to parse Namespaces worksheet")
+            
             nsmap[ns] = alias
         return nsmap      
     
-    def _parse_instance_mapping_worksheet(self, worksheet):
-        instance_map = defaultdict(list)
+    def _parse_instance_mapping_worksheet(self, worksheet, nsmap):
+        instance_map = {}
         for i in xrange(1, worksheet.nrows):
+            if not any(self._get_cell_value(worksheet, i, x) for x in xrange(0, worksheet.ncols)): # empty row
+                continue
+            
             label = self._get_cell_value(worksheet, i, 0)
-            instances = [x.strip() for x in self._get_cell_value(worksheet, i, 1).split(",")]
-            instance_map[label] = instances
+            selectors = [x.strip() for x in self._get_cell_value(worksheet, i, 1).split(",")]
+            ns = self._get_cell_value(worksheet, i, 2)
+            ns_alias = nsmap[ns]
+            
+            if not (label or selectors or ns):
+                raise Exception("Missing label, instance selector and/or namespace for %s in Instance Mapping worksheet" % label)
+            
+            instance_map[label] = {'selectors':selectors, 'ns':ns, 'ns_alias':ns_alias}
         return instance_map
     
     def _parse_profile(self, profile):
@@ -570,20 +591,19 @@ class ProfileValidator(SchematronValidator):
                     all_rules[context].extend(d)
 
         namespaces = self._parse_namespace_worksheet(namespace_ws)
-        instance_mapping = self._parse_instance_mapping_worksheet(instance_mapping_ws)
+        instance_mapping = self._parse_instance_mapping_worksheet(instance_mapping_ws, namespaces)
         schema = self._build_schematron_xml(all_rules, namespaces, instance_mapping)
         
         self._unload_workbook(profile)
         return schema
     
-    def _build_assert_test(self, context, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+    def _build_assert_test(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
         test = ""
         
         if field.startswith("@"): # field is an attribute
             entity = field
         else:
-            ns_alias = context.split(':')[0] 
-            entity = "%s:%s" % (ns_alias, field)
+            entity = "%s:%s" % (field_ns_alias, field)
         
         if allowed_values:
             list_allowed_values = allowed_values.split(',')
@@ -606,8 +626,8 @@ class ProfileValidator(SchematronValidator):
          
         return test
     
-    def _build_assert_text(self, context, field, occurrence, allowed_values=None, allowed_xsi_types=None):
-        full_path = context + "/" + field
+    def _build_assert_text(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+        full_path = "%s/%s:%s" % (context, field_ns_alias, field)
         
         if occurrence == "required":
             text = "%s is required for this STIX profile. " % full_path
@@ -622,14 +642,14 @@ class ProfileValidator(SchematronValidator):
         
         return text
     
-    def _add_test_to_assert(self, assert_element, d, context):
-        field = d['field']
-        occurrence = d['occurrence']
-        allowed_values = d['allowed_values']
-        allowed_xsi_types = d['xsi_types']
+    def _add_test_to_assert(self, assert_element, test_dict, context, type_ns):
+        field = test_dict['field']
+        occurrence = test_dict['occurrence']
+        allowed_values = test_dict['allowed_values']
+        allowed_xsi_types = test_dict['xsi_types']
         
-        test = self._build_assert_test(context, field, occurrence, allowed_values, allowed_xsi_types)
-        text = self._build_assert_text(context, field, occurrence, allowed_values, allowed_xsi_types)
+        test = self._build_assert_test(context, type_ns, field, occurrence, allowed_values, allowed_xsi_types)
+        text = self._build_assert_text(context, type_ns, field, occurrence, allowed_values, allowed_xsi_types)
         assert_element.set("test", test)
         assert_element.text = text
         

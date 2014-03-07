@@ -165,7 +165,7 @@ def main():
                     
         if profile_conversion:
             convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
-    
+
     except Exception as ex:
         error("Fatal error occurred: %s" % str(ex))
     
