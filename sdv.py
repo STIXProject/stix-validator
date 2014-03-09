@@ -170,9 +170,6 @@ def main():
             convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
 
     except Exception as ex:
-        import traceback
-        import sys
-        traceback.print_exc(file=sys.stdout)
         error("Fatal error occurred: %s" % str(ex))
     
 if __name__ == '__main__':
