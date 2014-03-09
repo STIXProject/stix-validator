@@ -460,17 +460,16 @@ class SchematronValidator(object):
         errors = validation_report.xpath(xpath, namespaces={'svrl':self.NS_SVRL})
         return errors
     
-    def _get_field_name(self, test):
+    def _get_field_name(self, d_error):
         '''This is intended to be overriden by a subclass'''
         return '.'
     
     def _get_error_line_numbers(self, d_error, tree):
-        '''Overrides SchematronValidator._get_error_line_numbers(...)'''
         locations = d_error['locations']
         test = d_error['test']
         nsmap = d_error['nsmap']
         
-        field_name = self._get_field_name_for_test(test)
+        field_name = self._get_field_name(d_error)
         if test.startswith('@'):
             xpath_test = '.'
         elif '=' in test:
@@ -503,7 +502,7 @@ class SchematronValidator(object):
             if text in d_errors:
                 d_errors[text]['locations'].append(location)
             else:
-                d_errors[text] = {'locations':[location], 'test':test, 'nsmap':error.nsmap}
+                d_errors[text] = {'locations':[location], 'test':test, 'nsmap':error.nsmap, 'text':text}
         
         return d_errors
     
@@ -547,6 +546,7 @@ class ProfileValidator(SchematronValidator):
     NS_STIX = "http://stix.mitre.org/stix-1"
     
     def __init__(self, profile_fn):
+        self._text_to_entity = {} # svrl error text => instance entity name mapping.
         profile = self._open_profile(profile_fn)
         schema = self._parse_profile(profile)
         super(ProfileValidator, self).__init__(schematron=schema)
@@ -682,10 +682,12 @@ class ProfileValidator(SchematronValidator):
         return test
     
     def _build_text(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
-        if field.startswith("@"):
-            full_path = "%s/%s" % (context, field)
+        if field.startswith("@"): # field is an attribute
+            entity = field
         else:
-            full_path = "%s/%s:%s" % (context, field_ns_alias, field)
+            entity = "%s:%s" % (field_ns_alias, field)
+        
+        full_path = "%s/%s" % (context, entity)
         
         if occurrence == "required":
             text = "%s is required for this STIX profile. " % full_path
@@ -697,6 +699,8 @@ class ProfileValidator(SchematronValidator):
             text = "%s is prohibited for this STIX profile." % full_path
         else:
             text = ""
+        
+        self._text_to_entity[text] = entity
         
         return text
     
@@ -760,18 +764,10 @@ class ProfileValidator(SchematronValidator):
     def validate(self, instance_doc, report_line_numbers=True):
         return super(ProfileValidator, self).validate(instance_doc, report_line_numbers)
     
-    def _get_field_name_for_test(self, test):
+    def _get_field_name(self, d_error):
         '''Overrides SchematronValidator._get_field_name_for_test()'''
-        if test:
-            if test.startswith("@"):
-                name = test.split('=')[0] # test="@version='1.0' or @version='2.0'" or test="@version"
-            elif test.startswith("("):
-                name = test[1:].split("=")[0] # test="(stix:Package_Intent='Indicators - Phishing') and (stix:Package_Intent/@xsi:type='stixVocabs:PackageIntentVocab-1.0')"
-            else:
-                name = test.split("/")[0].split("=")[0] # test="stix:Campaign" test="stix:Description='test'"
-        else:
-            name = "."
-            
-        return name
+        error_text = d_error['text']
+        field_name = self._text_to_entity.get(error_text, '.')
+        return field_name
     
     
