@@ -82,14 +82,17 @@ def print_schema_results(fn, results):
         print "[!] Validation errors: [%s]" % results.get('errors')
                  
 def print_profile_results(fn, results):
-    errors = results.get('errors')
+    report = results.get('report', {})
+    errors = report.get('errors')
     if not errors:
         print "[+] Profile validation results: %s : VALID" % fn
     else:
         print "[!] Profile validation results: %s : INVALID" % fn
         print "[!] Profile Errors"
         for error in errors:
-            print "    [!] %s" % error
+            msg = error.get('error')
+            line_numbers = error.get('line_numbers', "")
+            print "    [!] %s %s" % (msg, line_numbers)
 
 def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
     xslt = validator.get_xslt()
@@ -110,6 +113,7 @@ def main():
     parser.add_argument("--use-schemaloc", dest="use_schemaloc", action='store_true', default=False, help="Use schemaLocation attribute to determine schema locations.")
     parser.add_argument("--best-practices", dest="best_practices", action='store_true', default=False, help="Check that the document follows authoring best practices")
     parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
+    parser.add_argument("--disable-profile-error-lines", dest="disable_profile_error_lines", action='store_true', default=False, help="Disable reporting of profile validation line numbers. This may help performance when validating large documents with numerous validation errors.")
     parser.add_argument("--schematron-out", dest="schematron", default=None, help="Path to converted STIX profile schematron file output")
     parser.add_argument("--xslt-out", dest="xslt", default=None, help="Path to converted STIX profile schematron xslt output")
     
@@ -157,16 +161,18 @@ def main():
                     print_schema_results(fn, results)
                     if profile_validation:
                         if isvalid:
-                            profile_results = profile_validator.validate(fn)
+                            profile_results = profile_validator.validate(fn, report_line_numbers=(not args.disable_profile_error_lines))
                             print_profile_results(fn, profile_results)
                         else: 
-                            info("The document %s was schema-invalid. Skipping profile validation" % fn)
-                    print "" 
+                            info("The document %s was schema-invalid. Skipping profile validation" % fn) 
                     
         if profile_conversion:
             convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)
 
     except Exception as ex:
+        import traceback
+        import sys
+        traceback.print_exc(file=sys.stdout)
         error("Fatal error occurred: %s" % str(ex))
     
 if __name__ == '__main__':

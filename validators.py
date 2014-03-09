@@ -452,25 +452,76 @@ class SchematronValidator(object):
         d = {}
         d['result'] = result
         if report:
-            if 'error' in report:
-                d['errors'] = report['error']
-            if 'warning' in report:
-                d['warnings'] = report['warning']
-        
+                d['report'] = report
         return d
     
-    def _build_error_report_dict(self, validation_report):
-        errors = isoschematron.svrl_validation_errors(validation_report)
-        report_dict = defaultdict(set)
+    def _get_schematron_errors(self, validation_report):
+        xpath = "//svrl:failed-assert | //svrl:successful-report"
+        errors = validation_report.xpath(xpath, namespaces={'svrl':self.NS_SVRL})
+        return errors
+    
+    def _get_field_name(self, test):
+        '''This is intended to be overriden by a subclass'''
+        return '.'
+    
+    def _get_error_line_numbers(self, d_error, tree):
+        '''Overrides SchematronValidator._get_error_line_numbers(...)'''
+        locations = d_error['locations']
+        test = d_error['test']
+        nsmap = d_error['nsmap']
+        
+        field_name = self._get_field_name_for_test(test)
+        if test.startswith('@'):
+            xpath_test = '.'
+        elif '=' in test:
+            xpath_test = "./%s[not(%s)]" % (field_name, test.replace(field_name, '.'))
+        else:
+            xpath_test = "./%s" % field_name
+        
+        line_numbers = []
+        for location in locations:
+            ctx_node = tree.xpath(location, namespaces=nsmap)[0]
+            test_nodes = ctx_node.xpath(xpath_test, namespaces=nsmap)
+            
+            if test_nodes:
+                for node in test_nodes:
+                    if node.sourceline not in line_numbers: line_numbers.append(node.sourceline)
+            else:
+                if ctx_node.sourceline not in line_numbers: line_numbers.append(ctx_node.sourceline)
+        
+        line_numbers.sort()
+        return line_numbers
+    
+    def _build_error_dict(self, errors):
+        d_errors = {}
         
         for error in errors:
-            role = error.attrib['role']
-            text_node = error.find("{%s}text" % self.NS_SVRL)
-            report_dict[role].add(text_node.text)
+            text = error.find("{%s}text" % self.NS_SVRL).text
+            location = error.attrib.get('location')
+            test = error.attrib.get('test')
+            
+            if text in d_errors:
+                d_errors[text]['locations'].append(location)
+            else:
+                d_errors[text] = {'locations':[location], 'test':test, 'nsmap':error.nsmap}
         
+        return d_errors
+    
+    def _build_error_report_dict(self, validation_report, instance_tree, report_line_numbers=True): 
+        errors = self._get_schematron_errors(validation_report)
+        d_errors = self._build_error_dict(errors)
+        
+        report_dict = defaultdict(list)
+        for msg, d in d_errors.iteritems():
+            d_error = {'error' : msg}
+            if report_line_numbers:
+                line_numbers = self._get_error_line_numbers(d, instance_tree)
+                d_error['line_numbers'] = line_numbers
+            report_dict['errors'].append(d_error)
+            
         return report_dict
     
-    def validate(self, instance):
+    def validate(self, instance, report_line_numbers=True):
         if not self.schematron:
             raise Exception('Schematron document not set. Cannot validate. Call init_schematron(...) and retry.')
         try:
@@ -484,7 +535,7 @@ class SchematronValidator(object):
             result = self.schematron.validate(tree)
 
             if not result:
-                report = self._build_error_report_dict(self.schematron.validation_report)
+                report = self._build_error_report_dict(self.schematron.validation_report, tree, report_line_numbers)
                 return self._build_result_dict(result, report)
             else:
                 return self._build_result_dict(result)
@@ -542,8 +593,12 @@ class ProfileValidator(SchematronValidator):
             for selector in selectors:
                 rule_element = self._add_element(pattern, "rule", context=selector)
                 for test in tests:
-                    assert_element = self._add_element(node=rule_element, name="assert")
-                    self._add_test_to_assert(assert_element, test, selector, field_ns_alias)
+                    if test['occurrence'] == 'prohibited':
+                        test_element = self._add_element(node=rule_element, name="report")
+                    else:
+                        test_element = self._add_element(node=rule_element, name="assert")
+                        
+                    self._add_test_to_element(test_element, test, selector, field_ns_alias)
         
         self._map_ns(root, nsmap) # add namespaces to the schematron document
         return root
@@ -599,7 +654,7 @@ class ProfileValidator(SchematronValidator):
         self._unload_workbook(profile)
         return schema
     
-    def _build_assert_test(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+    def _build_test(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
         test = ""
         
         if field.startswith("@"): # field is an attribute
@@ -615,9 +670,7 @@ class ProfileValidator(SchematronValidator):
             list_xsi_types = allowed_xsi_types.split(',')
             xsi_type_str = " or ".join(["%s/@xsi:type='%s'" % (entity, xsi_type.strip()) for xsi_type in list_xsi_types])
         
-        if occurrence == "prohibited": # ignore allowed values/xsi:types
-            test = "not(%s)" % entity
-        elif allowed_values and allowed_xsi_types:
+        if allowed_values and allowed_xsi_types:
             test = "(%s) and (%s)" % (value_str, xsi_type_str)
         elif allowed_values:
             test = value_str
@@ -628,8 +681,11 @@ class ProfileValidator(SchematronValidator):
          
         return test
     
-    def _build_assert_text(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
-        full_path = "%s/%s:%s" % (context, field_ns_alias, field)
+    def _build_text(self, context, field_ns_alias, field, occurrence, allowed_values=None, allowed_xsi_types=None):
+        if field.startswith("@"):
+            full_path = "%s/%s" % (context, field)
+        else:
+            full_path = "%s/%s:%s" % (context, field_ns_alias, field)
         
         if occurrence == "required":
             text = "%s is required for this STIX profile. " % full_path
@@ -644,14 +700,14 @@ class ProfileValidator(SchematronValidator):
         
         return text
     
-    def _add_test_to_assert(self, assert_element, test_dict, context, type_ns):
+    def _add_test_to_element(self, assert_element, test_dict, context, type_ns):
         field = test_dict['field']
         occurrence = test_dict['occurrence']
         allowed_values = test_dict['allowed_values']
         allowed_xsi_types = test_dict['xsi_types']
         
-        test = self._build_assert_test(context, type_ns, field, occurrence, allowed_values, allowed_xsi_types)
-        text = self._build_assert_text(context, type_ns, field, occurrence, allowed_values, allowed_xsi_types)
+        test = self._build_test(context, type_ns, field, occurrence, allowed_values, allowed_xsi_types)
+        text = self._build_text(context, type_ns, field, occurrence, allowed_values, allowed_xsi_types)
         assert_element.set("test", test)
         assert_element.text = text
         
@@ -701,5 +757,21 @@ class ProfileValidator(SchematronValidator):
         copy = etree.ElementTree(self.schema)
         return copy.getroot()
     
-    def validate(self, instance_doc):
-        return super(ProfileValidator, self).validate(instance_doc)
+    def validate(self, instance_doc, report_line_numbers=True):
+        return super(ProfileValidator, self).validate(instance_doc, report_line_numbers)
+    
+    def _get_field_name_for_test(self, test):
+        '''Overrides SchematronValidator._get_field_name_for_test()'''
+        if test:
+            if test.startswith("@"):
+                name = test.split('=')[0] # test="@version='1.0' or @version='2.0'" or test="@version"
+            elif test.startswith("("):
+                name = test[1:].split("=")[0] # test="(stix:Package_Intent='Indicators - Phishing') and (stix:Package_Intent/@xsi:type='stixVocabs:PackageIntentVocab-1.0')"
+            else:
+                name = test.split("/")[0].split("=")[0] # test="stix:Campaign" test="stix:Description='test'"
+        else:
+            name = "."
+            
+        return name
+    
+    
