@@ -155,12 +155,13 @@ def main():
                 info("Processing %s files" % (len(to_validate)))
                 stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
                 for fn in to_validate:
-                    info("Validating STIX document %s... " % fn)
+                    info("Validating STIX document %s against XML schema... " % fn)
                     results = stix_validator.validate(fn)
                     isvalid = results['result']
                     print_schema_results(fn, results)
                     if profile_validation:
                         if isvalid:
+                            info("Validating STIX document %s against profile %s..." % (fn, args.profile))
                             profile_results = profile_validator.validate(fn, report_line_numbers=(not args.disable_profile_error_lines))
                             print_profile_results(fn, profile_results)
                         else: 
