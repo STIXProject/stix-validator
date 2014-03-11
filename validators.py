@@ -421,6 +421,7 @@ class STIXValidator(XmlValidator):
 class SchematronValidator(object):
     NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
     NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
+    NS_SAXON = "http://icl.com/saxon" # libxml2 requires this namespace instead of http://saxon.sf.net
     
     def __init__(self, schematron=None):
         self.schematron = None # isoschematron.Schematron instance
@@ -562,27 +563,23 @@ class ProfileValidator(SchematronValidator):
         document be a STIX_Package'''
         ns_stix = "http://stix.mitre.org/stix-1"
         rule_element = self._add_element(pattern, "rule", context="/")
-        assert_element = self._add_element(node=rule_element, name="assert")
-        assert_element.set('role', 'error')
-        assert_element.set("test", "%s:STIX_Package" % (nsmap.get(ns_stix, 'stix')))
-        assert_element.text = "The root element must be a STIX_Package instance"
-    
+        text = "The root element must be a STIX_Package instance"
+        test = "%s:STIX_Package" % nsmap.get(ns_stix, 'stix')
+        element = etree.XML('''<assert xmlns="%s" test="%s" role="error">%s [<value-of select="saxon:line-number()"/>]</assert> ''' % (self.NS_SCHEMATRON, test, text))
+        rule_element.append(element)
+
     def _add_required_test(self, rule_element, entity_name, context):
         entity_path = "%s/%s" % (context, entity_name)
-        element = etree.Element("{%s}assert" % self.NS_SCHEMATRON)
-        element.text = "%s is required by this profile" % (entity_path)
-        element.set('test', entity_name)
-        element.set('role', 'error')
+        text = "%s is required by this profile" % (entity_path)
+        test = entity_name
+        element = etree.XML('''<assert xmlns="%s" test="%s" role="error">%s [<value-of select="saxon:line-number()"/>]</assert> ''' % (self.NS_SCHEMATRON, test, text))
         rule_element.append(element)
     
     def _add_prohibited_test(self, rule_element, entity_name, context):
         entity_path = "%s/%s" % (context, entity_name) if entity_name.startswith("@") else context
-        element = etree.Element("{%s}report" % self.NS_SCHEMATRON)
-        element.text = "%s is prohibited by this profile" % (entity_path)
-        
-        test_field = entity_name if entity_name.startswith("@") else "."
-        element.set('test', test_field)
-        element.set('role', 'error')
+        text = "%s is prohibited by this profile" % (entity_path)
+        test_field = entity_name if entity_name.startswith("@") else "true()"
+        element = etree.XML('''<report xmlns="%s" test="%s" role="error">%s [<value-of select="saxon:line-number()"/>]</report> ''' % (self.NS_SCHEMATRON, test_field, text))
         rule_element.append(element)
     
     def _add_allowed_xsi_types_test(self, rule_element, context, entity_name, allowed_xsi_types):
@@ -590,25 +587,21 @@ class ProfileValidator(SchematronValidator):
                 
         if allowed_xsi_types:
             test = " or ".join("@xsi:type='%s'" % (x) for x in allowed_xsi_types)
-            assert_element = etree.Element("{%s}assert" % self.NS_SCHEMATRON)
-            assert_element.set('test', test)
-            assert_element.set('role', 'error')
-            assert_element.text = 'The allowed xsi:types for %s are %s' % (entity_path, allowed_xsi_types)
-            rule_element.append(assert_element)
+            text = 'The allowed xsi:types for %s are %s' % (entity_path, allowed_xsi_types)
+            element = etree.XML('''<assert xmlns="%s" test="%s" role="error">%s [<value-of select="saxon:line-number()"/>]</assert> ''' % (self.NS_SCHEMATRON, test, text))
+            rule_element.append(element)
     
     def _add_allowed_values_test(self, rule_element, context, entity_name, allowed_values):
         entity_path = "%s/%s" % (context, entity_name)
-        assert_element = etree.Element("{%s}assert" % self.NS_SCHEMATRON)
-        assert_element.set('role', 'error')
-        assert_element.text = "The allowed values for %s are %s" % (entity_path, allowed_values)
+        text = "The allowed values for %s are %s" % (entity_path, allowed_values)
         
         if entity_name.startswith('@'):
             test = " or ".join("%s='%s'" % (entity_name, x) for x in allowed_values)
         else:
             test = " or ".join(".='%s'" % (x) for x in allowed_values)
-
-        assert_element.set('test', test)
-        rule_element.append(assert_element)
+        
+        element = etree.XML('''<assert xmlns="%s" test="%s" role="error">%s [<value-of select="saxon:line-number()"/>]</assert> ''' % (self.NS_SCHEMATRON, test, text))
+        rule_element.append(element)
     
     def _create_rule_element(self, context):
         rule = etree.Element("{%s}rule" % self.NS_SCHEMATRON)
@@ -672,7 +665,8 @@ class ProfileValidator(SchematronValidator):
         return root
     
     def _parse_namespace_worksheet(self, worksheet):
-        nsmap = {self.NS_STIX : 'stix'}
+        nsmap = {self.NS_STIX : 'stix',
+                 self.NS_SAXON : 'saxon'}
         for i in xrange(1, worksheet.nrows): # skip the first row
             if not any(self._get_cell_value(worksheet, i, x) for x in xrange(0, worksheet.ncols)): # empty row
                 continue
@@ -765,7 +759,7 @@ class ProfileValidator(SchematronValidator):
         copy = etree.ElementTree(self.schema)
         return copy.getroot()
     
-    def validate(self, instance_doc, report_line_numbers=True):
-        return super(ProfileValidator, self).validate(instance_doc, report_line_numbers)
+    def validate(self, instance_doc):
+        return super(ProfileValidator, self).validate(instance_doc, report_line_numbers=False)
     
     

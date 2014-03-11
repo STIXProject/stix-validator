@@ -113,7 +113,6 @@ def main():
     parser.add_argument("--use-schemaloc", dest="use_schemaloc", action='store_true', default=False, help="Use schemaLocation attribute to determine schema locations.")
     parser.add_argument("--best-practices", dest="best_practices", action='store_true', default=False, help="Check that the document follows authoring best practices")
     parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
-    parser.add_argument("--disable-profile-error-lines", dest="disable_profile_error_lines", action='store_true', default=False, help="Disable reporting of profile validation line numbers. This may help performance when validating large documents with numerous validation errors.")
     parser.add_argument("--schematron-out", dest="schematron", default=None, help="Path to converted STIX profile schematron file output")
     parser.add_argument("--xslt-out", dest="xslt", default=None, help="Path to converted STIX profile schematron xslt output")
     
@@ -162,7 +161,7 @@ def main():
                     if profile_validation:
                         if isvalid:
                             info("Validating STIX document %s against profile %s..." % (fn, args.profile))
-                            profile_results = profile_validator.validate(fn, report_line_numbers=(not args.disable_profile_error_lines))
+                            profile_results = profile_validator.validate(fn)
                             print_profile_results(fn, profile_results)
                         else: 
                             info("The document %s was schema-invalid. Skipping profile validation" % fn) 
