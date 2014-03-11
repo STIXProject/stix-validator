@@ -563,19 +563,26 @@ class ProfileValidator(SchematronValidator):
         ns_stix = "http://stix.mitre.org/stix-1"
         rule_element = self._add_element(pattern, "rule", context="/")
         assert_element = self._add_element(node=rule_element, name="assert")
+        assert_element.set('role', 'error')
         assert_element.set("test", "%s:STIX_Package" % (nsmap.get(ns_stix, 'stix')))
         assert_element.text = "The root element must be a STIX_Package instance"
     
-    def _add_existence_test(self, rule_element, entity_name, context, occurrence):
+    def _add_required_test(self, rule_element, entity_name, context):
         entity_path = "%s/%s" % (context, entity_name)
-        if occurrence == 'prohibited':
-            element = etree.Element("{%s}report" % self.NS_SCHEMATRON)
-            element.text = "%s is prohibited by this profile" % (entity_path)
-        else:
-            element = etree.Element("{%s}assert" % self.NS_SCHEMATRON)
-            element.text = "%s is required by this profile" % (entity_path)
-            
+        element = etree.Element("{%s}assert" % self.NS_SCHEMATRON)
+        element.text = "%s is required by this profile" % (entity_path)
         element.set('test', entity_name)
+        element.set('role', 'error')
+        rule_element.append(element)
+    
+    def _add_prohibited_test(self, rule_element, entity_name, context):
+        entity_path = "%s/%s" % (context, entity_name) if entity_name.startswith("@") else context
+        element = etree.Element("{%s}report" % self.NS_SCHEMATRON)
+        element.text = "%s is prohibited by this profile" % (entity_path)
+        
+        test_field = entity_name if entity_name.startswith("@") else "."
+        element.set('test', test_field)
+        element.set('role', 'error')
         rule_element.append(element)
     
     def _add_allowed_xsi_types_test(self, rule_element, context, entity_name, allowed_xsi_types):
@@ -596,21 +603,21 @@ class ProfileValidator(SchematronValidator):
         assert_element.text = "The allowed values for %s are %s" % (entity_path, allowed_values)
         
         if entity_name.startswith('@'):
-            ctx = "%s[%s]" % (context, entity_name)
             test = " or ".join("%s='%s'" % (entity_name, x) for x in allowed_values)
         else:
-            ctx = entity_path
             test = " or ".join(".='%s'" % (x) for x in allowed_values)
 
         assert_element.set('test', test)
-        rule_element.set('context', ctx)
         rule_element.append(assert_element)
     
+    def _create_rule_element(self, context):
+        rule = etree.Element("{%s}rule" % self.NS_SCHEMATRON)
+        rule.set('context', context)
+        return rule
+    
     def _add_rules(self, pattern_element, selectors, field_ns, tests):
+        d_rules = {} # context : rule_element
         for selector in selectors:
-            rule_element = etree.Element("{%s}rule" % self.NS_SCHEMATRON)
-            rule_element.set('context', selector)
-            
             for d_test in tests:
                 field = d_test['field']
                 occurrence = d_test['occurrence']
@@ -622,23 +629,33 @@ class ProfileValidator(SchematronValidator):
                 else:
                     entity_name = "%s:%s" % (field_ns, field)
                 
-                self._add_existence_test(rule_element, entity_name, selector, occurrence)
-                pattern_element.append(rule_element)
-                
-                if allowed_values or allowed_xsi_types:
-                    allowed_rule_element = etree.Element("{%s}rule" % self.NS_SCHEMATRON)
-                    if entity_name.startswith('@'):
-                        ctx = "%s[%s]" % (selector, entity_name)
+                if occurrence == "required":
+                    ctx = selector
+                    rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
+                    self._add_required_test(rule, entity_name, ctx)
+                else:
+                    if entity_name.startswith("@"):
+                        ctx = selector
                     else:
                         ctx = "%s/%s" % (selector, entity_name)
-                    allowed_rule_element.set('context', ctx)
                     
+                    rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
+                    self._add_prohibited_test(rule, entity_name, ctx)
+                
+                if allowed_values or allowed_xsi_types:
+                    if entity_name.startswith('@'):
+                        ctx = selector
+                    else:
+                        ctx = "%s/%s" % (selector, entity_name)
+                        
+                    rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
                     if allowed_values:
-                        self._add_allowed_values_test(allowed_rule_element, selector, entity_name, allowed_values)
+                        self._add_allowed_values_test(rule, selector, entity_name, allowed_values)
                     if allowed_xsi_types:
-                        self._add_allowed_xsi_types_test(allowed_rule_element, selector, entity_name, allowed_xsi_types)
-                    
-                    pattern_element.append(allowed_rule_element)
+                        self._add_allowed_xsi_types_test(rule, selector, entity_name, allowed_xsi_types)
+        
+        for rule in d_rules.itervalues():            
+            pattern_element.append(rule)
     
     def _build_schematron_xml(self, rules, nsmap, instance_map):
         root = etree.Element("{%s}schema" % self.NS_SCHEMATRON, nsmap={None:self.NS_SCHEMATRON})
