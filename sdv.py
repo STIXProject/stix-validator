@@ -89,11 +89,12 @@ def print_profile_results(fn, results):
     else:
         print "[!] Profile validation results: %s : INVALID" % fn
         print "[!] Profile Errors"
-        for error in errors:
+        for error in sorted(errors, key=lambda x: x['error']):
             msg = error.get('error')
-            line_numbers = error.get('line_numbers', "")
-            print "    [!] %s %s" % (msg, line_numbers)
-
+            line_numbers = error['line_numbers']
+            line_numbers.sort()
+            print "    [!] %s [%s]" % (msg, ', '.join(line_numbers))
+            
 def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
     xslt = validator.get_xslt()
     schematron = validator.get_schematron()
