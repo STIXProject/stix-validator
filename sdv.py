@@ -8,7 +8,10 @@ STIX Document Validator (sdv) - validates STIX v1.1 instance documents.
 
 import os
 import argparse
+import json
 from validators import STIXValidator, ProfileValidator
+
+QUIET_OUTPUT = False
 
 def get_files_to_validate(dir):
     '''Return a list of xml files under a directory'''
@@ -27,6 +30,8 @@ def error(msg):
 
 def info(msg):
     '''Prints an info message'''
+    if QUIET_OUTPUT: 
+        return
     print "[-] %s" % msg
 
 def print_schema_results(fn, results):
@@ -79,7 +84,9 @@ def print_schema_results(fn, results):
                     
     else:
         print "[!] XML schema validation results: %s : INVALID" % fn
-        print "[!] Validation errors: [%s]" % results.get('errors')
+        print "[!] Validation errors"
+        for error in results.get("errors", []):
+            print "    [!] %s" % (error)
                  
 def print_profile_results(fn, results):
     report = results.get('report', {})
@@ -116,12 +123,16 @@ def main():
     parser.add_argument("--profile", dest="profile", default=None, help="Path to STIX profile in excel")
     parser.add_argument("--schematron-out", dest="schematron", default=None, help="Path to converted STIX profile schematron file output")
     parser.add_argument("--xslt-out", dest="xslt", default=None, help="Path to converted STIX profile schematron xslt output")
+    parser.add_argument("--quiet", dest="quiet", action="store_true", default=False, help="Only print results and errors if they occur")
+    parser.add_argument("--json-results", dest="json", action="store_true", default=False, help="Print results as raw JSON. This also sets --quiet.")
     
     args = parser.parse_args()
+    global QUIET_OUTPUT
+    QUIET_OUTPUT = args.quiet
     schema_validation = False
     profile_validation = False
     profile_conversion = False
-            
+    
     if (args.infile or args.indir) and (args.schema_dir or args.use_schemaloc):
         schema_validation = True
         if args.profile:
@@ -139,6 +150,8 @@ def main():
     if args.profile and not (profile_validation or profile_conversion):
         error("Profile specified but no conversion options or validation options specified")
     
+   
+    
     try:
         if profile_validation or profile_conversion:
             profile_validator = ProfileValidator(args.profile)
@@ -155,17 +168,31 @@ def main():
                 info("Processing %s files" % (len(to_validate)))
                 stix_validator = STIXValidator(schema_dir=args.schema_dir, use_schemaloc=args.use_schemaloc, best_practices=args.best_practices)
                 for fn in to_validate:
+                    schema_results = {}
+                    profile_results = {}
+                    
                     info("Validating STIX document %s against XML schema... " % fn)
-                    results = stix_validator.validate(fn)
-                    isvalid = results['result']
-                    print_schema_results(fn, results)
+                    schema_results = stix_validator.validate(fn)
+                    isvalid = schema_results['result']
+                    
                     if profile_validation:
                         if isvalid:
                             info("Validating STIX document %s against profile %s..." % (fn, args.profile))
                             profile_results = profile_validator.validate(fn)
-                            print_profile_results(fn, profile_results)
                         else: 
                             info("The document %s was schema-invalid. Skipping profile validation" % fn) 
+                    
+                    if args.json:
+                        json_results = {}
+                        if schema_results:
+                            json_results['schema_validation'] = schema_results
+                        if profile_results:
+                            json_results['profile_results'] = profile_results
+                        
+                        print json.dumps(json_results)
+                    else:
+                        if schema_results: print_schema_results(fn, schema_results)
+                        if profile_results: print_profile_results(fn, profile_results)
                     
         if profile_conversion:
             convert_profile(profile_validator, xslt_out_fn=args.xslt, schematron_out_fn=args.schematron)

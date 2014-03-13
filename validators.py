@@ -118,7 +118,10 @@ class XmlValidator(object):
     def _build_result_dict(self, result, errors=None):
         d = {}
         d['result'] = result
-        if errors: d['errors'] = errors
+        if errors: 
+            if not hasattr(errors, "__iter__"):
+                errors = [errors]
+            d['errors'] = errors
         return d
     
     def validate(self, instance_doc):
@@ -162,12 +165,12 @@ class XmlValidator(object):
         wrapper_schema_doc = self._build_wrapper_schema(import_dict=required_imports)
         xmlschema = etree.XMLSchema(wrapper_schema_doc)
         
-        try: 
-            xmlschema.assertValid(instance_root)
+        isvalid = xmlschema.validate(instance_root)
+        if isvalid:
             return self._build_result_dict(True)
-        except Exception as e:
-            return self._build_result_dict(False, str(e))
-
+        else:
+            return self._build_result_dict(False, [str(x) for x in xmlschema.error_log])
+            
 
 class STIXValidator(XmlValidator):
     '''Schema validates STIX v1.1 documents and checks best practice guidance'''
