@@ -11,6 +11,7 @@ import argparse
 import json
 from validators import STIXValidator, ProfileValidator
 
+__version__ = "1.1.0.0"
 QUIET_OUTPUT = False
 
 def get_files_to_validate(dir):
