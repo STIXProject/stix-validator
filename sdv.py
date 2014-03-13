@@ -150,8 +150,6 @@ def main():
     if args.profile and not (profile_validation or profile_conversion):
         error("Profile specified but no conversion options or validation options specified")
     
-   
-    
     try:
         if profile_validation or profile_conversion:
             profile_validator = ProfileValidator(args.profile)
