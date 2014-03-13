@@ -20,6 +20,8 @@ The STIX Document Validator can validate a STIX v1.1 instance document against S
 found locally or referenced remotely through the schemaLocation attribute. It can also perform
 some 'best practice' guidance checks and STIX Profile validation and conversion to XSLT/Schematron.
 
+**NOTE:** The STIX Profile validation and conversion capabilities should be considered **experimental.**
+
 **Validate using local schemas**  
 `python sdv.py --input-file <stix_document.xml> --schema-dir schema`
 
