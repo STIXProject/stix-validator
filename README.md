@@ -1,6 +1,6 @@
-# STIX Document Validator (sdv) BETA
+# STIX Document Validator (sdv)
 A python tool used to validate STIX v1.1 instance documents. For more information about the
-Structured Thread Information eXpression, see http://stix.mitre.org.
+Structured Threat Information eXpression, see http://stix.mitre.org.
 
 ## Dependencies
 The STIX Document Validator has the following dependencies:
@@ -41,7 +41,7 @@ some 'best practice' guidance checks and STIX Profile validation and conversion 
 `python sdv.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>`
 
 ## All STIX Documents?
-The STIX Document Validator bundles a schema directory with it, which includes all STIX v1.0.1 
+The STIX Document Validator bundles a schema directory with it, which includes all STIX v1.1 
 schema files. If an instance document uses constructs or languages defined by other schemas
 a user must point the STIX Document Validator at those schemas in order to validate.
 
