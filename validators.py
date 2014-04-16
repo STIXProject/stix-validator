@@ -541,8 +541,9 @@ class SchematronValidator(object):
                 tree = etree.parse(instance)
             
             result = self.schematron.validate(tree)
+            report = self._build_error_report_dict(self.schematron.validation_report, tree, report_line_numbers)
 
-            if not result:
+            if len(report['errors']) > 0:
                 report = self._build_error_report_dict(self.schematron.validation_report, tree, report_line_numbers)
                 return self._build_result_dict(result, report)
             else:
