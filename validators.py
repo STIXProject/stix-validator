@@ -571,7 +571,7 @@ class ProfileValidator(SchematronValidator):
                 continue
 
             field = self._get_cell_value(worksheet, i, 0)
-            occurrence = self._get_cell_value(worksheet, i, 1)
+            occurrence = self._get_cell_value(worksheet, i, 1).lower()
             xsi_types = self._get_cell_value(worksheet, i, 3)
             allowed_values = self._get_cell_value(worksheet, i, 4)
             
@@ -579,7 +579,7 @@ class ProfileValidator(SchematronValidator):
             list_allowed_values = [x.strip() for x in allowed_values.split(',')] if allowed_values else []
             
             
-            if occurrence in ('required', 'prohibited'): # ignore 'optional' and 'suggested'
+            if occurrence in ('required', 'prohibited') or len(list_xsi_types) > 0 or len(list_allowed_values) > 0: # ignore rows with no rules
                 d[context].append({'field' : field,
                                    'occurrence' : occurrence,
                                    'xsi_types' : list_xsi_types,
@@ -668,7 +668,7 @@ class ProfileValidator(SchematronValidator):
                     ctx = selector
                     rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
                     self._add_required_test(rule, entity_name, ctx)
-                else:
+                elif occurrence == "prohibited":
                     if entity_name.startswith("@"):
                         ctx = selector
                     else:
