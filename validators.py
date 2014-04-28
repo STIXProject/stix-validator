@@ -135,7 +135,7 @@ class XmlValidator(object):
         instance_doc - a filename, file-like object, etree._Element, or etree._ElementTree to be validated
         '''
         if not(self.__use_schemaloc or self.__imports):
-            return (False, "No schemas to validate against! Try instantiating XmlValidator with use_schemaloc=True or setting the schema_dir")
+            return self._build_result_dict(False, "No schemas to validate against! Try instantiating XmlValidator with use_schemaloc=True or setting the schema_dir")
         
         if isinstance(instance_doc, etree._Element):
             instance_root = instance_doc
@@ -153,7 +153,7 @@ class XmlValidator(object):
             try:
                 required_imports = self._extract_schema_locations(instance_root)
             except KeyError as e:
-                return (False, "No schemaLocation attribute set on instance document. Unable to validate")
+                return self._build_result_dict(False, "No schemaLocation attribute set on instance document. Unable to validate")
         else:
             required_imports = {}
             for prefix, ns in instance_root.nsmap.iteritems():
@@ -162,7 +162,7 @@ class XmlValidator(object):
                     required_imports[ns] = schemaloc
 
         if not required_imports:
-            return (False, "Unable to determine schemas to validate against")
+            return self._build_result_dict(False, "Unable to determine schemas to validate against")
 
         wrapper_schema_doc = self._build_wrapper_schema(import_dict=required_imports)
         xmlschema = etree.XMLSchema(wrapper_schema_doc)
