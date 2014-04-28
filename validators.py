@@ -23,7 +23,8 @@ class XmlValidator(object):
         Keyword Arguments
         fp - the path to the schema file
         '''
-        tree = etree.parse(fp)
+        parser = etree.ETCompatXMLParser(huge_tree=True)
+        tree = etree.parse(fp, parser=parser)
         root = tree.getroot()
         return root.attrib['targetNamespace'] # throw an error if it doesn't exist...we can't validate
         
@@ -142,8 +143,9 @@ class XmlValidator(object):
             instance_root = instance_doc.getroot()
         else:
             try:
-                et = etree.parse(instance_doc)
-                instance_root = et.getroot()
+                parser = etree.ETCompatXMLParser(huge_tree=True)
+                tree = etree.parse(instance_doc, parser=parser)
+                instance_root = tree.getroot()
             except etree.XMLSyntaxError as e:
                 return self._build_result_dict(False, str(e))
             
@@ -367,11 +369,13 @@ class STIXValidator(XmlValidator):
         elif isinstance(instance_doc, etree._ElementTree):
             root = instance_doc.getroot()
         elif isinstance(instance_doc, basestring):
-            tree = etree.parse(instance_doc)
+            parser = etree.ETCompatXMLParser(huge_tree=True)
+            tree = etree.parse(instance_doc, parser=parser)
             root = tree.getroot()
         else:
             instance_doc.seek(0)
-            tree = etree.parse(instance_doc)
+            parser = etree.ETCompatXMLParser(huge_tree=True)
+            tree = etree.parse(instance_doc, parser=parser)
             root = tree.getroot()
         
         root_element = self._check_root_element(root)
@@ -438,7 +442,8 @@ class SchematronValidator(object):
             self.schematron = None
             return
         elif not (isinstance(schematron, etree._Element) or isinstance(schematron, etree._ElementTree)):
-            tree = etree.parse(schematron)
+            parser = etree.ETCompatXMLParser(huge_tree=True)
+            tree = etree.parse(schematron, parser=parser)
         else:
             tree = schematron
             
@@ -538,7 +543,8 @@ class SchematronValidator(object):
             elif isinstance(instance, etree._ElementTree):
                 tree = instance
             else:
-                tree = etree.parse(instance)
+                parser = etree.ETCompatXMLParser(huge_tree=True)
+                tree = etree.parse(instance, parser=parser)
             
             result = self.schematron.validate(tree)
             report = self._build_error_report_dict(self.schematron.validation_report, tree, report_line_numbers)
