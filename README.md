@@ -9,11 +9,20 @@ The STIX Document Validator has the following dependencies:
   * libxml2 >= v2.9.1 http://www.xmlsoft.org/downloads.html
 * xlrd >= v0.9.2 https://pypi.python.org/pypi/xlrd
 
-**NOTE:** Older versions of libxml2 do not work properly and may result in undesirable behavior.
+For a Windows installer of lxml, we recommend looking here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
+
+## Common Libxml2 Error
+Users often report an error which looks something like the following:
+```
+Fatal error occurred: local union type: A type, derived by list or union, must have the 
+simple ur-type definition as base type, not '{http://cybox.mitre.org/common-2}(NULL)'., line 350
+```
+This error is caused by an insufficient version of libxml2 being installed on the system. The 
+stix-validator requires libxml2 v2.9.1 at a minimum and is not guaranteed to work properly with
+earlier versions. 
+
 To see what version of libxml2 you have installed, execute the `xml2-config --version` command
 and make sure you are running at least v2.9.1.
-
-For a Windows installer of lxml, we recommend looking here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
 
 ## Use
 The STIX Document Validator can validate a STIX v1.1 instance document against STIX v1.1 schemas
