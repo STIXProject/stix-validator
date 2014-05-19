@@ -3,7 +3,7 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 '''
-STIX Document Validator (sdv) - validates STIX v1.1 instance documents.
+STIX Document Validator (sdv) - validates STIX v1.1.1 instance documents.
 '''
 
 import os
@@ -11,7 +11,7 @@ import argparse
 import json
 from validators import STIXValidator, ProfileValidator
 
-__version__ = "1.1.0.0"
+__version__ = "1.1.1.0"
 QUIET_OUTPUT = False
 
 def get_files_to_validate(dir):
