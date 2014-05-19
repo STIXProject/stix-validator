@@ -175,8 +175,8 @@ class XmlValidator(object):
             
 
 class STIXValidator(XmlValidator):
-    '''Schema validates STIX v1.1 documents and checks best practice guidance'''
-    __stix_version__ = "1.1"
+    '''Schema validates STIX v1.1.1 documents and checks best practice guidance'''
+    __stix_version__ = "1.1.1"
     
     PREFIX_STIX_CORE = 'stix'
     PREFIX_CYBOX_CORE = 'cybox'
