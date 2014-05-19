@@ -129,7 +129,7 @@ def main():
     
     args = parser.parse_args()
     global QUIET_OUTPUT
-    QUIET_OUTPUT = args.quiet
+    QUIET_OUTPUT = args.quiet or args.json
     schema_validation = False
     profile_validation = False
     profile_conversion = False
