@@ -183,7 +183,7 @@ class STIXBestPracticeValidator(object):
 
     def check_duplicate_ids(self, root, namespaces, *args, **kwargs):
         '''
-
+        Checks for duplicate ids in the document.
         :param root:
         :param namespaces:
         :param args:
@@ -210,7 +210,7 @@ class STIXBestPracticeValidator(object):
 
     def check_idref_resolution(self, root, namespaces, *args, **kwargs):
         '''
-
+        Checks that all idrefs resolve to a construct in the document
         :param root:
         :param namespaces:
         :param args:
@@ -236,7 +236,7 @@ class STIXBestPracticeValidator(object):
 
     def check_idref_with_content(self, root, namespaces, *args, **kwargs):
         '''
-
+        Checks that constructs with idref set do not contain content
         :param root:
         :param namespaces:
         :param args:
@@ -257,6 +257,15 @@ class STIXBestPracticeValidator(object):
         return results
 
     def check_indicator_practices(self, root, namespaces, *args, **kwargs):
+        '''
+        Looks for STIX Indicators that are missing a Description, Type, Valid_Time_Position,
+        Indicated_TTP, and/or Confidence
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
         ns_indicator = namespaces[PREFIX_STIX_INDICATOR]
         xpath = "//%s:Indicator | //%s:Indicator" % (PREFIX_STIX_CORE,
                                                      PREFIX_STIX_COMMON)
@@ -291,6 +300,14 @@ class STIXBestPracticeValidator(object):
         return {}
 
     def check_root_element(self, root, namespaces, *args, **kwargs):
+        '''
+        Checks that the root element is a STIX_Package
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
         ns_stix_core = namespaces[PREFIX_STIX_CORE]
         results = {}
 
@@ -318,6 +335,14 @@ class STIXBestPracticeValidator(object):
         return {}
 
     def check_titles(self, root, namespaces, *args, **kwargs):
+        '''
+        Checks that all major STIX constructs have a Title element
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
         elements_to_check = (
             '%s:STIX_Package/%s:STIX_Header' % (PREFIX_STIX_CORE,PREFIX_STIX_CORE),
             '%s:Campaign' % PREFIX_STIX_CORE,
