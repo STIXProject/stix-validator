@@ -1,5 +1,5 @@
 # STIX Document Validator (sdv)
-A python tool used to validate STIX v1.1.1 instance documents. For more information about the
+A python tool used to validate STIX instance documents. For more information about the
 Structured Threat Information eXpression, see http://stix.mitre.org.
 
 ## Dependencies
@@ -25,34 +25,43 @@ To see what version of libxml2 you have installed, execute the `xml2-config --ve
 and make sure you are running at least v2.9.1.
 
 ## Use
-The STIX Document Validator can validate a STIX v1.1.1 instance document against STIX v1.1.1 schemas
+The STIX Document Validator can validate a STIX instance document against STIX schemas
 found locally or referenced remotely through the schemaLocation attribute. It can also perform
 some 'best practice' guidance checks and STIX Profile validation and conversion to XSLT/Schematron.
 
 **NOTE:** The STIX Profile validation and conversion capabilities should be considered **experimental.**
 
 **Validate using local schemas**  
-`python sdv.py --input-file <stix_document.xml> --schema-dir schema`
+`python sdv.py --input-file <stix_document.xml>`
 
 **Validate using schemaLocation**  
 `python sdv.py --input-file <stix_document.xml> --use-schemaloc`
 
 **Validate a directory of STIX documents**  
-`python sdv.py --input-dir <stix_dir> --schema-dir schema`
+`python sdv.py --input-dir <stix_dir>`
 
 **Check "best practice" guidance**  
-`python sdv.py --input-file <stix_document.xml> --schema-dir schema --best-practices`
+`python sdv.py --input-file <stix_document.xml> --best-practices`
 
 **Validate using STIX Profile**  
-`python sdv.py --input-file <stix_document.xml> --schema-dir schema --profile <stix_profile.xlsx>`
+`python sdv.py --input-file <stix_document.xml> --profile <stix_profile.xlsx>`
 
 **Translate STIX Profile to XSLT/Schematron**  
 `python sdv.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>`
 
 ## All STIX Documents?
-The STIX Document Validator bundles a schema directory with it, which includes all STIX v1.1.1 
-schema files. If an instance document uses constructs or languages defined by other schemas
+The STIX Document Validator bundles a schema directory with it, which includes all STIX 
+schema files (v1.0 through v1.1.1). If an instance document uses constructs or languages defined by other schemas
 a user must point the STIX Document Validator at those schemas in order to validate.
+
+To do this, you'll need to modify the `settings.py` file to include or override an entry in the `SCHEMAS`
+dictionary. 
+
+Example:
+```python
+# Format: { STIX VERSION : SCHEMA DIRECTORY }
+SCHEMAS = {'1.1.1': 'schemas/your_custom_schema_dir'}
+```
 
 ## Terms
 BY USING THE STIX DOCUMENT VALIDATOR, YOU SIGNIFY YOUR ACCEPTANCE OF THE 
