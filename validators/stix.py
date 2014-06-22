@@ -318,7 +318,41 @@ class STIXBestPracticeValidator(object):
         return {}
 
     def check_titles(self, root, namespaces, *args, **kwargs):
-        return {}
+        elements_to_check = (
+            '%s:STIX_Package/%s:STIX_Header' % (PREFIX_STIX_CORE,PREFIX_STIX_CORE),
+            '%s:Campaign' % PREFIX_STIX_CORE,
+            '%s:Campaign' % PREFIX_STIX_COMMON,
+            '%s:Course_Of_Action' % PREFIX_STIX_CORE,
+            '%s:Course_Of_Action' % PREFIX_STIX_COMMON,
+            '%s:Exploit_Target' % PREFIX_STIX_CORE,
+            '%s:Exploit_Target' % PREFIX_STIX_COMMON,
+            '%s:Incident' % PREFIX_STIX_CORE,
+            '%s:Incident' % PREFIX_STIX_COMMON,
+            '%s:Indicator' % PREFIX_STIX_CORE,
+            '%s:Indicator' % PREFIX_STIX_COMMON,
+            '%s:Threat_Actor' % PREFIX_STIX_COMMON,
+            '%s:TTP' % PREFIX_STIX_CORE,
+            '%s:TTP' % PREFIX_STIX_COMMON,
+        )
+
+        results = defaultdict(list)
+        for tag in elements_to_check:
+            xpath = "//%s" % tag
+            for element in root.xpath(xpath, namespaces=namespaces):
+                if 'idref' not in element.attrib:
+                    found_title = False
+                    for child in element:
+                        if child.tag.endswith("}Title"):
+                            found_title = True
+                            break
+
+                    if not found_title:
+                        result = {'tag': element.tag, 'line_number': element.sourceline,
+                                  'id': element.attrib.get('id')}
+                        results['missing_titles'].append(result)
+
+        return results
+
 
     def check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
         return {}

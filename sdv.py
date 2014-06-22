@@ -97,6 +97,11 @@ def print_best_practice_results(fn, results):
             for node in indicator_suggestions:
                 print '    [~] id: [%s] line: [%s] missing: %s' % (node['id'], node['line_number'], node.get('missing'))
 
+        missing_titles = results.get('missing_titles')
+        if missing_titles:
+            print '    [#] Missing Titles'
+            for node in missing_titles:
+                print '    [~] [%s] id: [%s] line: [%s]' % (node['tag'], node['id'], node['line_number'])
 
 def print_profile_results(fn, results):
     report = results.get('report', {})
