@@ -11,6 +11,10 @@ The STIX Document Validator has the following dependencies:
 
 For a Windows installer of lxml, we recommend looking here: http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
 
+The STIX Document Validator is developed and actively tested against Python 2.7; we believe that most parts should also work with Python 2.6, however we make no guarantees. If you encounter an error under Python 2.6, please let us know so we can investigate whether a fix is feasible.
+
+The STIX Document Validator is not compatible with Python 3.
+
 ## Common Libxml2 Error
 Users often report an error which looks something like the following:
 ```
