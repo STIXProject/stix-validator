@@ -7,3 +7,7 @@ before_install:
 install:
  - pip install tox
 script: tox -e $TOX_ENV
+
+notifications:
+    email:
+        - stix-commits-list@lists.mitre.org
