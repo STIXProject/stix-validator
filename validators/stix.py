@@ -383,7 +383,7 @@ class STIXBestPracticeValidator(object):
         return {}
 
     def _get_stix_construct_versions(self, version):
-       pass
+        pass
 
     def _get_vocabs(self, version):
         pass
@@ -411,10 +411,17 @@ class STIXBestPracticeValidator(object):
                 results = func(root, namespaces, version=version)
                 warnings.update(results)
 
-            return warnings
+            results = {}
+            if warnings:
+                results['result'] = False
+                results['warnings'] = warnings
+            else:
+                results['result'] = True
+                
+            return results
+        
         except Exception as ex:
-            return {'fatal': str(ex)}
-
+            return {'result': False, 'fatal': str(ex)}
 
 
 class STIXSchemaValidator(object):

@@ -39,83 +39,104 @@ def info(msg):
         return
     print "[-] %s" % msg
 
+def print_level(fmt, level, *args):
+    msg = fmt % args
+    spaces = '    ' * level
+    print "%s%s" % (spaces, msg)
+
 def print_schema_results(fn, results):
     if results['result']:
-        print "[+] XML schema validation results: %s : VALID" % fn
+        print_level("[+] XML schema validation results: %s : VALID", 0, fn)
     else:
-        print "[!] XML schema validation results: %s : INVALID" % fn
-        print "[!] Validation errors"
+        print_level("[!] XML schema validation results: %s : INVALID", 0, fn)
+        print_level("[!] Validation errors", 0)
         for error in results.get("errors", []):
-            print "    [!] %s" % (error)
+            print_level("[!] %s",1 ,error)
 
 def print_best_practice_results(fn, results):
-    if results:
+    if results['result']:
+        print "[+] Best Practice validation results: %s : VALID" % fn
+    else:
+        print_level("[!] Best Practice validation results: %s : INVALID", 0, fn)
+        print_level("[!] Best Practice warnings", 0)
         if 'fatal' in results:
-            print 'Fatal error occurred processing best practices: %s' % results['fatal']
+            print_level("[!] Fatal error occurred processing best practices: "
+                        "%s", 1, results['fatal'])
             return
-
-        print "[-] Best Practice Warnings"
-        root_element = results.get('root_element')
+        
+        warnings = results.get('warnings', {})
+        root_element = warnings.get('root_element')
         if root_element:
-            print '    [#] Root element not STIX_Package: [%s]' % (root_element['tag'])
+            print_level("[#] Root element not STIX_Package: [%s]", 1,
+                        root_element['tag'])
 
-        duplicate_ids = results.get('duplicate_ids')
+        duplicate_ids = warnings.get('duplicate_ids')
         if duplicate_ids:
-            print '    [#] Nodes with duplicate ids'
+            print_level("[#] Nodes with duplicate ids", 1)
             for id_, list_nodes in duplicate_ids.iteritems():
-                print '    [~] id: [%s]' % (id_)
+                print_level("[~] id: [%s]", 2, id_)
                 for node in list_nodes:
-                    print '       [%s] line: [%s]' % (node['tag'], node['line_number'])
+                    print_level("[%s] line: [%s]", 3, node['tag'], 
+                                node['line_number'])
 
-        missing_ids = results.get('missing_ids')
+        missing_ids = warnings.get('missing_ids')
         if missing_ids:
-            print '    [#] Nodes with missing ids'
+            print_level("[#] Nodes with missing ids", 1)
             for node in missing_ids:
-                print '    [~] [%s] line: [%s]' % (node['tag'], node['line_number'])
+                print_level("[~] [%s] line: [%s]", 2, node['tag'], 
+                            node['line_number'])
 
-        unresolved_idrefs = results.get('unresolved_idrefs')
+        unresolved_idrefs = warnings.get('unresolved_idrefs')
         if unresolved_idrefs:
-            print '    [#] Nodes with idrefs that do not resolve'
+            print_level("[#] Nodes with idrefs that do not resolve", 1)
             for node in unresolved_idrefs:
-                print '    [~] [%s] idref: [%s] line: [%s]' % (node['tag'], node['idref'], node['line_number'])
+                print_level("[~] [%s] idref: [%s] line: [%s]", 2, node['tag'], 
+                            node['idref'], node['line_number'])
 
-        formatted_ids = results.get('id_format')
+        formatted_ids = warnings.get('id_format')
         if formatted_ids:
-            print '    [#] Nodes with ids not formatted as [ns_prefix]:[object-type]-[GUID]'
+            print_level("[#] Nodes with ids not formatted as [ns_prefix]:"
+                        "[object-type]-[GUID]", 1)
             for node in formatted_ids:
-                print '    [~] [%s] id: [%s] line: [%s]' % (node['tag'], node['id'], node['line_number'])
+                print_level("[~] [%s] id: [%s] line: [%s]", 2, node['tag'], 
+                            node['id'], node['line_number'])
 
-        idrefs_with_content = results.get('idref_with_content')
+        idrefs_with_content = warnings.get('idref_with_content')
         if idrefs_with_content:
-            print '    [#] Nodes that declare idrefs but also contain content'
+            print_level("[#] Nodes that declare idrefs but also contain "
+                        "content", 1)
             for node in idrefs_with_content:
-                print '    [~] [%s] idref: [%s] line: [%s]' % (node['tag'], node['idref'], node['line_number'])
+                print_level("[~] [%s] idref: [%s] line: [%s]", 2, node['tag'], 
+                            node['idref'], node['line_number'])
 
-        indicator_suggestions = results.get('indicator_suggestions')
+        indicator_suggestions = warnings.get('indicator_suggestions')
         if indicator_suggestions:
-            print '    [#] Indicator suggestions'
+            print_level("[#] Indicator suggestions", 1)
             for node in indicator_suggestions:
-                print '    [~] id: [%s] line: [%s] missing: %s' % (node['id'], node['line_number'], node.get('missing'))
+                print_level("[~] id: [%s] line: [%s] missing: %s", 2, 
+                            node['id'], node['line_number'],
+                            node.get('missing'))
 
-        missing_titles = results.get('missing_titles')
+        missing_titles = warnings.get('missing_titles')
         if missing_titles:
-            print '    [#] Missing Titles'
+            print_level("[#] Missing Titles", 1)
             for node in missing_titles:
-                print '    [~] [%s] id: [%s] line: [%s]' % (node['tag'], node['id'], node['line_number'])
+                print_level("[~] [%s] id: [%s] line: [%s]", 2,
+                            node['tag'], node['id'], node['line_number'])
 
 def print_profile_results(fn, results):
     report = results.get('report', {})
     errors = report.get('errors')
     if not errors:
-        print "[+] Profile validation results: %s : VALID" % fn
+        print_level("[+] Profile validation results: %s : VALID", 0, fn)
     else:
-        print "[!] Profile validation results: %s : INVALID" % fn
-        print "[!] Profile Errors"
+        print_level("[!] Profile validation results: %s : INVALID", 0, fn)
+        print_level("[!] Profile Errors", 0)
         for error in sorted(errors, key=lambda x: x['error']):
             msg = error.get('error')
             line_numbers = error['line_numbers']
             line_numbers.sort()
-            print "    [!] %s [%s]" % (msg, ', '.join(line_numbers))
+            print_level("[!] %s [%s]", 1, msg, ', '.join(line_numbers))
             
 def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
     xslt = validator.get_xslt()
