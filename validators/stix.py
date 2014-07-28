@@ -23,6 +23,8 @@ PREFIX_CYBOX_CORE = 'cybox-core'
 PREFIX_CYBOX_COMMON = 'cybox-common'
 PREFIX_CYBOX_VOCABS = 'cybox-vocabs'
 
+mandatory= ['required', 'must']
+forbidden = ['prohibited', 'mustnot'] 
 
 class UnknownVersionException(Exception):
     pass
@@ -495,7 +497,7 @@ class STIXProfileValidator(SchematronValidator):
                 continue
 
             field = self._get_cell_value(worksheet, i, 0)
-            occurrence = self._get_cell_value(worksheet, i, 1).lower()
+            occurrence = self._get_cell_value(worksheet, i, 1).lower().strip()
             xsi_types = self._get_cell_value(worksheet, i, 3)
             allowed_values = self._get_cell_value(worksheet, i, 4)
 
@@ -504,7 +506,7 @@ class STIXProfileValidator(SchematronValidator):
             list_allowed_values = [x.strip() for x in allowed_values.split(',')] \
                 if allowed_values else []
 
-            if (occurrence in ('required', 'prohibited') or
+            if (occurrence in mandatory or
                     len(list_xsi_types) > 0 or
                     len(list_allowed_values) > 0):  # ignore rows with no rules
                 d[context].append({'field': field,
@@ -607,11 +609,11 @@ class STIXProfileValidator(SchematronValidator):
                 else:
                     entity_name = "%s:%s" % (field_ns, field)
 
-                if occurrence == "required":
+                if occurrence in mandatory:
                     ctx = selector
                     rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
                     self._add_required_test(rule, entity_name, ctx)
-                elif occurrence == "prohibited":
+                elif occurrence in forbidden:
                     if entity_name.startswith("@"):
                         ctx = selector
                     else:
