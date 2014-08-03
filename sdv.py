@@ -163,7 +163,8 @@ def convert_profile(validator, xslt_out_fn=None, schematron_out_fn=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="STIX Document Validator")
+    parser = argparse.ArgumentParser(description="STIX Document Validator v%s"
+                                    % __version__)
     parser.add_argument("--stix-version", dest="stix_version", default=None,
                         help="The version of STIX to validate against")
     parser.add_argument("--input-file", dest="infile", default=None,
