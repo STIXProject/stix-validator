@@ -207,13 +207,12 @@ def main():
     profile_validation = False
     profile_conversion = False
 
-    if (args.infile or args.indir) and (settings.SCHEMAS or
-                                        args.use_schemaloc):
+    if ((args.infile or args.indir) and
+        (settings.SCHEMAS or args.use_schemaloc)):
+
         schema_validation = True
         if args.profile:
             profile_validation = True
-    else:
-        error("Invalid schema validation options")
 
     if args.profile and (args.schematron or args.xslt):
         profile_conversion = True
@@ -221,10 +220,12 @@ def main():
     if args.infile and args.indir:
         error("Must provide either --input-file or --input-dir argument, "
               "but not both")
+
     if ((args.infile or args.indir) and
             not (settings.SCHEMAS or args.use_schemaloc)):
         error("Must provide either --use-schemaloc or settings.SCHEMAS when "
               "--input-file or input-dir declared")
+
     if args.profile and not (profile_validation or profile_conversion):
         error("Profile specified but no conversion options or validation "
               "options specified")
