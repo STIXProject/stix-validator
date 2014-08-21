@@ -480,6 +480,7 @@ class STIXProfileValidator(SchematronValidator):
         '''Initializes an instance of STIXFrofileValidator.'''
         profile = self._open_profile(profile_fn)
         schema = self._parse_profile(profile)
+
         super(STIXProfileValidator, self).__init__(schematron=schema)
 
     def _build_rule_dict(self, worksheet):
@@ -698,8 +699,15 @@ class STIXProfileValidator(SchematronValidator):
                 continue
 
             label = self._get_cell_value(worksheet, i, 0)
-            selectors = [x.strip() for x in self._get_cell_value(worksheet, i,
+            selectors = [x.strip().replace('"', "'") for x in self._get_cell_value(worksheet, i,
                                                                  1).split(",")]
+
+            for selector in selectors:
+                if not selector:
+                    raise Exception("Empty selector for '%s' in Instance Mapping "
+                                    "worksheet. Look for "
+                                    "extra commas in field." % label)
+
             ns = self._get_cell_value(worksheet, i, 2)
             ns_alias = nsmap[ns]
 
