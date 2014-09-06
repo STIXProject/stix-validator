@@ -504,7 +504,7 @@ def _get_profile_validator(options):
         An instance of ``STIXProfileValidator``
 
     """
-    if options.profile_validate:
+    if any((options.profile_validate, options.profile_convert)):
         return STIXProfileValidator(options.in_profile)
     return None
 
