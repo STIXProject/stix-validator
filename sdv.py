@@ -703,6 +703,17 @@ def _get_arg_parser():
 
 
 def main():
+    """Entry point for sdv.py.
+
+    Parses and validates command line arguments and then does at least one of
+    the following:
+
+    * Validates instance document against schema/best practices/profile and
+      prints results to stdout.
+    * Converts a STIX profile into xslt and/or schematron formats
+    * Prints an error to stderr and exit(1)
+
+    """
     parser = _get_arg_parser()
     args = parser.parse_args()
 
