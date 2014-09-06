@@ -643,6 +643,10 @@ def _validate_args(args):
     if args.profile and any((args.schematron, args.xslt)):
         profile_convert = True
 
+    if all((args.stix_version, args.use_schemaloc)):
+        raise ArgumentError("Cannot set both --stix-version and "
+                            "--use-schemalocs")
+
     if any((args.xslt, args.schematron)) and not args.profile:
         raise ArgumentError("Profile filename is required when profile "
                             "conversion options are set.")
