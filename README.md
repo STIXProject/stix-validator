@@ -44,7 +44,7 @@ some 'best practice' guidance checks and STIX Profile validation and conversion 
 **Validate a directory of STIX documents**  
 `python sdv.py </path/to/stix_dir>`
 
-**Validate multiple files and/or directories**
+**Validate multiple files and/or directories**  
 `python sdv.py <one.xml> <two.xml> <directory_of_files>...`
 
 **Check "best practice" guidance**  
