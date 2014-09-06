@@ -15,7 +15,7 @@ import settings
 from validators import (STIXSchemaValidator, STIXProfileValidator,
                         STIXBestPracticeValidator)
 
-__version__ = "1.1.1.1"
+__version__ = "1.1.1.2"
 
 QUIET_OUTPUT = False
 
