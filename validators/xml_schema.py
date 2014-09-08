@@ -150,7 +150,7 @@ class XmlSchemaValidator(object):
                                            "against! Try instantiating "
                                            "XmlValidator with "
                                            "use_schemaloc=True or setting the "
-                                           "schema_dir")
+                                           "schema_dir param in __init__")
 
         if isinstance(doc, etree._Element):
             root = doc

@@ -36,19 +36,22 @@ some 'best practice' guidance checks and STIX Profile validation and conversion 
 **NOTE:** The STIX Profile validation and conversion capabilities should be considered **experimental.**
 
 **Validate using local schemas**  
-`python sdv.py --input-file <stix_document.xml>`
+`python sdv.py <stix_document.xml>`
 
 **Validate using schemaLocation**  
-`python sdv.py --input-file <stix_document.xml> --use-schemaloc`
+`python sdv.py --use-schemaloc <stix_document.xml>`
 
 **Validate a directory of STIX documents**  
-`python sdv.py --input-dir <stix_dir>`
+`python sdv.py </path/to/stix_dir>`
+
+**Validate multiple files and/or directories**  
+`python sdv.py <one.xml> <two.xml> <directory_of_files>...`
 
 **Check "best practice" guidance**  
-`python sdv.py --input-file <stix_document.xml> --best-practices`
+`python sdv.py --best-practices <stix_document.xml>`
 
 **Validate using STIX Profile**  
-`python sdv.py --input-file <stix_document.xml> --profile <stix_profile.xlsx>`
+`python sdv.py --profile <stix_profile.xlsx> <stix_document.xml>`
 
 **Translate STIX Profile to XSLT/Schematron**  
 `python sdv.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>`
