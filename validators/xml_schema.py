@@ -174,10 +174,12 @@ class XmlSchemaValidator(object):
                                                "Unable to validate")
         else:
             required_imports = {}
-            for prefix, ns in root.nsmap.iteritems():
-                schema_location = self.__imports.get(ns)
-                if schema_location:
-                    required_imports[ns] = schema_location
+            # visit all nodes and gather schemas
+            for elem in root.iter():
+                for prefix, ns in elem.nsmap.iteritems():
+                    schema_location = self.__imports.get(ns)
+                    if schema_location:
+                        required_imports[ns] = schema_location
 
         if not required_imports:
             return self._build_result_dict(False, "Unable to determine schemas "
