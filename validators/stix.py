@@ -499,6 +499,9 @@ class STIXProfileValidator(SchematronValidator):
 
             field = self._get_cell_value(worksheet, i, 0)
             occurrence = self._get_cell_value(worksheet, i, 1).lower().strip()
+            # strip whitespace to handle "must not" as well as "mustnot"
+            occurrence = "".join(occurrence.split())
+
             xsi_types = self._get_cell_value(worksheet, i, 3)
             allowed_values = self._get_cell_value(worksheet, i, 4)
 
