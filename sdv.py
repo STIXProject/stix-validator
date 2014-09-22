@@ -322,6 +322,12 @@ def _print_best_practice_results(fn, results):
                 _print_level("[~] [%s] id: [%s] line: [%s]", 2,
                             node['tag'], node['id'], node['line_number'])
 
+        marking_control_xpath_issues = warnings.get('marking_control_xpath_issues')
+        if marking_control_xpath_issues:
+            _print_level("[#] Controlled Structure XPath Issues", 1)
+            for node in marking_control_xpath_issues:
+                _print_level("[~] line: [%s]\tissue: %s", 2,
+                            node['line_number'], node['problem'])
 
 def _print_profile_results(fn, results):
     """Prints STIX Profile validation results to stdout.
