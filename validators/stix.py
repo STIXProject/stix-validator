@@ -342,7 +342,8 @@ class STIXBestPracticeValidator(object):
         :return:
         '''
         latest_map = {
-            '1.0': ["AssetTypeVocab",
+            '1.0': [
+                    "AssetTypeVocab",
                     "AttackerInfrastructureTypeVocab",
                     "AttackerToolTypeVocab",
                     "COAStageVocab",
@@ -368,15 +369,35 @@ class STIXBestPracticeValidator(object):
                     "SecurityCompromiseVocab",
                     "SystemTypeVocab",
                     "ThreatActorSophisticationVocab",
-                    "ThreatActorTypeVocab"],
-            '1.0.1': ["PlanningAndOperationalSupportVocab"],
-            '1.1': ["IndicatorTypeVocab", "MotivationVocab"],
-            '1.1.1': ["AvailabilityLossTypeVocab"]
+                    "ThreatActorTypeVocab",
+                    "ActionArgumentNameVocab", # cybox
+                    "ActionObjectAssociationTypeVocab", #cybox
+                    "ActionRelationshipTypeVocab", # cybox
+                    "ActionTypeVocab", # cybox
+                    "CharacterEncodingVocab", # cybox
+                    "EventTypeVocab", # cybox
+                    "HashNameVocab", # cybox
+                    "InformationSourceTypeVocab", # cybox
+                    "ObjectStateVocab" # cybox
+                    ],
+            '1.0.1': [
+                      "PlanningAndOperationalSupportVocab",
+                      "EventTypeVocab" # cybox
+                      ],
+            '1.1': ["IndicatorTypeVocab",
+                    "MotivationVocab",
+                    "ActionNameVocab", # cybox
+                    "ObjectRelationshipVocab", # cybox
+                    "ToolTypeVocab" # cybox
+                    ],
+            '1.1.1': [
+                      "AvailabilityLossTypeVocab"
+                      ]
         }
-        
+
         results = {}
         list_vocabs = []
-        xpath = "//*[starts-with(@xsi:type, 'stixVocabs:')]"
+        xpath = "//*[contains(@xsi:type, 'Vocab-')]" # assumption: STIX/CybOX convention: end Vocab names with "Vocab-<version#>"
         vocabs = root.xpath(xpath, namespaces=namespaces)
         for vocab in vocabs:
             xsi_type = re.split(":|-", vocab.attrib["{%s}type" % namespaces[PREFIX_XSI]])
@@ -390,7 +411,9 @@ class STIXBestPracticeValidator(object):
                         dict_vocab['newest_version'] = version_num
                         break
                 list_vocabs.append(dict_vocab)
-        results['vocab_suggestions'] = list_vocabs
+
+        if list_vocabs: # only add list to results if there are entries
+            results['vocab_suggestions'] = list_vocabs
         return results
 
     def check_content_versions(self, root, namespaces, *args, **kwargs):
@@ -486,9 +509,9 @@ class STIXBestPracticeValidator(object):
                 results['warnings'] = warnings
             else:
                 results['result'] = True
-                
+
             return results
-        
+
         except Exception as ex:
             return {'result': False, 'fatal': str(ex)}
 
