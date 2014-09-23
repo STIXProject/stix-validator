@@ -322,6 +322,15 @@ def _print_best_practice_results(fn, results):
                 _print_level("[~] [%s] id: [%s] line: [%s]", 2,
                             node['tag'], node['id'], node['line_number'])
 
+        vocab_suggestions = warnings.get('vocab_suggestions')
+        if vocab_suggestions:
+            _print_level("[#] Vocab suggestions", 1)
+            for node in vocab_suggestions:
+                _print_level("[~] vocab: [%s] line: [%s] version used: [%s] version suggested: [%s]", 2,
+                            node['out_of_date'], node['line_number'],
+                            node['given_version'],
+                            node.get('newest_version', "???"))
+
 
 def _print_profile_results(fn, results):
     """Prints STIX Profile validation results to stdout.

@@ -9,6 +9,7 @@ import xlrd
 from .xml_schema import XmlSchemaValidator
 from .schematron import SchematronValidator
 
+PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'
 PREFIX_STIX_COMMON = 'stix-common'
 PREFIX_STIX_CAMPAIGN = 'stix-campaign'
@@ -30,7 +31,8 @@ class UnknownVersionException(Exception):
 
 def get_stix_namespaces(version):
     if version in ('1.0', '1.0.1', '1.1', '1.1.1'):
-        d = {PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',
+        d = {PREFIX_XSI: "http://www.w3.org/2001/XMLSchema-instance",
+             PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',
              PREFIX_STIX_COMMON: 'http://stix.mitre.org/common-1',
              PREFIX_STIX_CAMPAIGN: 'http://stix.mitre.org/Campaign-1',
              PREFIX_STIX_COA: 'http://stix.mitre.org/CourseOfAction-1',
@@ -85,7 +87,8 @@ class STIXBestPracticeValidator(object):
                    self.check_idref_with_content, self.check_indicator_practices,
                    self.check_indicator_patterns,
                    self.check_root_element,
-                   self.check_titles, self.check_marking_control_xpath),
+                   self.check_titles, self.check_marking_control_xpath,
+                   self.check_latest_vocabs),
             '1.1': (self.check_timestamp_usage, self.check_timestamp_timezone),
             '1.1.1': (self.check_timestamp_usage, self.check_timestamp_timezone)
         }
@@ -329,7 +332,89 @@ class STIXBestPracticeValidator(object):
         return {}
 
     def check_latest_vocabs(self, root, namespaces, *args, **kwargs):
-        return {}
+        '''
+        Checks that all STIX vocabs are using latest published versions.
+        Triggers a warning if an out of date vocabulary is used.
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
+        latest_map = {
+            '1.0': [
+                    "AssetTypeVocab",
+                    "AttackerInfrastructureTypeVocab",
+                    "AttackerToolTypeVocab",
+                    "COAStageVocab",
+                    "CampaignStatusVocab",
+                    "CourseOfActionTypeVocab",
+                    "DiscoveryMethodVocab",
+                    "HighMediumLowVocab",
+                    "ImpactQualificationVocab",
+                    "ImpactRatingVocab",
+                    "IncidentCategoryVocab",
+                    "IncidentEffectVocab",
+                    "IncidentStatusVocab",
+                    "InformationSourceRoleVocab",
+                    "InformationTypeVocab",
+                    "IntendedEffectVocab",
+                    "LocationClassVocab",
+                    "LossDurationVocab",
+                    "LossPropertyVocab",
+                    "MalwareTypeVocab",
+                    "ManagementClassVocab",
+                    "OwnershipClassVocab",
+                    "PackageIntentVocab",
+                    "SecurityCompromiseVocab",
+                    "SystemTypeVocab",
+                    "ThreatActorSophisticationVocab",
+                    "ThreatActorTypeVocab",
+                    "ActionArgumentNameVocab", # cybox
+                    "ActionObjectAssociationTypeVocab", #cybox
+                    "ActionRelationshipTypeVocab", # cybox
+                    "ActionTypeVocab", # cybox
+                    "CharacterEncodingVocab", # cybox
+                    "EventTypeVocab", # cybox
+                    "HashNameVocab", # cybox
+                    "InformationSourceTypeVocab", # cybox
+                    "ObjectStateVocab" # cybox
+                    ],
+            '1.0.1': [
+                      "PlanningAndOperationalSupportVocab",
+                      "EventTypeVocab" # cybox
+                      ],
+            '1.1': ["IndicatorTypeVocab",
+                    "MotivationVocab",
+                    "ActionNameVocab", # cybox
+                    "ObjectRelationshipVocab", # cybox
+                    "ToolTypeVocab" # cybox
+                    ],
+            '1.1.1': [
+                      "AvailabilityLossTypeVocab"
+                      ]
+        }
+
+        results = {}
+        list_vocabs = []
+        xpath = "//*[contains(@xsi:type, 'Vocab-')]" # assumption: STIX/CybOX convention: end Vocab names with "Vocab-<version#>"
+        vocabs = root.xpath(xpath, namespaces=namespaces)
+        for vocab in vocabs:
+            xsi_type = re.split(":|-", vocab.attrib["{%s}type" % namespaces[PREFIX_XSI]])
+            if not xsi_type[1] in latest_map.get(xsi_type[2]):
+                dict_vocab = defaultdict(list)
+                dict_vocab['line_number'] = vocab.sourceline
+                dict_vocab['out_of_date'] = xsi_type[1]
+                dict_vocab['given_version'] = xsi_type[2]
+                for version_num in latest_map:
+                    if xsi_type[1] in latest_map[version_num]:
+                        dict_vocab['newest_version'] = version_num
+                        break
+                list_vocabs.append(dict_vocab)
+
+        if list_vocabs: # only add list to results if there are entries
+            results['vocab_suggestions'] = list_vocabs
+        return results
 
     def check_content_versions(self, root, namespaces, *args, **kwargs):
         return {}
@@ -424,9 +509,9 @@ class STIXBestPracticeValidator(object):
                 results['warnings'] = warnings
             else:
                 results['result'] = True
-                
+
             return results
-        
+
         except Exception as ex:
             return {'result': False, 'fatal': str(ex)}
 
