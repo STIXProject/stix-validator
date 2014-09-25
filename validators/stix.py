@@ -86,7 +86,7 @@ class STIXBestPracticeValidator(object):
                    self.check_duplicate_ids, self.check_idref_resolution,
                    self.check_idref_with_content, self.check_indicator_practices,
                    self.check_indicator_patterns,
-                   self.check_root_element,
+                   self.check_root_element, self.check_cybox_object_conditions,
                    self.check_titles, self.check_marking_control_xpath,
                    self.check_latest_vocabs),
             '1.1': (self.check_timestamp_usage, self.check_timestamp_timezone),
@@ -261,6 +261,33 @@ class STIXBestPracticeValidator(object):
                           'idref': element.attrib['idref'],
                           'line_number': element.sourceline}
                 results['idref_with_content'].append(result)
+
+        return results
+
+    def check_cybox_object_conditions(self, root, namespaces, *args, **kwargs):
+        '''
+        Emit warnings for all Cybox Object Properties contained within
+        STIX Indicators that do not have condition attributes.
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
+        xpath = ("(//%s:Indicator | //%s:Indicator)//%s:Object"
+                    "/%s:Properties/*[not(@condition)]") % (PREFIX_STIX_CORE,
+                    PREFIX_STIX_COMMON, PREFIX_CYBOX_CORE, PREFIX_CYBOX_CORE)
+        results = {}
+        list_props = []
+        props = root.xpath(xpath, namespaces=namespaces)
+        for obj_prop in props:
+            result = defaultdict(list)
+            result['id'] = obj_prop.attrib.get('id', "N/A")
+            result['line_number'] = obj_prop.sourceline
+            list_props.append(result)
+
+        if list_props:
+            results['cybox_property_condition_missing'] = list_props
 
         return results
 
