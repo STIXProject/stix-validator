@@ -31,7 +31,7 @@
 		</stix:Description>
 		<stix:Handling>
 			<marking:Marking>
-				<marking:Controlled_Structure>node()</marking:Controlled_Structure>
+				<marking:Controlled_Structure>This is not XPath</marking:Controlled_Structure>
 			</marking:Marking>
 		</stix:Handling>
 	</stix:STIX_Header>

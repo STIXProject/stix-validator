@@ -396,10 +396,10 @@ class STIXBestPracticeValidator(object):
                 result['problem'] = "No XPath supplied"
             else:
                 try:
-                    res_set = elem.xpath(cs_xpath, namespaces=namespaces)
+                    res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
                     if not res_set:
                         result['problem'] = "XPath does not return any results"
-                except etree.XPathEvalError, e:
+                except etree.XPathEvalError as e:
                     result['problem'] = "Invalid XPath supplied"
             if result['problem']:
                 results['marking_control_xpath_issues'].append(result)
