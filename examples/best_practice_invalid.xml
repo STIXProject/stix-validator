@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<stix:STIX_Package 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-	xmlns:stix="http://stix.mitre.org/stix-1" 
+<stix:STIX_Package
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:stix="http://stix.mitre.org/stix-1"
 	xmlns:stixCommon="http://stix.mitre.org/common-1"
 	xmlns:indicator="http://stix.mitre.org/Indicator-2"
 	xmlns:ttp="http://stix.mitre.org/TTP-1"
-	xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1" 
-	xmlns:cybox="http://cybox.mitre.org/cybox-2" 
-	xmlns:DomainNameObj="http://cybox.mitre.org/objects#DomainNameObject-1" 
-	xmlns:example="http://example.com/" 
+	xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
+	xmlns:cybox="http://cybox.mitre.org/cybox-2"
+	xmlns:DomainNameObj="http://cybox.mitre.org/objects#DomainNameObject-1"
+	xmlns:example="http://example.com/"
+	xmlns:marking="http://data-marking.mitre.org/Marking-1"
 	xsi:schemaLocation="
 	http://stix.mitre.org/stix-1 http://stix.mitre.org/XMLSchema/core/1.1.1/stix_core.xsd
 	http://stix.mitre.org/common-1 http://stix.mitre.org/XMLSchema/common/1.1.1/stix_common.xsd
@@ -16,17 +17,23 @@
 	http://stix.mitre.org/TTP-1 http://stix.mitre.org/XMLSchema/ttp/1.1.1/ttp.xsd
 	http://stix.mitre.org/default_vocabularies-1 http://stix.mitre.org/XMLSchema/default_vocabularies/1.1.1/stix_default_vocabularies.xsd
 	http://cybox.mitre.org/cybox-2 http://cybox.mitre.org/XMLSchema/core/2.1/cybox_core.xsd
-	http://cybox.mitre.org/objects#DomainNameObject-1 http://cybox.mitre.org/XMLSchema/objects/Domain_Name/1.0/Domain_Name_Object.xsd"
+	http://cybox.mitre.org/objects#DomainNameObject-1 http://cybox.mitre.org/XMLSchema/objects/Domain_Name/1.0/Domain_Name_Object.xsd
+	http://data-marking.mitre.org/Marking-1  http://stix.mitre.org/XMLSchema/data_marking/1.1.1/data_marking.xsd"
 	id="example:Indicator-ba1d406e-937c-414f-9231-6e1dbe64fe8b" version="1.1.1" timestamp="2014-05-08T09:00:00.000000Z">
 	<stix:STIX_Header>
 		<stix:Title>STIX Validator Example</stix:Title>
 		<stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Indicators</stix:Package_Intent>
 		<stix:Description>
 			This example document is invalid against the STIX Suggested Practices.
-			
+
 			STIX Suggested Practices state that Indicators should have a Title, Valid_Time_Position, Indicated_TTP and Confidence. The
 			only Indicator in this document is missing all of these properties except the Title.
 		</stix:Description>
+		<stix:Handling>
+			<marking:Marking>
+				<marking:Controlled_Structure>This is not XPath</marking:Controlled_Structure>
+			</marking:Marking>
+		</stix:Handling>
 	</stix:STIX_Header>
 	<stix:Indicators>
 		<stix:Indicator xsi:type="indicator:IndicatorType" id="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" timestamp="2014-02-20T09:00:00.000000Z" version="2.1.1">

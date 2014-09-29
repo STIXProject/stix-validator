@@ -472,7 +472,23 @@ class STIXBestPracticeValidator(object):
         return results
 
     def check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
-        return {}
+        results = defaultdict(list)
+        xpath = "//%s:Controlled_Structure" % PREFIX_DATA_MARKING
+        for elem in root.xpath(xpath, namespaces=namespaces):
+            cs_xpath = elem.text
+            result = {'problem': None, 'line_number': elem.sourceline }
+            if not cs_xpath:
+                result['problem'] = "No XPath supplied"
+            else:
+                try:
+                    res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
+                    if not res_set:
+                        result['problem'] = "XPath does not return any results"
+                except etree.XPathEvalError as e:
+                    result['problem'] = "Invalid XPath supplied"
+            if result['problem']:
+                results['marking_control_xpath_issues'].append(result)
+        return results
 
     def _get_stix_construct_versions(self, version):
         pass
