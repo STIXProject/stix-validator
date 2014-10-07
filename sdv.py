@@ -2,9 +2,8 @@
 
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
-'''
-STIX Document Validator (sdv) - validates STIX v1.1.1 instance documents.
-'''
+
+from gooey import Gooey
 
 import sys
 import os
@@ -24,30 +23,6 @@ EXIT_FAILURE = 1
 
 
 class ValidationOptions(object):
-    """Collection of validation options which can be set via command line.
-
-    Attributes:
-        schema_validate: True if XML Schema validation should be performed.
-        use_schemaloc: True if the XML Schema validation process should look
-            at the xsi:schemaLocation attribute to find schemas to validate
-            against.
-        stix_version: The version of STIX which should be validated against.
-        profile_validate: True if profile validation should be performed.
-        best_practice_validate: True if STIX best practice validation should
-            be performed.
-        profile_convert: True if a STIX Profile should be converted into
-            schematron or xslt.
-        xslt_out: The filename for the output profile xslt.
-        schematron_out: The filename for the output profile schematron.
-        json_results: True if results should be printed in JSON format.
-        quiet_output: True if only results and fatal errors should be printed
-            to stdout/stderr.
-        in_files: A list of input files and directories of files to be
-            validated.
-        in_profile: A filename/path for a STIX Profile to validate against or
-            convert.
-
-    """
     def __init__(self):
         # validation options
         self.schema_validate = False
@@ -73,18 +48,6 @@ class ValidationOptions(object):
 
 
 class ValidationResults(object):
-    """Stores validation results for given file.
-
-    Args:
-        fn: The filename/path for the file that was validated.
-
-    Attributes:
-        fn: The filename/path for the file that was validated.
-        schema_results: XML schema validation results.
-        best_practice_results: STIX Best Practice validation results.
-        profile_resutls: STIX Profile validation results.
-
-    """
     def __init__(self, fn=None):
         self.fn = fn
         self.schema_results = None
@@ -93,95 +56,35 @@ class ValidationResults(object):
 
 
 class ArgumentError(Exception):
-    """An exception to be raised when invalid or incompatible arguments are
-    passed into the application via the command line.
-
-    Args:
-        show_help (bool): If true, the help/usage information should be printed
-            to the screen.
-
-    Attributes:
-        show_help (bool): If true, the help/usage information should be printed
-            to the screen.
-
-    """
     def __init__(self, msg=None, show_help=False):
         super(ArgumentError, self).__init__(msg)
         self.show_help = show_help
 
 
 class SchemaInvalidError(Exception):
-    """Exception to be raised when schema validation fails for a given
-    STIX document.
-
-    Attributes:
-        results (dict): A dictionary of schema validation results.
-
-    """
     def __init__(self, msg=None, results=None):
         super(SchemaInvalidError, self).__init__(msg)
         self.results = results
 
 
 def _error(msg):
-    """Prints a message to the stderr prepended by '[!]'.
-
-    Args:
-        msg: The error message to print.
-
-    """
-    sys.stderr.write("\n[!] %s\n" % str(msg))
+    sys.stdout.write("\n[!] %s\n" % str(msg))
     exit(EXIT_FAILURE)
 
 
 def _info(msg):
-    """Prints a message to stdout, prepended by '[-]'.
-
-    Note:
-        If the application is running in "Quiet Mode"
-        (i.e., ``QUIET_OUTPUT == True``), this function will return
-        immediately and no message will be printed.
-
-    Args:
-        msg: The message to print.
-
-    """
     if QUIET_OUTPUT:
         return
     print "[-] %s" % msg
 
 
 def _print_level(fmt, level, *args):
-    """Prints a formatted message to stdout prepended by spaces. Useful for
-    printing hierarchical information, like bullet lists.
-
-    Args:
-        fmt (str): A Python formatted string.
-        level (int): Used to determing how many spaces to print. The formula
-            is ``'    ' * level ``.
-        *args: Variable length list of arguments. Values are plugged into the
-            format string.
-
-    Examples:
-        >>> _print_level("%s", 0, "TEST")
-        TEST
-        >>> _print_level("%s", 1, "TEST")
-            TEST
-        >>> _print_level("%s", 2, "TEST")
-                TEST
-
-    """
     msg = fmt % args
     spaces = '    ' * level
     print "%s%s" % (spaces, msg)
 
 
 def _get_dir_files(dir_):
-    """Finds all the XML files under a directory.
-
-    Returns:
-        A list of file paths
-    """
     files = []
     for fn in os.listdir(dir_):
         if fn.endswith('.xml'):
@@ -191,13 +94,6 @@ def _get_dir_files(dir_):
     return files
 
 def _get_files_to_validate(options):
-    """Returns a list of files to validate.
-
-    Returns:
-        A list of filenames. An empty list if `options` does not have
-        ``in_filea`` set.
-
-    """
     files = options.in_files
 
     if not files:
@@ -215,25 +111,11 @@ def _get_files_to_validate(options):
 
 
 def _set_output_level(options):
-    """Set the output level for the application.
-
-    If the ``quiet_output`` or ``json_results`` attributes are set on `options`
-    then the application does not print informational messages to stdout; only
-    results or fatal errors are printed to stdout.
-
-    """
     global QUIET_OUTPUT
     QUIET_OUTPUT = options.quiet_output or options.json_results
 
 
 def _print_schema_results(fn, results):
-    """Prints STIX Schema validation results to stdout.
-
-    Args:
-        fn: The name/path of the file that was validated.
-        results (dict): The validation results.
-
-    """
     if results['result']:
         _print_level("[+] XML schema validation results: %s : VALID", 0, fn)
     else:
@@ -244,13 +126,6 @@ def _print_schema_results(fn, results):
 
 
 def _print_best_practice_results(fn, results):
-    """Prints STIX Best Practice validation results to stdout.
-
-    Args:
-        fn: The name/path of the file that was validated.
-        results (dict): The validation results.
-
-    """
     if results['result']:
         print "[+] Best Practice validation results: %s : VALID" % fn
     else:
@@ -324,13 +199,6 @@ def _print_best_practice_results(fn, results):
 
 
 def _print_profile_results(fn, results):
-    """Prints STIX Profile validation results to stdout.
-
-    Args:
-        fn: The name/path of the file that was validated.
-        results (dict): The validation results.
-
-    """
     report = results.get('report', {})
     errors = report.get('errors')
     if not errors:
@@ -346,12 +214,7 @@ def _print_profile_results(fn, results):
 
 
 def _print_json_results(results):
-    """Prints `results` to stdout in JSON format.
-
-    Args:
-        results: An instance of ``ValidationResults`` which contains the
-            results to print.
-    """
+    
     json_results = {}
     for fn, result in results.iteritems():
         d = {}
@@ -368,16 +231,6 @@ def _print_json_results(results):
 
 
 def _print_results(results, options):
-    """Prints `results` to stdout. If ``options.json_output`` is set, the
-    results are printed in JSON format.
-
-    Args:
-        results: An instance of ``ValidationResults`` which contains the
-            results to print.
-        options: An instance of ``ValidationOptions`` which contains output
-            options.
-
-    """
     if options.json_results:
         _print_json_results(results)
         return
@@ -392,20 +245,6 @@ def _print_results(results, options):
 
 
 def _convert_profile(validator, options):
-    """Converts a STIX Profile to XSLT and/or Schematron formats.
-
-    This converts a STIX Profile document and writes the results to output
-    schematron and/or xslt files to the output file names.
-
-    The output file names are defined by
-    ``output.xslt_out`` and ``options.schematron_out``.
-
-    Args:
-        validator: An instance of STIXProfileValidator
-        options: ValidationOptions intance with validation options for this
-            validation run.
-
-    """
     xslt = validator.get_xslt()
     schematron = validator.get_schematron()
 
@@ -424,18 +263,6 @@ def _convert_profile(validator, options):
 
 
 def _schema_validate(validator, fn, options):
-    """Performs STIX XML Schema validation against the input filename.
-
-    Args:
-        validator: An instance of validators.STIXSchemaValidator
-        fn: A filename for a STIX document
-        options: ValidationOptions instance with validation options for this
-            validation run.
-
-    Returns:
-        A dictionary of validation results
-
-    """
     _info("Performing xml schema validation on %s" % fn)
     results = validator.validate(fn, version=options.stix_version,
                                  schemaloc=options.use_schemaloc)
@@ -447,78 +274,30 @@ def _schema_validate(validator, fn, options):
 
 
 def _best_practice_validate(validator, fn, options):
-    """Performs STIX Best Practice validation against the input filename.
-
-    Args:
-        validator: An instance of STIXBestPracticeValidator
-        fn: A filename for a STIX document
-        options: ValidationOptions instance with validation options for
-            this validation run.
-
-    Returns:
-        A dictionary of validation results
-
-    """
     _info("Performing best practice validation on %s" % fn)
     results = validator.validate(fn, version=options.stix_version)
     return results
 
 
 def _profile_validate(validator, fn):
-    """Performs STIX Profile validation against the input filename.
-
-    Args:
-        fn: A filename for a STIX document
-
-    Returns:
-        A dictionary of validation results
-
-    """
     _info("Performing profile validation on %s" % fn)
     results = validator.validate(fn)
     return results
 
 
 def _get_schema_validator(options):
-    """Initializes a ``STIXSchemaValidator`` instance.
-
-    Args:
-        options: An instance of ``ValidationOptions``
-
-    Returns:
-        An instance of ``STIXSchemaValidator``
-
-    """
     if options.schema_validate:
         return STIXSchemaValidator(schemas=settings.SCHEMAS)
     return None
 
 
 def _get_profile_validator(options):
-    """Initializes a ``STIXProfileValidator`` instance.
-
-    Args:
-        options: An instance of ``ValidationOptions``
-
-    Returns:
-        An instance of ``STIXProfileValidator``
-
-    """
     if any((options.profile_validate, options.profile_convert)):
         return STIXProfileValidator(options.in_profile)
     return None
 
 
 def _get_best_practice_validator(options):
-    """Initializes a ``STIXBestPracticeValidator`` instance.
-
-    Args:
-        options: An instance of ``ValidationOptions``
-
-    Returns:
-        An instance of ``STIXBestPracticeValidator``
-
-    """
     if options.best_practice_validate:
         return STIXBestPracticeValidator()
     return None
@@ -551,13 +330,6 @@ def _validate_file(fn, schema_validator, profile_validator,
 
 
 def _validate(options):
-    """Validates files based on command line options.
-
-    Args:
-        options: An instance of ``ValidationOptions`` containing options for
-            this validation run.
-
-    """
     files = _get_files_to_validate(options)
     schema_validator = _get_schema_validator(options)
     profile_validator = _get_profile_validator(options)
@@ -576,16 +348,6 @@ def _validate(options):
 
 
 def _set_validation_options(args):
-    """Populates an instance of ``ValidationOptions`` from the `args` param.
-
-    Args:
-        args (argparse.Namespace): The arguments parsed and returned from
-            ArgumentParser.parse_args().
-
-    Returns:
-        Instance of ``ValidationOptions``.
-
-    """
     options = ValidationOptions()
 
     if (args.files and any((settings.SCHEMAS, args.use_schemaloc))):
@@ -615,18 +377,7 @@ def _set_validation_options(args):
 
 
 def _validate_args(args):
-    """Checks that valid and compatible command line arguments were passed into
-    the application.
 
-    Args:
-        args (argparse.Namespace): The arguments parsed and returned from
-            ArgumentParser.parse_args().
-
-    Raises:
-        ArgumentError: If invalid or incompatible command line arguments were
-            passed into the application.
-
-    """
     schema_validate = False
     profile_validate = False
     profile_convert = False
@@ -660,15 +411,9 @@ def _validate_args(args):
         raise ArgumentError("Profile specified but no conversion options or "
                             "validation options specified")
 
-
+@Gooey(program_name ="STIX Validator") # create fancy GUI
 def _get_arg_parser():
-    """Initializes and returns an argparse.ArgumentParser instance for this
-    application.
-
-    Returns:
-        Instance of ``argparse.ArgumentParser``
-
-    """
+    
     parser = argparse.ArgumentParser(description="STIX Document Validator v%s"
                                     % __version__)
     parser.add_argument("--stix-version", dest="stix_version", default=None,
@@ -703,17 +448,7 @@ def _get_arg_parser():
 
 
 def main():
-    """Entry point for sdv.py.
-
-    Parses and validates command line arguments and then does at least one of
-    the following:
-
-    * Validates instance document against schema/best practices/profile and
-      prints results to stdout.
-    * Converts a STIX profile into xslt and/or schematron formats
-    * Prints an error to stderr and exit(1)
-
-    """
+    
     parser = _get_arg_parser()
     args = parser.parse_args()
 
