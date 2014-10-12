@@ -32,7 +32,6 @@ class ProfileError(SchematronError):
             return None
 
         text = message.text
-        self._line = text.split(" ")[-1][1:-1]
         return text[:text.rfind(' [')]
 
 
