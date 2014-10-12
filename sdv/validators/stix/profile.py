@@ -17,21 +17,21 @@ class ProfileError(SchematronError):
         self._line = self._parse_line(error)
 
     def _parse_line(self, error):
-        message = error.find("{%s}text" % NS_SVRL)
+        text = super(ProfileError, self)._parse_message(error)
 
-        if message == None:
+        if not text:
             return None
 
-        line = message.text.split()[-1][1:-1]
+        line = text.split()[-1][1:-1]
         return line
 
-    def _parse_message(self, error):
-        message = error.find("{%s}text" % NS_SVRL)
 
-        if message == None:
+    def _parse_message(self, error):
+        text = super(ProfileError, self)._parse_message(error)
+
+        if not text:
             return None
 
-        text = message.text
         return text[:text.rfind(' [')]
 
 

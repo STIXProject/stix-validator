@@ -40,10 +40,11 @@ class SchematronError(object):
 
         return self._line
 
+
     def _parse_message(self, error):
         message = error.find("{%s}text" % NS_SVRL)
 
-        if not message:
+        if message == None:
             return None
 
         return message.text
