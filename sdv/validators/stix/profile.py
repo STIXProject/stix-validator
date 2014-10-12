@@ -22,8 +22,7 @@ class ProfileError(SchematronError):
         if message == None:
             return None
 
-        text = message.text
-        line = text.split(" ")[-1][1:-1]
+        line = message.text.split()[-1][1:-1]
         return line
 
     def _parse_message(self, error):

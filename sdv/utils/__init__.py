@@ -44,7 +44,7 @@ def get_target_ns(doc):
     Returns:
         The value of the ``targetNamespace`` attribute found at the root of
         `doc`.
-        
+
     Raises:
         KeyError: If `doc` does not contain a ``targetNamespace`` attribute.
 
