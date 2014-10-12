@@ -11,11 +11,9 @@ import os
 import logging
 import argparse
 import json
-import settings
-from validators import (STIXSchemaValidator, STIXProfileValidator,
-                        STIXBestPracticeValidator)
-
-__version__ = "1.1.1.2"
+import sdv
+from sdv.validators import (STIXSchemaValidator,
+    STIXProfileValidator, STIXBestPracticeValidator)
 
 QUIET_OUTPUT = False
 
@@ -234,12 +232,12 @@ def _print_schema_results(fn, results):
         results (dict): The validation results.
 
     """
-    if results['result']:
+    if results.is_valid:
         _print_level("[+] XML schema validation results: %s : VALID", 0, fn)
     else:
         _print_level("[!] XML schema validation results: %s : INVALID", 0, fn)
         _print_level("[!] Validation errors", 0)
-        for error in results.get("errors", []):
+        for error in results.errors:
             _print_level("[!] %s", 1, error)
 
 
@@ -251,18 +249,14 @@ def _print_best_practice_results(fn, results):
         results (dict): The validation results.
 
     """
-    if results['result']:
+    if results.is_valid:
         print "[+] Best Practice validation results: %s : VALID" % fn
     else:
         _print_level("[!] Best Practice validation results: %s : INVALID",
                     0, fn)
         _print_level("[!] Best Practice warnings", 0)
-        if 'fatal' in results:
-            _print_level("[!] Fatal error occurred processing best practices: "
-                        "%s", 1, results['fatal'])
-            return
 
-        warnings = results.get('warnings', {})
+        warnings = results.warnings
         root_element = warnings.get('root_element')
         if root_element:
             _print_level("[#] Root element not STIX_Package: [%s]", 1,
@@ -346,17 +340,15 @@ def _print_profile_results(fn, results):
         results (dict): The validation results.
 
     """
-    report = results.get('report', {})
-    errors = report.get('errors')
-    if not errors:
+
+    if results.is_valid:
         _print_level("[+] Profile validation results: %s : VALID", 0, fn)
     else:
         _print_level("[!] Profile validation results: %s : INVALID", 0, fn)
         _print_level("[!] Profile Errors", 0)
-        for error in sorted(errors, key=lambda x: x['error']):
-            msg = error.get('error')
-            line_numbers = error['line_numbers']
-            line_numbers.sort()
+
+        errors = results.as_dict()['errors']
+        for msg, line_numbers in errors.iteritems():
             _print_level("[!] %s [%s]", 1, msg, ', '.join(line_numbers))
 
 
@@ -371,11 +363,11 @@ def _print_json_results(results):
     for fn, result in results.iteritems():
         d = {}
         if result.schema_results:
-            d['schema_validation'] = result.schema_results
+            d['schema_validation'] = result.schema_results.as_dict()
         if result.profile_results:
-            d['profile_results'] = result.profile_results
+            d['profile_results'] = result.profile_results.as_dict()
         if result.best_practice_results:
-            d['best_practice_results'] = result.best_practice_results
+            d['best_practice_results'] = result.best_practice_results.as_dict()
 
         json_results[fn] = d
 
@@ -452,10 +444,12 @@ def _schema_validate(validator, fn, options):
 
     """
     _info("Performing xml schema validation on %s" % fn)
-    results = validator.validate(fn, version=options.stix_version,
-                                 schemaloc=options.use_schemaloc)
-    is_valid = results['result']
-    if not is_valid:
+
+    results = validator.validate(
+        fn, version=options.stix_version, schemaloc=options.use_schemaloc
+    )
+
+    if not results.is_valid:
         raise SchemaInvalidError(results=results)
 
     return results
@@ -505,7 +499,7 @@ def _get_schema_validator(options):
 
     """
     if options.schema_validate:
-        return STIXSchemaValidator(schemas=settings.SCHEMAS)
+        return STIXSchemaValidator()
     return None
 
 
@@ -603,7 +597,7 @@ def _set_validation_options(args):
     """
     options = ValidationOptions()
 
-    if (args.files and any((settings.SCHEMAS, args.use_schemaloc))):
+    if (args.files):
         options.schema_validate = True
 
     if options.schema_validate and args.profile:
@@ -649,7 +643,7 @@ def _validate_args(args):
     if len(sys.argv) == 1:
         raise ArgumentError("Invalid arguments", show_help=True)
 
-    if (args.files and any((settings.SCHEMAS, args.use_schemaloc))):
+    if (args.files):
         schema_validate = True
 
     if schema_validate and args.profile:
@@ -666,11 +660,6 @@ def _validate_args(args):
         raise ArgumentError("Profile filename is required when profile "
                             "conversion options are set.")
 
-    if (args.files and not any((settings.SCHEMAS, args.use_schemaloc))):
-        raise ArgumentError("Must provide either --use-schemaloc or "
-                            "settings.SCHEMAS when --input-file or input-dir "
-                            "declared")
-
     if (args.profile and not any((profile_validate, profile_convert))):
         raise ArgumentError("Profile specified but no conversion options or "
                             "validation options specified")
@@ -685,9 +674,13 @@ def _get_arg_parser():
 
     """
     parser = argparse.ArgumentParser(description="STIX Document Validator v%s"
-                                    % __version__)
+                                    % sdv.__version__)
     parser.add_argument("--stix-version", dest="stix_version", default=None,
                         help="The version of STIX to validate against")
+    parser.add_argument("--schemas", dest="schemas", default=None,
+                        help="Schema directory. If not provided, the STIX "
+                             "schemas bundled with the stix-validator library "
+                             "will be used.")
     parser.add_argument("--use-schemaloc", dest="use_schemaloc",
                         action='store_true', default=False, help="Use "
                         "schemaLocation attribute to determine schema "
