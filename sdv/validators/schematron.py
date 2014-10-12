@@ -50,6 +50,15 @@ class SchematronError(object):
         return message.text
 
 
+    def __unicode__(self):
+        return unicode(self.message)
+
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+
+
 class SchematronReport(object):
     def __init__(self, doc, svrl_report):
         self._svrl_report = svrl_report
