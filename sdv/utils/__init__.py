@@ -44,14 +44,13 @@ def get_target_ns(doc):
     Returns:
         The value of the ``targetNamespace`` attribute found at the root of
         `doc`.
-
+        
     Raises:
         KeyError: If `doc` does not contain a ``targetNamespace`` attribute.
 
     """
     root = get_etree_root(doc)
     return root.attrib['targetNamespace']
-
 
 
 def get_schemaloc_pairs(node):

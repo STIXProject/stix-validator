@@ -28,7 +28,7 @@ class XmlValidationResults(_BaseValidationResults):
 
 class XmlSchemaValidator(object):
     def __init__(self, schema_dir=None):
-        self.__schemas = self._map_schemas(schema_dir)
+        self._schemas = self._map_schemas(schema_dir)
 
 
     def _get_includes(self, root):
@@ -122,10 +122,10 @@ class XmlSchemaValidator(object):
 
         for elem in root.iter():
             for prefix, ns in elem.nsmap.iteritems():
-                if ns not in self.__schemas:
+                if ns not in self._schemas:
                     continue
 
-                schema_location = self.__schemas[ns]
+                schema_location = self._schemas[ns]
                 imports[ns] = schema_location
 
         return imports
@@ -174,7 +174,7 @@ class XmlSchemaValidator(object):
                        etree._ElementTree to be validated
 
         '''
-        if not any((schemaloc, self.__schemas)):
+        if not any((schemaloc, self._schemas)):
             raise ValidationError(
                 "No schemas to validate against! Try instantiating "
                 "XmlValidator with use_schemaloc=True or setting the "

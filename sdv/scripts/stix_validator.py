@@ -26,6 +26,7 @@ class ValidationOptions(object):
 
     Attributes:
         schema_validate: True if XML Schema validation should be performed.
+        schema_dir: A user-defined schema directory to validate against.
         use_schemaloc: True if the XML Schema validation process should look
             at the xsi:schemaLocation attribute to find schemas to validate
             against.
@@ -49,6 +50,7 @@ class ValidationOptions(object):
     def __init__(self):
         # validation options
         self.schema_validate = False
+        self.schema_dir = None
         self.use_schemaloc = False
         self.stix_version = None
         self.profile_validate = False
@@ -499,7 +501,7 @@ def _get_schema_validator(options):
 
     """
     if options.schema_validate:
-        return STIXSchemaValidator()
+        return STIXSchemaValidator(schema_dir=options.schema_dir)
     return None
 
 
@@ -540,11 +542,13 @@ def _validate_file(fn, schema_validator, profile_validator,
 
     try:
         if schema_validator:
-            results.schema_results = _schema_validate(schema_validator, fn,
-                                                      options)
+            results.schema_results = _schema_validate(
+                schema_validator, fn, options
+            )
         if best_practice_validator:
-            results.best_practice_results = \
-                _best_practice_validate(best_practice_validator, fn, options)
+            results.best_practice_results = _best_practice_validate(
+                best_practice_validator, fn, options
+            )
 
         if profile_validator:
             results.profile_results = _profile_validate(profile_validator, fn)
@@ -552,8 +556,10 @@ def _validate_file(fn, schema_validator, profile_validator,
     except SchemaInvalidError as ex:
         results.schema_results = ex.results
         if any((profile_validator, best_practice_validator)):
-            msg = ("File %s was schema-invalid. No other validation will be "
-                  "performed." % fn)
+            msg = (
+                "File %s was schema-invalid. No other validation will be "
+                "performed." % fn
+            )
             _info(msg)
 
     return results
@@ -611,6 +617,7 @@ def _set_validation_options(args):
 
     # input options
     options.stix_version = args.stix_version
+    options.schema_dir = args.schema_dir
     options.in_files = args.files
     options.in_profile = args.profile
 
@@ -677,7 +684,7 @@ def _get_arg_parser():
                                     % sdv.__version__)
     parser.add_argument("--stix-version", dest="stix_version", default=None,
                         help="The version of STIX to validate against")
-    parser.add_argument("--schemas", dest="schemas", default=None,
+    parser.add_argument("--schema-dir", dest="schema_dir", default=None,
                         help="Schema directory. If not provided, the STIX "
                              "schemas bundled with the stix-validator library "
                              "will be used.")
