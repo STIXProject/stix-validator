@@ -53,6 +53,7 @@ setup(
     version=get_version(),
     packages=find_packages(),
     scripts=['sdv/scripts/stix_validator.py'],
+    include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,
     long_description=readme,
