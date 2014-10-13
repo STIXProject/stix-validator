@@ -415,8 +415,8 @@ def _convert_profile(validator, options):
             validation run.
 
     """
-    xslt = validator.get_xslt()
-    schematron = validator.get_schematron()
+    xslt = validator.xslt
+    schematron = validator.schematron
 
     schematron_out_fn = options.schematron_out
     xslt_out_fn = options.xslt_out

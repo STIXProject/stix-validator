@@ -1,7 +1,6 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
-from lxml import etree
 from lxml import isoschematron
 from collections import defaultdict
 
@@ -13,19 +12,32 @@ NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
 NS_SAXON = "http://icl.com/saxon"   # libxml2 requires this namespace
 NS_SAXON_SF_NET = "http://saxon.sf.net/"
 
-
 class SchematronError(object):
-    def __init__(self, doc, report, error):
-        self._report = report
+    """Represents an error found in a SVRL report.
+
+    Args:
+        doc: The instance document which was validated and produced this error.
+        report: The etree._ElementTree SVRL report containing the error.
+        error: The svrl:failed-assert or svrl:successful-report etree._Element
+            instance.
+
+    Attributes:
+        message: The error message generated during the Schematron validation
+            run.
+    """
+    def __init__(self, doc, error):
         self._doc = doc
         self._error = error
-
-        self.message = self._parse_message(error)
         self._xpath_location = error.attrib.get('location')
         self._test = error.attrib.get('test')
         self._line = None
+        self.message = self._parse_message(error)
 
     def _get_line(self):
+        """Returns the line number in the input document associated with this
+        error.
+
+        """
         root = utils.get_etree_root(self._doc)
         xpath = self._xpath_location
         nsmap = self._error.nsmap
@@ -35,11 +47,11 @@ class SchematronError(object):
 
     @property
     def line(self):
+        """Returns the line number for non-conformant element or attribute."""
         if not self._line:
             self._line = self._get_line()
 
         return self._line
-
 
     def _parse_message(self, error):
         message = error.find("{%s}text" % NS_SVRL)
@@ -49,10 +61,8 @@ class SchematronError(object):
 
         return message.text
 
-
     def __unicode__(self):
         return unicode(self.message)
-
 
     def __str__(self):
         return unicode(self).encode('utf-8')
@@ -62,10 +72,13 @@ class SchematronValidationResults(ValidationResults):
     """Used to hold results of a Schematron validation process.
 
     Args:
-        report: An instance of :class:`SchematronReport`.
+        doc: The document which produced these validation results.
+        svrl_report: The etree._ElementTree SVRL report produced during the
+            validation run.
 
     Attributes:
-        report: An instance of :class:`SchematronReport`
+        errors: A list of :class:`SchematronError` instances representing
+            errors found in the `svrl_report`.
 
     """
     def __init__(self, doc, svrl_report):
@@ -75,12 +88,12 @@ class SchematronValidationResults(ValidationResults):
         self.errors = self._parse_errors(svrl_report)
 
 
-    def _parse_errors(self, report):
+    def _parse_errors(self, svrl_report):
         xpath = "//svrl:failed-assert | //svrl:successful-report"
         nsmap = {'svrl': NS_SVRL}
-        errors = report.xpath(xpath, namespaces=nsmap)
+        errors = svrl_report.xpath(xpath, namespaces=nsmap)
 
-        return [SchematronError(self._doc, report, x) for x in errors]
+        return [SchematronError(self._doc, x) for x in errors]
 
 
     def as_dict(self):
@@ -101,10 +114,28 @@ class SchematronValidationResults(ValidationResults):
 
 
 class SchematronValidator(object):
+    """Performs schematron validation against an XML instance document.
+
+    Args:
+        schematron: A Schematron document. This can be a filename, file-like
+            object, etree._Element, or etree._ElementTree instance.
+
+    """
     def __init__(self, schematron):
-        self.schematron = self._build_schematron(schematron)
+        self._schematron = self._build_schematron(schematron)
 
     def _build_schematron(self, sch):
+        """Attempts to build an ``lxml.isoschematron.Schematron`` instance
+        from `sch`.
+
+        Args:
+            sch: A Schematron document filename, file-like object,
+                etree._Element, or etree._ElementTree.
+
+        Returns:
+            A ``lxml.isoschematron.Schematron`` instance for `sch`.
+
+        """
         if sch is None:
             raise ValueError("Input schematron document cannot be None")
 
@@ -115,25 +146,30 @@ class SchematronValidator(object):
 
         return schematron
 
-
-    def get_xslt(self):
+    @property
+    def xslt(self):
         """Returns an etree._ElementTree representation of the XSLT
         transform of the Schematron document.
 
         """
-        return self.schematron.validator_xslt
+        return self._schematron.validator_xslt
 
 
-    def get_schematron(self):
+    @property
+    def schematron(self):
         """Returns an etree._ElementTree representation of the Schematron
         document.
 
         """
-        return self.schematron.schematron
+        return self._schematron.schematron
 
 
     def validate(self, doc):
         """Validates an XML instance document `doc` using Schematron rules.
+
+        Args:
+            doc: An XML instance document. This can be a filename, file-like
+                object, etree._Element or etree._ElementTree instance.
 
         Returns:
             An instance of :class:`SchematronValidationResults`.

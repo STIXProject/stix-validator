@@ -52,7 +52,8 @@ class XmlSchemaValidator(object):
         OVERRIDE_SCHEMALOC: Overrides the schemalocation for a given namespace
             that may be discovered when walking `schema_dir`. This does not
             alter the schemalocation of namespaces declared by
-            ``xsi:schemalLocation`` attributes.
+            ``xsi:schemalLocation`` attributes if validating via
+            ``xsi:schemaLocation``.
 
     """
     OVERRIDE_SCHEMALOC = {}

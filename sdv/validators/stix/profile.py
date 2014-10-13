@@ -12,12 +12,17 @@ from sdv.validators.schematron import (SchematronValidator,
     NS_SCHEMATRON)
 
 class ProfileParseError(ValidationError):
+    """Raised when an error occurs during the parse or initialization
+    of a STIX profile document.
+
+    """
     pass
 
 
 class ProfileError(SchematronError):
-    def __init__(self, doc, report, error):
-        super(ProfileError, self).__init__(doc, report, error)
+    """Represents STIX profile validation error."""
+    def __init__(self, doc, error):
+        super(ProfileError, self).__init__(doc, error)
         self._line = self._parse_line(error)
 
     def _parse_line(self, error):
@@ -40,20 +45,34 @@ class ProfileError(SchematronError):
 
 
 class ProfileValidationResults(SchematronValidationResults):
+    """Represents STIX profile validation results. This is returned from
+    the :meth:`STIXProfileValidator.valdate` method.
+
+    Attributes:
+        errors: A list of :class:`ProfileError` instances representing
+            errors found in the `svrl_report`.
+
+    """
     def __init__(self, doc, svrl_report):
         super(ProfileValidationResults, self).__init__(doc, svrl_report)
 
-    def _parse_errors(self, report):
+    def _parse_errors(self, svrl_report):
         xpath = "//svrl:failed-assert | //svrl:successful-report"
         nsmap = {'svrl': NS_SVRL}
-        errors = report.xpath(xpath, namespaces=nsmap)
+        errors = svrl_report.xpath(xpath, namespaces=nsmap)
 
-        return [ProfileError(self._doc, report, x) for x in errors]
+        return [ProfileError(self._doc, x) for x in errors]
 
 
 class STIXProfileValidator(SchematronValidator):
+    """Performs STIX Profile validation.
+
+    Args:
+        profile_fn: The filename of a .XLSX STIX Profile document.
+
+    """
     def __init__(self, profile_fn):
-        '''Initializes an instance of STIXFrofileValidator.'''
+        '''Initializes an instance of STIXProfileValidator.'''
         profile = self._open_profile(profile_fn)
         schema = self._parse_profile(profile)
 
@@ -422,8 +441,8 @@ class STIXProfileValidator(SchematronValidator):
                 "File does not seem to be valid XLSX."
             )
 
-
-    def get_xslt(self):
+    @SchematronValidator.xslt.getter
+    def xslt(self):
         '''Overrides SchematronValidator.get_xslt()
 
         Returns an lxml.etree._ElementTree representation of the ISO Schematron
@@ -439,19 +458,21 @@ class STIXProfileValidator(SchematronValidator):
         support Saxon extension functions at all.
 
         '''
-        if not self.schematron:
+        if not self._schematron:
             return None
 
-        s = etree.tostring(self.schematron.validator_xslt)
+        s = etree.tostring(self._schematron.validator_xslt)
         s = s.replace(' [<axsl:text/>'
                       '<axsl:value-of select="saxon:line-number()"/>'
                       '<axsl:text/>]', '')
         s = s.replace('xmlns:saxon="http://icl.com/saxon"', '')
         s = s.replace('<svrl:ns-prefix-in-attribute-values '
                       'uri="http://icl.com/saxon" prefix="saxon"/>', '')
+
         return etree.parse(StringIO(s))
 
-    def get_schematron(self):
+    @SchematronValidator.schematron.getter
+    def schematron(self):
         '''Overrides SchematronValidator.get_schematron()
 
         Returns an lxml.etree._ElementTree representation of the ISO Schematron
@@ -467,21 +488,26 @@ class STIXProfileValidator(SchematronValidator):
         support Saxon extension functions at all.
 
         '''
-        if not self.schematron:
-            return None
-
-        s = etree.tostring(self.schematron.schematron)
+        s = etree.tostring(self._schematron.schematron)
         s = s.replace(' [<value-of select="saxon:line-number()"/>]', '')
         s = s.replace('<ns prefix="saxon" uri="http://icl.com/saxon"/>', '')
+
         return etree.parse(StringIO(s))
 
 
     def validate(self, doc):
-        '''Validates an XML instance document against a STIX profile.'''
+        """Validates an XML instance document against a STIX profile.
 
+        Args:
+            doc: A STIX XML instance document.
+
+        Returns:
+            An instance of :class:`ProfileValidationResults`.
+
+        """
         root = utils.get_etree_root(doc)
-        is_valid = self.schematron.validate(root)
-        svrl_report = self.schematron.validation_report
+        is_valid = self._schematron.validate(root)
+        svrl_report = self._schematron.validation_report
 
         results = ProfileValidationResults(root, svrl_report)
         results.is_valid = is_valid
