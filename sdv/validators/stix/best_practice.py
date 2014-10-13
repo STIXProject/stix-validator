@@ -462,8 +462,10 @@ class STIXBestPracticeValidator(object):
             )
 
         if version not in self.rules:
-            raise stix.UnknownVersionError(
-                "Unable to determine rules for STIX version %s" % version
+            raise stix.InvalidVersionError(
+                "Unable to determine rules for STIX version %s" % version,
+                expected=[x for x in self.rules.keys() if x],
+                found=version
             )
 
         namespaces = stix.get_stix_namespaces(version)
