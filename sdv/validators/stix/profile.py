@@ -8,8 +8,8 @@ from lxml import etree
 import sdv.utils as utils
 from sdv import ValidationError
 from sdv.validators.schematron import (SchematronValidator,
-    SchematronValidationResults, SchematronError, SchematronReport, NS_SVRL,
-    NS_SAXON, NS_SAXON_SF_NET, NS_SCHEMATRON)
+    SchematronValidationResults, SchematronError, NS_SVRL, NS_SAXON,
+    NS_SCHEMATRON)
 
 class ProfileParseError(ValidationError):
     pass
@@ -39,10 +39,9 @@ class ProfileError(SchematronError):
         return text[:text.rfind(' [')]
 
 
-class ProfileReport(SchematronReport):
+class ProfileValidationResults(SchematronValidationResults):
     def __init__(self, doc, svrl_report):
-        super(ProfileReport, self).__init__(doc, svrl_report)
-
+        super(ProfileValidationResults, self).__init__(doc, svrl_report)
 
     def _parse_errors(self, report):
         xpath = "//svrl:failed-assert | //svrl:successful-report"
@@ -50,11 +49,6 @@ class ProfileReport(SchematronReport):
         errors = report.xpath(xpath, namespaces=nsmap)
 
         return [ProfileError(self._doc, report, x) for x in errors]
-
-
-class ProfileValidationResults(SchematronValidationResults):
-    def __init__(self, report):
-        super(ProfileValidationResults, self).__init__(report)
 
 
 class STIXProfileValidator(SchematronValidator):
@@ -488,9 +482,8 @@ class STIXProfileValidator(SchematronValidator):
         root = utils.get_etree_root(doc)
         is_valid = self.schematron.validate(root)
         svrl_report = self.schematron.validation_report
-        report = ProfileReport(root, svrl_report)
 
-        results = ProfileValidationResults(report)
+        results = ProfileValidationResults(root, svrl_report)
         results.is_valid = is_valid
 
         return results

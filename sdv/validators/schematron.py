@@ -58,51 +58,44 @@ class SchematronError(object):
         return unicode(self).encode('utf-8')
 
 
+class SchematronValidationResults(ValidationResults):
+    """Used to hold results of a Schematron validation process.
 
-class SchematronReport(object):
+    Args:
+        report: An instance of :class:`SchematronReport`.
+
+    Attributes:
+        report: An instance of :class:`SchematronReport`
+
+    """
     def __init__(self, doc, svrl_report):
+        super(SchematronValidationResults, self).__init__()
         self._svrl_report = svrl_report
         self._doc = doc
         self.errors = self._parse_errors(svrl_report)
 
+
     def _parse_errors(self, report):
-        '''Returns a list of SVRL failed-assert and successful-report elements.'''
         xpath = "//svrl:failed-assert | //svrl:successful-report"
         nsmap = {'svrl': NS_SVRL}
         errors = report.xpath(xpath, namespaces=nsmap)
 
         return [SchematronError(self._doc, report, x) for x in errors]
 
-    def as_dict(self):
-        d = defaultdict(list)
-        for error in self.errors:
-            message = error.message
-            lines = d[message]
-            lines.append(error.line)
-            lines.sort()
-            d[error.message] = lines
-
-        return {'errors': d}
-
-
-class SchematronValidationResults(ValidationResults):
-    def __init__(self, report):
-        super(SchematronValidationResults, self).__init__()
-        self.report = report
-
-    @ValidationResults.errors.setter
-    def errors(self, value):
-        pass
-
-    @ValidationResults.errors.getter
-    def errors(self):
-        return self.report.errors
 
     def as_dict(self):
-        d = {}
+        d = super(SchematronValidationResults, self).as_dict()
 
-        d['result'] = self.is_valid
-        d.update(self.report.as_dict())
+        if self.errors:
+            errors = defaultdict(list)
+            for error in self.errors:
+                message = error.message
+                lines = errors[message]
+                lines.append(error.line)
+                lines.sort()
+                errors[error.message] = lines
+
+            d['errors'] = dict(errors.items())
 
         return d
 
@@ -124,20 +117,33 @@ class SchematronValidator(object):
 
 
     def get_xslt(self):
+        """Returns an etree._ElementTree representation of the XSLT
+        transform of the Schematron document.
+
+        """
         return self.schematron.validator_xslt
 
 
     def get_schematron(self):
-        self.schematron.schematron
+        """Returns an etree._ElementTree representation of the Schematron
+        document.
+
+        """
+        return self.schematron.schematron
 
 
     def validate(self, doc):
+        """Validates an XML instance document `doc` using Schematron rules.
+
+        Returns:
+            An instance of :class:`SchematronValidationResults`.
+
+        """
         root = utils.get_etree_root(doc)
         is_valid = self.schematron.validate(root)
         svrl_report = self.schematron.validation_report
-        report = SchematronReport(root, svrl_report)
 
-        results = SchematronValidationResults(report)
+        results = SchematronValidationResults(root, svrl_report)
         results.is_valid = is_valid
 
         return results
