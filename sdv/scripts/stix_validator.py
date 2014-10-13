@@ -422,14 +422,25 @@ def _convert_profile(validator, options):
     xslt_out_fn = options.xslt_out
 
     if schematron_out_fn:
-        _info("Writing schematron conversion of profile to %s" %
-             schematron_out_fn)
-        schematron.write(schematron_out_fn, pretty_print=True,
-                         xml_declaration=True, encoding="UTF-8")
+        _info(
+            "Writing schematron conversion of profile to %s" %
+            schematron_out_fn
+        )
+
+        schematron.write(
+            schematron_out_fn,
+            pretty_print=True,
+            xml_declaration=True,
+            encoding="UTF-8"
+        )
     if xslt_out_fn:
         _info("Writing xslt conversion of profile to %s" % xslt_out_fn)
-        xslt.write(xslt_out_fn, pretty_print=True, xml_declaration=True,
-                   encoding="UTF-8")
+        xslt.write(
+            xslt_out_fn,
+            pretty_print=True,
+            xml_declaration=True,
+            encoding="UTF-8"
+        )
 
 
 def _schema_validate(validator, fn, options):
