@@ -12,8 +12,8 @@ import logging
 import argparse
 import json
 import sdv
-from sdv.validators import (STIXSchemaValidator,
-    STIXProfileValidator, STIXBestPracticeValidator)
+from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
+    STIXBestPracticeValidator)
 
 QUIET_OUTPUT = False
 
@@ -700,13 +700,13 @@ def _get_arg_parser():
                              "schemas bundled with the stix-validator library "
                              "will be used.")
     parser.add_argument("--use-schemaloc", dest="use_schemaloc",
-                        action='store_true', default=False, help="Use "
-                        "schemaLocation attribute to determine schema "
-                        "locations.")
+                        action='store_true', default=False,
+                        help="Use schemaLocation attribute to determine schema "
+                             "locations.")
     parser.add_argument("--best-practices", dest="best_practices",
                         action='store_true', default=False,
                         help="Check that the document follows authoring "
-                        "best practices")
+                             "best practices")
     parser.add_argument("--profile", dest="profile", default=None,
                         help="Path to STIX profile in excel")
     parser.add_argument("--schematron-out", dest="schematron", default=None,
@@ -716,11 +716,12 @@ def _get_arg_parser():
                         help="Path to converted STIX profile schematron xslt "
                         "output.")
     parser.add_argument("--quiet", dest="quiet", action="store_true",
-                        default=False, help="Only print results and errors if "
-                        "they occur.")
+                        default=False,
+                        help="Only print results and errors if they occur.")
     parser.add_argument("--json-results", dest="json", action="store_true",
-                        default=False, help="Print results as raw JSON. This "
-                        "also sets --quiet.")
+                        default=False,
+                        help="Print results as raw JSON. This also sets "
+                             "--quiet.")
     parser.add_argument("files", metavar="FILES", nargs="*",
                         help="A whitespace separated list of STIX files or "
                              "directories of STIX files to validate.")
