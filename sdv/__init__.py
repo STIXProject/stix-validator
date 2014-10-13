@@ -8,9 +8,9 @@ XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 class ValidationError(Exception):
     pass
 
-class _BaseValidationResults(object):
+class ValidationResults(object):
     def __init__(self):
-        self.is_valid = None
+        self.is_valid = False
         self.errors = None
 
     @property

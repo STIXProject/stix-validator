@@ -5,7 +5,7 @@ from lxml import etree
 from lxml import isoschematron
 from collections import defaultdict
 
-from sdv import _BaseValidationResults
+from sdv import ValidationResults
 import sdv.utils as utils
 
 NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
@@ -85,16 +85,16 @@ class SchematronReport(object):
         return {'errors': d}
 
 
-class SchematronValidationResults(_BaseValidationResults):
+class SchematronValidationResults(ValidationResults):
     def __init__(self, report):
         super(SchematronValidationResults, self).__init__()
         self.report = report
 
-    @_BaseValidationResults.errors.setter
+    @ValidationResults.errors.setter
     def errors(self, value):
         pass
 
-    @_BaseValidationResults.errors.getter
+    @ValidationResults.errors.getter
     def errors(self):
         return self.report.errors
 

@@ -2,11 +2,25 @@
 # See LICENSE.txt for complete terms.
 
 import os
-
 from sdv import (XSD_ROOT, ValidationError)
 import sdv.utils as utils
 from sdv.validators import XmlSchemaValidator
 import common as stix
+
+
+class _XmlSchemaValidator(XmlSchemaValidator):
+    """Needed to resolve namespace collisions between CybOX 2.1 and
+    STIX v1.1.1.
+
+    CybOX imports CPE 2.3. The STIX CVRF extension imports CPE 2.2a. Both
+    are defined within the 'http://cpe.mitre.org/language/2.0' namespace.
+
+    """
+    OVERRIDE_SCHEMALOC = {
+        'http://cpe.mitre.org/language/2.0': os.path.join(
+            XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
+        )
+    }
 
 class STIXSchemaValidator(object):
     SCHEMAS = {
@@ -25,15 +39,15 @@ class STIXSchemaValidator(object):
 
 
     def _get_validators(self, schema_dir=None):
-        validators = {self._KEY_SCHEMALOC: XmlSchemaValidator()}
+        validators = {self._KEY_SCHEMALOC: _XmlSchemaValidator()}
 
         if schema_dir:
             validators = {
-                self._KEY_USER_DEFINED: XmlSchemaValidator(schema_dir)
+                self._KEY_USER_DEFINED: _XmlSchemaValidator(schema_dir)
             }
         else:
             for version, location in self.SCHEMAS.iteritems():
-                validator = XmlSchemaValidator(location)
+                validator = _XmlSchemaValidator(location)
                 validators[version] = validator
 
         return validators

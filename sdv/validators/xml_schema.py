@@ -4,8 +4,7 @@
 import os
 from collections import defaultdict
 from lxml import etree
-
-from sdv import (_BaseValidationResults, ValidationError)
+from sdv import (ValidationResults, ValidationError)
 import sdv.utils as utils
 
 NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
@@ -15,98 +14,273 @@ TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
 
 
 class IncludeProcessError(ValidationError):
+    """Raised when errors occur during the processing of ``xs:include``
+    directives found within schema documents.
+
+    """
     pass
 
 
 class ImportProcessError(ValidationError):
+    """Raised when errors occur when generating ``xs:import`` directives for
+    the "uber" schema, used to validate XML instance documents.
+
+    """
     pass
 
 
-class XmlValidationResults(_BaseValidationResults):
+class XmlValidationResults(ValidationResults):
+    """Results of XML schema validation. Returned from
+    :meth:`XmlSchemaValidator.validate`.
+
+    """
     pass
 
 
 class XmlSchemaValidator(object):
+    """Validates XML instance documents.
+
+    Note:
+        If validating against a single XML schema document, use etree.XMLSchema
+        instead.
+
+    Args:
+        schema_dir: A directory of schema files used to validate XML instance
+            documents.
+
+    Attributes:
+        OVERRIDE_SCHEMALOC: Overrides the schemalocation for a given namespace
+            that may be discovered when walking `schema_dir`. This does not
+            alter the schemalocation of namespaces declared by
+            ``xsi:schemalLocation`` attributes.
+
+    """
+    OVERRIDE_SCHEMALOC = {}
+
     def __init__(self, schema_dir=None):
-        self._schemas = self._map_schemas(schema_dir)
+        self._schemalocs = self._map_schemalocs(schema_dir)
 
+    def _get_includes(self, fp, root):
+        """Returns a list of ``xs:include`` targets found within `root`.
 
-    def _get_includes(self, root):
+        The returned list contains paths to the ``xs:include`` targets. The
+        file paths are absolute.
+
+        Note:
+            This assumes all includes point to local schemas. Remote schema
+            locations will not be parsed correctly!
+
+        Args:
+            fp: The file path to `root`. This is used to determine the path
+                to the included schema if the include path is relative.
+            root: An etree._Element representation of the schema.
+
+        Returns:
+            A list of file paths to included schemas.
+
+        """
         xs_includes = root.findall(TAG_XS_INCLUDE)
+        dir_ = os.path.dirname(fp)
 
         includes= []
         for include in xs_includes:
             loc = include.attrib['schemaLocation']
-            fn = os.path.split(loc)[1]
-            includes.append(fn)
+
+            if os.path.isabs(loc):
+                locpath = loc
+            else:
+                locpath = os.path.abspath(os.path.join(dir_, loc))
+
+            includes.append(locpath)
 
         return includes
 
 
     def _build_include_graph(self, schema_paths):
+        """Builds a graph of ``xs:include`` directive sources and targets for
+        the schemas contained by the `schema_paths` list.
+
+        Args:
+            schema_paths: A list of schema file paths
+
+        Returns:
+            A graph representing ``xs:include`` statements found within the
+            schemas in `schema_paths`.
+
+        """
         graph = defaultdict(list)
 
-        for schema_path in schema_paths:
-            root = utils.get_etree_root(schema_path)
-            includes = self._get_includes(root)
-            schema_fn = os.path.split(schema_path)[1]
-            graph[schema_fn].append(includes)
+        for fp in schema_paths:
+            root = utils.get_etree_root(fp)
+            includes = self._get_includes(fp, root)
+            graph[fp].extend(includes)
 
         return graph
 
 
-    def _is_included(self, graph, fn):
+    def _is_included(self, graph, fp):
+        """Returns ``True`` if the schema at `fp` was included by any other
+         schemas in `graph`.
+
+         """
         for schema, includes in graph.iteritems():
-            if fn in includes:
+            if fp in includes:
                 return True
 
         return False
 
 
     def _get_include_root(self, ns, list_schemas):
-        include_graph = self._build_include_graph(list_schemas)
+        """Attempts to determine the "root" schema for a targetNamespace.
 
-        for fn in include_graph:
-            if (not self._is_included(include_graph, fn) and
-               (len(include_graph[fn]) > 0)):
-                return fn
+        This builds a graph of ``xs:include`` directive sources and targets
+        and attempts to find a common base for all includes.
+
+        Note:
+            If no schemas in `list_schemas` ``xs:include`` another schema,
+            then ``list_schemas[0]`` is returned. This occurs when duplicate
+            schemas (or different versions of the same schema that define the
+            same namespace) were encountered in the initialization schema
+            directory.
+
+        Args:
+            ns: The target namespace
+            list_schemas: A list of schemas which exist or define the
+                target namespace.
+
+        Returns:
+            A path to the root schema for the input `ns`.
+
+        """
+        graph = self._build_include_graph(list_schemas)
+
+        if all(not(x) for x in graph.itervalues()):
+            return list_schemas[0]
+
+        for fp in graph:
+            if (not self._is_included(graph, fp) and
+               (len(graph[fp]) > 0)):
+                return fp
 
         raise IncludeProcessError(
             "Unable to determine base schema for %s" % ns
         )
 
 
-    def _map_schemas(self, schema_dir):
-        '''Given a directory of schemas, this builds a dictionary of schemas
-        that need to be imported under a wrapper schema in order to enable
-        validation. This returns a dictionary of the form
-        {namespace : path to schema}.
+    def _process_includes(self, imports):
+        """Attempts to resolve cases where multiple schemas declare the same
+        ``targetNamespace`` value. This is due to the use of the ``xs:include``
+        directive, which can be found in OASIS CIQ schemas along with others.
 
-        Keyword Arguments
-        schema_dir - a directory of schema files
-        '''
-        if not schema_dir:
-            return
+        This is done by building an ``xs:include`` graph, and returning the
+        root of that graph.
 
-        imports = defaultdict(list)
-        for top, dirs, files in os.walk(schema_dir):
-            for f in files:
-                if f.endswith('.xsd'):
-                    fp = os.path.join(top, f)
-                    target_ns = utils.get_target_ns(fp)
-                    imports[target_ns].append(fp)
+        Note:
+            This method is flawed! This assumes that the ``xs:include`` graph
+            is really a tree, and has a root which can be imported and used
+            to validate all instance data which belongs to its namespace.
+
+            A better way may be to programatically combine all "split" schemas
+            within a single schema document and map the targetNamespace to that
+            combined schema document.
+
+        Args:
+            imports: A dictionary of namespaces to a list of schema file
+                paths. Most often, this list will have only one file path
+                in it.
+
+        Returns:
+            A dictionary of schema targetNamespaces to a single schema file
+            path.
+
+        """
+        processed = {}
 
         for ns, schemas in imports.iteritems():
             if len(schemas) > 1:
                 base_schema = self._get_include_root(ns, schemas)
-                imports[ns] = base_schema
+                processed[ns] = base_schema
             else:
-                imports[ns] = schemas[0]
+                processed[ns] = schemas[0]
 
-        return imports
+        return processed
+
+
+    def _walk_schemas(self, schema_dir):
+        """Walks the `schema_dir` directory and builds a dictionary of
+        schema ``targetNamespace`` values to a list of schema file paths.
+
+        Because multiple schemas can declare the same ``targetNamespace``
+        value, the ``value`` portion of the returned dictionary is a ``list``.
+
+        Note:
+            This method attempts to resolve issues where the same schema
+            exists in two or more locations under `schema_dir` by keeping
+            a record of visited target namespaces and filenames. If the same
+            filename:targetNS (not file path) pair has been visited already,
+            the file is not added to the schemalocation dictionary.
+
+        Returns:
+            A dictionary of  schema ``targetNamespace`` values to a list of
+            schema file paths.
+
+        """
+        seen = []
+        schemalocs = defaultdict(list)
+
+        for top, dirs, files in os.walk(schema_dir):
+            for fn in files:
+                if fn.endswith('.xsd'):
+                    fp = os.path.abspath(os.path.join(top, fn))
+                    target_ns = utils.get_target_ns(fp)
+
+                    if (target_ns, fn) in seen:
+                        continue
+
+                    schemalocs[target_ns].append(fp)
+                    seen.append((target_ns, fn))
+
+        for ns, loc in self.OVERRIDE_SCHEMALOC.iteritems():
+            schemalocs[ns] = [loc]
+
+        return schemalocs
+
+
+    def _map_schemalocs(self, schema_dir):
+        """Walks the `schema_dir` directory and builds a dictionary which maps
+        schema targetNamespace values to schema file paths.
+
+        If `schema_dir` is ``None``, this function returns immediately.
+
+        Returns:
+            A dictionary mapping schema ``targetNamespace`` values to the
+            schema file path.
+
+        Raises:
+            IncludeProcessError: If an error occurs while processing
+                ``xs:include`` directives.
+
+        """
+        if not schema_dir:
+            return
+
+        schemalocs = self._walk_schemas(schema_dir)
+        schemalocs = self._process_includes(schemalocs)
+
+        return schemalocs
 
 
     def _parse_schemaloc(self, root):
+        """Parses the ``xsi:schemaLocation`` attribute found on `root`.
+
+        Returns:
+            A dictionary of namespaces to schema locations.
+
+        Raises:
+            ImportProcessError: If `root` did not contain an
+                ``xsi:schemaLocation`` attribute.
+
+        """
         try:
             imports = utils.get_schemaloc_pairs(root)
             return dict(imports)
@@ -119,13 +293,23 @@ class XmlSchemaValidator(object):
 
 
     def _get_required_schemas(self, root):
+        """Retrieve all the namespaces and schemalocations needed to validate
+        `root`.
+
+        Args:
+            root: An etree._Element XML document.
+
+        Returns:
+            A dictionary mapping namespaces to schemalocations.
+
+        """
         imports = {}
         for elem in root.iter():
             for prefix, ns in elem.nsmap.iteritems():
-                if ns not in self._schemas:
+                if ns not in self._schemalocs:
                     continue
 
-                schema_location = self._schemas[ns]
+                schema_location = self._schemalocs[ns]
                 imports[ns] = schema_location
 
         return imports
@@ -143,6 +327,22 @@ class XmlSchemaValidator(object):
 
 
     def _build_uber_schema(self, doc, schemaloc=False):
+        """Builds a schema which is made up of ``xs:import`` directives for
+        each schema required to validate `doc`.
+
+        If schemaloc is ``True``, the ``xsi:schemaLocation`` attribute values
+        are used to create the ``xs:import`` directives. If ``False``, the
+        initialization schema directory is used.
+
+        Returns:
+            An ``etree.XMLSchema`` instance used to validate `doc`.
+
+        Raise:
+            ImportProcessError: If an error occurred while building the
+                dictionary of namespace to schemalocation mappings used to
+                drive the uber schema creation.
+
+        """
         root = utils.get_etree_root(doc)
         imports = self._build_required_imports(root)
 
@@ -175,17 +375,28 @@ class XmlSchemaValidator(object):
 
 
     def validate(self, doc, schemaloc=False):
-        '''Validates an instance documents.
+        """Validates an XML instance document.
 
-        Returns a tuple of where the first item is the boolean validation
-        result and the second is the validation error if there was one.
+        Args:
+            doc: An XML instance document. This can be a filename, file-like
+                object, ``etree._Element``, or ``etree._ElementTree``.
+            schemaloc: If ``True``, the document will be validated using the
+                ``xsi:schemaLocation`` attribute found on the instance
+                document root.
 
-        Keyword Arguments
-        instance_doc - a filename, file-like object, etree._Element, or
-                       etree._ElementTree to be validated
+        Returns:
+            An instance of :class:`XmlValidationResults`.
 
-        '''
-        if not any((schemaloc, self._schemas)):
+        Raises:
+            ValidationError: If the class was not initialized with a schema
+                directory and `schemaloc` is ``False``.
+            ImportProcessError: If an error occurs while processing the schemas
+                required for validation.
+            IncludeProcessError: If an error occurs while processing
+                ``xs:include`` directives.
+
+        """
+        if not any((schemaloc, self._schemalocs)):
             raise ValidationError(
                 "No schemas to validate against! Try instantiating "
                 "XmlValidator with use_schemaloc=True or setting the "

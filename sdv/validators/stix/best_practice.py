@@ -5,12 +5,12 @@ import re
 from collections import defaultdict
 from lxml import etree
 
-from sdv import _BaseValidationResults
+from sdv import ValidationResults
 import sdv.utils as utils
 import common as stix
 
 
-class BestPracticeResults(_BaseValidationResults):
+class BestPracticeResults(ValidationResults):
     def __init__(self):
         super(BestPracticeResults, self).__init__()
         self.warnings = None
