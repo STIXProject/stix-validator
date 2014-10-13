@@ -106,20 +106,20 @@ class XmlSchemaValidator(object):
         return imports
 
 
-    def _build_required_imports(self, doc, schemaloc=False):
-        root = utils.get_etree_root(doc)
+    def _parse_schemaloc(self, root):
+        try:
+            imports = utils.get_schemaloc_pairs(root)
+            return dict(imports)
+        except KeyError:
+            raise ImportProcessError(
+                "Cannot validate using xsi:schemaLocation. The "
+                "xsi:schemaLocation attribute was not found on the input "
+                "document"
+            )
+
+
+    def _get_required_schemas(self, root):
         imports = {}
-
-        if schemaloc:
-            try:
-                imports = utils.get_schemaloc_pairs(root)
-            except KeyError:
-                raise ImportProcessError(
-                    "Cannot validate using xsi:schemaLocation. The "
-                    "xsi:schemaLocation attribute was not found on the input "
-                    "document"
-                )
-
         for elem in root.iter():
             for prefix, ns in elem.nsmap.iteritems():
                 if ns not in self._schemas:
@@ -127,6 +127,17 @@ class XmlSchemaValidator(object):
 
                 schema_location = self._schemas[ns]
                 imports[ns] = schema_location
+
+        return imports
+
+
+    def _build_required_imports(self, doc, schemaloc=False):
+        root = utils.get_etree_root(doc)
+
+        if schemaloc:
+            imports = self._parse_schemaloc(root)
+        else:
+            imports = self._get_required_schemas(root)
 
         return imports
 

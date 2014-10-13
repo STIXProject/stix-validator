@@ -9,7 +9,6 @@ from sdv.validators import XmlSchemaValidator
 import common as stix
 
 class STIXSchemaValidator(object):
-
     SCHEMAS = {
         '1.1.1': os.path.join(XSD_ROOT, 'stix_1.1.1'),
         '1.1': os.path.join(XSD_ROOT, 'stix_1.1'),
