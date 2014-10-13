@@ -219,7 +219,12 @@ class STIXProfileValidator(SchematronValidator):
         <pattern> element. Each rule and test corresponds to entries found
         in the STIX profile document.
         '''
-        d_rules = {}  # context : rule_element
+
+        def get_rule(ctx):
+            rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
+            return rule
+
+        d_rules = {}
         for selector in selectors:
             for d_test in tests:
                 field = d_test['field']
@@ -234,7 +239,7 @@ class STIXProfileValidator(SchematronValidator):
 
                 if occurrence == "required":
                     ctx = selector
-                    rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
+                    rule = get_rule(ctx)
                     self._add_required_test(rule, entity_name, ctx)
                 elif occurrence == "prohibited":
                     if entity_name.startswith("@"):
@@ -242,7 +247,7 @@ class STIXProfileValidator(SchematronValidator):
                     else:
                         ctx = "%s/%s" % (selector, entity_name)
 
-                    rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
+                    rule = get_rule(ctx)
                     self._add_prohibited_test(rule, entity_name, ctx)
 
                 if allowed_values or allowed_xsi_types:
@@ -251,28 +256,31 @@ class STIXProfileValidator(SchematronValidator):
                     else:
                         ctx = "%s/%s" % (selector, entity_name)
 
-                    rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
+                    rule = get_rule(ctx)
                     if allowed_values:
-                        self._add_allowed_values_test(rule,
-                                                      selector,
-                                                      entity_name,
-                                                      allowed_values)
+                        self._add_allowed_values_test(
+                            rule, selector, entity_name, allowed_values
+                        )
                     if allowed_xsi_types:
-                        self._add_allowed_xsi_types_test(rule,
-                                                         selector,
-                                                         entity_name,
-                                                         allowed_xsi_types)
+                        self._add_allowed_xsi_types_test(
+                            rule, selector, entity_name, allowed_xsi_types
+                        )
 
         for rule in d_rules.itervalues():
             pattern_element.append(rule)
 
     def _build_schematron_xml(self, rules, nsmap, instance_map):
-        '''Returns an etree._Element instance representation of the STIX profile'''
+        """Returns an etree._Element instance representation of the STIX
+        profile.
+
+        """
         root = etree.Element(
             "{%s}schema" % NS_SCHEMATRON,
             nsmap={None: NS_SCHEMATRON}
         )
-        pattern = self._add_element(root, "pattern", id="STIX_Schematron_Profile")
+        pattern = self._add_element(
+            root, "pattern", id="STIX_Schematron_Profile"
+        )
         self._add_root_test(pattern, nsmap)  # check the root element of the document
 
         for label, tests in rules.iteritems():
@@ -329,8 +337,8 @@ class STIXProfileValidator(SchematronValidator):
                 continue
 
             label = self._get_cell_value(worksheet, i, 0)
-            selectors = [x.strip().replace('"', "'") for x in self._get_cell_value(worksheet, i,
-                                                                 1).split(",")]
+            selectors = self._get_cell_value(worksheet, i,  1).split(",")
+            selectors = [x.strip().replace('"', "'") for x in selectors]
 
             for selector in selectors:
                 if not selector:
@@ -340,7 +348,6 @@ class STIXProfileValidator(SchematronValidator):
                     )
 
             ns = self._get_cell_value(worksheet, i, 2)
-            ns_alias = nsmap[ns]
 
             if not (label or selectors or ns):
                 raise ProfileParseError(
@@ -351,7 +358,7 @@ class STIXProfileValidator(SchematronValidator):
             instance_map[label] = {
                 'selectors': selectors,
                 'ns': ns,
-                'ns_alias': ns_alias
+                'ns_alias': nsmap[ns]
             }
 
         return instance_map
@@ -384,10 +391,10 @@ class STIXProfileValidator(SchematronValidator):
         return schema
 
     def _map_ns(self, schematron, nsmap):
-        '''Adds <ns> nodes to the supplied schematron document for each entry
+        """Adds <ns> nodes to the supplied schematron document for each entry
         supplied by the nsmap.
 
-        '''
+        """
         for ns, prefix in nsmap.iteritems():
             ns_element = etree.Element("{%s}ns" % NS_SCHEMATRON)
             ns_element.set("prefix", prefix)
@@ -395,13 +402,18 @@ class STIXProfileValidator(SchematronValidator):
             schematron.insert(0, ns_element)
 
     def _add_element(self, node, name, text=None, **kwargs):
-        '''Adds an etree._Element child to the supplied node. The child
-        node is returned'''
+        """Adds an etree._Element child to the supplied node. The child
+        node is returned
+
+        """
         child = etree.SubElement(node, "{%s}%s" % (NS_SCHEMATRON, name))
+
         if text:
             child.text = text
+
         for k, v in kwargs.iteritems():
             child.set(k, v)
+
         return child
 
     def _unload_workbook(self, workbook):
@@ -417,18 +429,20 @@ class STIXProfileValidator(SchematronValidator):
         return value
 
     def _convert_to_string(self, value):
-        '''Returns the str(value) or an 8-bit string version of value
-        encoded as UTF-8.'''
+        """Returns the str(value) or an 8-bit string version of value
+        encoded as UTF-8.
+
+        """
         if isinstance(value, unicode):
             return value.encode("UTF-8")
         else:
             return str(value)
 
     def _open_profile(self, filename):
-        '''Returns xlrd.open_workbook(filename) or raises an Exception if the
+        """Returns xlrd.open_workbook(filename) or raises an Exception if the
         filename extension is not .xlsx or the open_workbook() call fails.
 
-        '''
+        """
         if not filename.lower().endswith(".xlsx"):
             raise ProfileParseError(
                 "File must have .XLSX extension. Filename provided: %s" %
@@ -443,10 +457,8 @@ class STIXProfileValidator(SchematronValidator):
 
     @SchematronValidator.xslt.getter
     def xslt(self):
-        '''Overrides SchematronValidator.get_xslt()
-
-        Returns an lxml.etree._ElementTree representation of the ISO Schematron
-        skeleton generated XSLT translation of a STIX profile.
+        """Returns an lxml.etree._ElementTree representation of the ISO
+        Schematron skeleton generated XSLT translation of a STIX profile.
 
         The STIXProfileValidator uses the extension function saxon:line-number()
         for reporting line numbers. This function is stripped along with any
@@ -457,7 +469,7 @@ class STIXProfileValidator(SchematronValidator):
         "http://icl.com/saxon". The freely distributed SaxonHE library does not
         support Saxon extension functions at all.
 
-        '''
+        """
         if not self._schematron:
             return None
 
@@ -473,10 +485,8 @@ class STIXProfileValidator(SchematronValidator):
 
     @SchematronValidator.schematron.getter
     def schematron(self):
-        '''Overrides SchematronValidator.get_schematron()
-
-        Returns an lxml.etree._ElementTree representation of the ISO Schematron
-        translation of a STIX profile.
+        """Returns an lxml.etree._ElementTree representation of the
+        ISO Schematron translation of a STIX profile.
 
         The STIXProfileValidator uses the extension function saxon:line-number()
         for reporting line numbers. This function is stripped along with any
@@ -487,7 +497,7 @@ class STIXProfileValidator(SchematronValidator):
         "http://icl.com/saxon". The freely distributed SaxonHE library does not
         support Saxon extension functions at all.
 
-        '''
+        """
         s = etree.tostring(self._schematron.schematron)
         s = s.replace(' [<value-of select="saxon:line-number()"/>]', '')
         s = s.replace('<ns prefix="saxon" uri="http://icl.com/saxon"/>', '')
