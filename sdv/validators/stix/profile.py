@@ -8,7 +8,7 @@ from lxml import etree
 import sdv.utils as utils
 from sdv import ValidationError
 from sdv.validators.schematron import (SchematronValidator,
-    SchematronValidationResults, SchematronError, NS_SVRL, NS_SAXON,
+    SchematronValidationResult, SchematronError, NS_SVRL, NS_SAXON,
     NS_SCHEMATRON)
 
 class ProfileParseError(ValidationError):
@@ -21,17 +21,30 @@ class ProfileParseError(ValidationError):
 
 class ProfileError(SchematronError):
     """Represents STIX profile validation error."""
+
     def __init__(self, doc, error):
         super(ProfileError, self).__init__(doc, error)
         self._line = self._parse_line(error)
 
     def _parse_line(self, error):
+        """Errors are reported as ``<error msg> [line number]``.
+
+        This method parses the line number out of th error message.
+
+        Returns:
+            A string line number for the `error`.
+
+        """
         text = super(ProfileError, self)._parse_message(error)
 
         if not text:
             return None
 
+        # Split the string on whitespace.
+        # Get the last item.
+        # Strip the leading '[' and trailing ']'.
         line = text.split()[-1][1:-1]
+
         return line
 
 
@@ -44,7 +57,7 @@ class ProfileError(SchematronError):
         return text[:text.rfind(' [')]
 
 
-class ProfileValidationResults(SchematronValidationResults):
+class ProfileValidationResult(SchematronValidationResult):
     """Represents STIX profile validation results. This is returned from
     the :meth:`STIXProfileValidator.valdate` method.
 
@@ -53,10 +66,15 @@ class ProfileValidationResults(SchematronValidationResults):
             errors found in the `svrl_report`.
 
     """
-    def __init__(self, doc, svrl_report):
-        super(ProfileValidationResults, self).__init__(doc, svrl_report)
+    def __init__(self, is_valid, doc=None, svrl_report=None):
+        super(ProfileValidationResult, self).__init__(
+            is_valid=is_valid, doc=doc, svrl_report=svrl_report
+        )
 
     def _parse_errors(self, svrl_report):
+        if not svrl_report:
+            return None
+
         xpath = "//svrl:failed-assert | //svrl:successful-report"
         nsmap = {'svrl': NS_SVRL}
         errors = svrl_report.xpath(xpath, namespaces=nsmap)
@@ -72,28 +90,38 @@ class STIXProfileValidator(SchematronValidator):
 
     """
     def __init__(self, profile_fn):
-        '''Initializes an instance of STIXProfileValidator.'''
         profile = self._open_profile(profile_fn)
         schema = self._parse_profile(profile)
 
         super(STIXProfileValidator, self).__init__(schematron=schema)
 
     def _build_rule_dict(self, worksheet):
-        '''Builds a dictionary representation of the rules defined by a STIX
-        profile document.'''
+        """Builds a dictionary representation of the rules defined by a STIX
+        profile document.
+
+        """
+        COL_FIELD_NAME     = 0
+        COL_OCCURRENCE     = 1
+        COL_XSI_TYPES      = 3
+        COL_ALLOWED_VALUES = 4
+
+        def _is_empty_row(row):
+            return not any(self._get_cell_value(worksheet, row, x)
+                           for x in xrange(0, worksheet.ncols))
+
         d = defaultdict(list)
         for i in xrange(1, worksheet.nrows):
-            if not any(self._get_cell_value(worksheet, i, x)
-                       for x in xrange(0, worksheet.ncols)):  # empty row
-                continue
-            if not self._get_cell_value(worksheet, i, 1):  # assume this is a label row
-                context = self._get_cell_value(worksheet, i, 0)
+            if _is_empty_row(i):
                 continue
 
-            field = self._get_cell_value(worksheet, i, 0)
-            occurrence = self._get_cell_value(worksheet, i, 1).lower()
-            xsi_types = self._get_cell_value(worksheet, i, 3)
-            allowed_values = self._get_cell_value(worksheet, i, 4)
+            if not self._get_cell_value(worksheet, i, COL_OCCURRENCE):
+                context = self._get_cell_value(worksheet, i, COL_FIELD_NAME)
+                continue
+
+            field = self._get_cell_value(worksheet, i, COL_FIELD_NAME)
+            occurrence = self._get_cell_value(worksheet, i, COL_OCCURRENCE).lower()
+            xsi_types = self._get_cell_value(worksheet, i, COL_XSI_TYPES)
+            allowed_values = self._get_cell_value(worksheet, i, COL_ALLOWED_VALUES)
 
             if xsi_types:
                 list_xsi_types = [x.strip() for x in xsi_types.split(',')]
@@ -115,6 +143,7 @@ class STIXProfileValidator(SchematronValidator):
                     'xsi_types': list_xsi_types,
                     'allowed_values': list_allowed_values
                 }
+
                 d[context].append(rule)
 
         return d
@@ -123,6 +152,7 @@ class STIXProfileValidator(SchematronValidator):
         '''
         Adds a root-level test that requires the root element of a STIX
         document be a STIX_Package.
+
         '''
         ns_stix = "http://stix.mitre.org/stix-1"
         rule_element = self._add_element(pattern, "rule", context="/")
@@ -133,11 +163,14 @@ class STIXProfileValidator(SchematronValidator):
             '[<value-of select="saxon:line-number()"/>]</assert> ' %
             (NS_SCHEMATRON, test, text)
         )
+
         rule_element.append(element)
 
     def _add_required_test(self, rule_element, entity_name, context):
         '''Adds a test to the rule element checking for the presence of a
-        required STIX field.'''
+        required STIX field.
+
+        '''
         entity_path = "%s/%s" % (context, entity_name)
         text = "%s is required by this profile" % (entity_path)
         test = entity_name
@@ -146,6 +179,7 @@ class STIXProfileValidator(SchematronValidator):
             '[<value-of select="saxon:line-number()"/>]</assert> ' %
             (NS_SCHEMATRON, test, text)
         )
+
         rule_element.append(element)
 
     def _add_prohibited_test(self, rule_element, entity_name, context):
@@ -153,6 +187,7 @@ class STIXProfileValidator(SchematronValidator):
         entity_path = (
             "%s/%s" % (context, entity_name) if entity_name.startswith("@") else context
         )
+
         text = "%s is prohibited by this profile" % (entity_path)
         test_field = entity_name if entity_name.startswith("@") else "true()"
         element = etree.XML(
@@ -160,6 +195,7 @@ class STIXProfileValidator(SchematronValidator):
             '[<value-of select="saxon:line-number()"/>]</report> ' %
             (NS_SCHEMATRON, test_field, text)
         )
+
         rule_element.append(element)
 
     def _add_allowed_xsi_types_test(self, rule_element, context,
@@ -172,15 +208,18 @@ class STIXProfileValidator(SchematronValidator):
             test = " or ".join(
                 "@xsi:type='%s'" % (x) for x in allowed_xsi_types
             )
+
             text = (
                 'The allowed xsi:types for %s are %s' %
                 (entity_path, allowed_xsi_types)
             )
+
             element = etree.XML(
                 '<assert xmlns="%s" test="%s" role="error">%s '
                 '[<value-of select="saxon:line-number()"/>]</assert> ' %
                 (NS_SCHEMATRON, test, text)
             )
+
             rule_element.append(element)
 
     def _add_allowed_values_test(self, rule_element, context, entity_name,
@@ -363,31 +402,40 @@ class STIXProfileValidator(SchematronValidator):
 
         return instance_map
 
-    def _parse_profile(self, profile):
-        '''Converts the supplied STIX profile into a Schematron representation.
-         The Schematron schema is returned as a etree._Element instance.
-        '''
-        overview_ws = profile.sheet_by_name("Overview")
-        namespace_ws = profile.sheet_by_name("Namespaces")
-        instance_mapping_ws = profile.sheet_by_name("Instance Mapping")
 
+    def _parse_validation_rules(self, profile):
+        skip = ("Overview", "Namespaces", "Instance Mapping")
         all_rules = defaultdict(list)
+
         for worksheet in profile.sheets():
-            if worksheet.name not in ("Overview", "Namespaces", "Instance Mapping"):
+            if worksheet.name not in skip:
                 rules = self._build_rule_dict(worksheet)
                 for context, d in rules.iteritems():
                     all_rules[context].extend(d)
 
+        return all_rules
+
+    def _parse_profile(self, profile):
+        """Converts the supplied STIX profile into a Schematron representation.
+         The Schematron schema is returned as a etree._Element instance.
+
+        """
+        namespace_ws = profile.sheet_by_name("Namespaces")
         namespaces = self._parse_namespace_worksheet(namespace_ws)
+
+        instance_mapping_ws = profile.sheet_by_name("Instance Mapping")
         instance_mapping = self._parse_instance_mapping_worksheet(
             instance_mapping_ws,  namespaces
         )
+
+        all_rules = self._parse_validation_rules(profile)
 
         schema = self._build_schematron_xml(
             all_rules, namespaces, instance_mapping
         )
 
         self._unload_workbook(profile)
+
         return schema
 
     def _map_ns(self, schematron, nsmap):
@@ -424,9 +472,10 @@ class STIXProfileValidator(SchematronValidator):
     def _get_cell_value(self, worksheet, row, col):
         '''Returns the worksheet cell value found at (row,col).'''
         if not worksheet:
-            raise Exception("worksheet value was NoneType")
-        value = str(worksheet.cell_value(row, col))
-        return value
+            raise ProfileParseError("worksheet value was NoneType")
+
+        return str(worksheet.cell_value(row, col))
+
 
     def _convert_to_string(self, value):
         """Returns the str(value) or an 8-bit string version of value
@@ -474,12 +523,18 @@ class STIXProfileValidator(SchematronValidator):
             return None
 
         s = etree.tostring(self._schematron.validator_xslt)
-        s = s.replace(' [<axsl:text/>'
-                      '<axsl:value-of select="saxon:line-number()"/>'
-                      '<axsl:text/>]', '')
+        s = s.replace(
+            ' [<axsl:text/>'
+            '<axsl:value-of select="saxon:line-number()"/>'
+            '<axsl:text/>]',
+            ''
+        )
         s = s.replace('xmlns:saxon="http://icl.com/saxon"', '')
-        s = s.replace('<svrl:ns-prefix-in-attribute-values '
-                      'uri="http://icl.com/saxon" prefix="saxon"/>', '')
+        s = s.replace(
+            '<svrl:ns-prefix-in-attribute-values '
+            'uri="http://icl.com/saxon" prefix="saxon"/>',
+            ''
+        )
 
         return etree.parse(StringIO(s))
 
@@ -519,7 +574,4 @@ class STIXProfileValidator(SchematronValidator):
         is_valid = self._schematron.validate(root)
         svrl_report = self._schematron.validation_report
 
-        results = ProfileValidationResults(root, svrl_report)
-        results.is_valid = is_valid
-
-        return results
+        return ProfileValidationResult(is_valid, root, svrl_report)

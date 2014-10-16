@@ -4,7 +4,7 @@
 import os
 from collections import defaultdict
 from lxml import etree
-from sdv import (ValidationResults, ValidationError)
+from sdv import (ValidationResult, ValidationError)
 import sdv.utils as utils
 
 NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
@@ -29,12 +29,34 @@ class ImportProcessError(ValidationError):
     pass
 
 
-class XmlValidationResults(ValidationResults):
+class XmlValidationResult(ValidationResult):
     """Results of XML schema validation. Returned from
     :meth:`XmlSchemaValidator.validate`.
 
     """
-    pass
+    def __init__(self, is_valid, errors=None):
+        super(XmlValidationResult, self).__init__(is_valid)
+        self.errors = errors
+
+    @property
+    def errors(self):
+        return self._errors
+
+    @errors.setter
+    def errors(self, value):
+        if not value:
+            self._errors = None
+        elif hasattr(value, '__getitem__'):
+            self._errors = [str(x) for x in value]
+        else:
+            self._errors = [value]
+
+    def as_dict(self):
+        d = super(XmlValidationResult, self).as_dict()
+
+        if self.errors:
+            d['errors'] = self.errors
+
 
 
 class XmlSchemaValidator(object):
@@ -408,9 +430,6 @@ class XmlSchemaValidator(object):
         xsd = self._build_uber_schema(root, schemaloc)
         is_valid = xsd.validate(root)
 
-        result = XmlValidationResults()
-        result.is_valid = is_valid
-        result.errors = [str(x) for x in xsd.error_log]
+        return XmlValidationResult(is_valid, xsd.error_log)
 
-        return result
 

@@ -2,22 +2,93 @@
 # See LICENSE.txt for complete terms.
 
 import re
-from collections import defaultdict
+import collections
 from lxml import etree
 
-from sdv import ValidationResults
+from sdv import ValidationResult
 import sdv.utils as utils
 import common as stix
 
 
-class BestPracticeResults(ValidationResults):
-    def __init__(self):
-        super(BestPracticeResults, self).__init__()
-        self.warnings = None
+class BestPracticeWarningCollection(collections.MutableSequence):
+    def __init__(self, name=None):
+        self.name = name
+        self._warnings = []
 
+    def __getitem__(self, key):
+        return self._warnings.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self._warnings.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self._warnings.__delitem__(key)
+
+    def __len__(self):
+        return len(self._warnings)
+
+    def __nonzero__(self):
+        return bool(self.warnings)
 
     def as_dict(self):
-        d = super(BestPracticeResults, self).as_dict()
+        d = {}
+
+        if self.warnings:
+            warnings = [x.as_dict() for x in self.warnings]
+        else:
+            warnings = None
+
+        d[self.name] = warnings
+
+
+class BestPracticeWarning(object):
+    def __init__(self, message=None, id_=None, idref=None,  node=None):
+        self.message = message
+        self.id_ = id_
+        self.idref = idref
+        self.line = node.sourceline if node else None
+        self.tag = node.tag if node else None
+
+    def __unicode__(self):
+        return unicode(self.message)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def as_dict(self):
+        d = {}
+
+        if self.id_:
+            d['id_'] = self.id_
+
+        if self.idref:
+            d['idref'] = self.idref
+
+        if self.tag:
+            d['tag'] = self.tag
+
+        if self.line:
+            d['line'] = self.line
+
+        if self.message:
+            d['message'] = self.message
+
+        return d
+
+
+class BestPracticeValidationResult(ValidationResult):
+    """Used for recording STIX best practice results.
+
+    Attributes:
+        warnings: TODO: write this
+
+    """
+    def __init__(self, is_valid=False):
+        super(BestPracticeValidationResult, self).__init__(is_valid)
+        self.warnings = None
+
+    def as_dict(self):
+        d = super(BestPracticeValidationResult, self).as_dict()
 
         if self.warnings:
             d['warnings'] = self.warnings
@@ -80,15 +151,13 @@ class STIXBestPracticeValidator(object):
              '%s:Action' % stix.PREFIX_CYBOX_CORE
         )
 
-        results = defaultdict(list)
+        results = BestPracticeWarningCollection('Missing IDs')
         for tag in elements_to_check:
             xpath = "//%s" % tag
             for element in root.xpath(xpath, namespaces=namespaces):
                 if 'idref' not in element.attrib and 'id' not in element.attrib:
-                    result = {'tag': element.tag,
-                              'line_number': element.sourceline}
-
-                    results['missing_ids'].append(result)
+                    warning = BestPracticeWarning(node=element)
+                    results.append(warning)
 
         return results
 
@@ -97,11 +166,6 @@ class STIXBestPracticeValidator(object):
         Checks that the core STIX/CybOX constructs in the STIX instance
         document have ids and that each id is formatted as
         [ns_prefix]:[object-type]-[GUID].
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
         regex = re.compile(r'\w+:\w+-')
 
@@ -126,58 +190,40 @@ class STIXBestPracticeValidator(object):
              '%s:Action' % stix.PREFIX_CYBOX_CORE
         )
 
-        results = defaultdict(list)
+        results = BestPracticeWarningCollection('ID Format')
         for tag in elements_to_check:
             xpath = "//%s" % tag
             for element in root.xpath(xpath, namespaces=namespaces):
                 if 'id' in element.attrib:
                     id_ = element.attrib['id']
                     if not regex.match(id_):
-                        result = {'tag': element.tag,
-                                  'id': id_,
-                                  'line_number': element.sourceline}
-
-                        results['id_format'].append(result)
+                        result = BestPracticeWarning(id_=id_, node=element)
+                        results.append(result)
 
         return results
 
     def check_duplicate_ids(self, root, namespaces, *args, **kwargs):
         '''
         Checks for duplicate ids in the document.
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
-        dup_dict = {}
-        results = {}
-        dict_id_nodes = defaultdict(list)
+        dict_id_nodes = collections.defaultdict(list)
         xpath_all_nodes_with_ids = "//*[@id]"
 
         all_nodes_with_ids = root.xpath(xpath_all_nodes_with_ids)
         for node in all_nodes_with_ids:
             dict_id_nodes[node.attrib['id']].append(node)
 
-        for id, node_list in dict_id_nodes.iteritems():
-            if len(node_list) > 1:
-                dup_dict[id] = [{'tag': node.tag,
-                                 'line_number': node.sourceline}
-                                for node in node_list]
-
-        if dup_dict:
-            results['duplicate_ids'] = dup_dict
+        results = BestPracticeWarningCollection('Duplicate IDs')
+        for id, nodes in dict_id_nodes.iteritems():
+            if len(nodes) > 1:
+                results.extend(BestPracticeWarning(node=x) for x in nodes)
 
         return results
 
     def check_idref_resolution(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all idrefs resolve to a construct in the document
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
+
         '''
         xpath_all_idrefs = "//*[@idref]"
         xpath_all_ids = "//@id"
@@ -185,14 +231,13 @@ class STIXBestPracticeValidator(object):
         all_idrefs = root.xpath(xpath_all_idrefs)
         all_ids = root.xpath(xpath_all_ids)
 
-        results = defaultdict(list)
+        results = BestPracticeWarningCollection("Unresolved IDREFs")
         for element in all_idrefs:
-            if element.attrib['idref'] not in all_ids:
-                result = {'tag': element.tag,
-                          'idref': element.attrib['idref'],
-                          'line_number': element.sourceline}
+            idref = element.attrib['idref']
 
-                results['unresolved_idrefs'].append(result)
+            if idref not in all_ids:
+                result = BestPracticeWarning(node=element, idref=idref)
+                results.append(result)
 
         return results
 
@@ -207,14 +252,14 @@ class STIXBestPracticeValidator(object):
         '''
         xpath = "//*[@idref]"
         elements = root.xpath(xpath)
-        results = defaultdict(list)
+        results = BestPracticeWarningCollection("IDREF with Content")
 
         for element in elements:
+            idref = element.attrib['idref']
+
             if element.text or len(element) > 0:
-                result = {'tag': element.tag,
-                          'idref': element.attrib['idref'],
-                          'line_number': element.sourceline}
-                results['idref_with_content'].append(result)
+                result = BestPracticeWarning(node=element, idref=idref)
+                results.append(result)
 
         return results
 
@@ -235,6 +280,7 @@ class STIXBestPracticeValidator(object):
         list_indicators = []
         indicators = root.xpath(xpath, namespaces=namespaces)
         for indicator in indicators:
+
             dict_indicator = defaultdict(list)
             if 'idref' not in indicator.attrib:     # if this is not an idref
                                                     # node, look at its content

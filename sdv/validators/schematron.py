@@ -4,7 +4,7 @@
 from lxml import isoschematron
 from collections import defaultdict
 
-from sdv import ValidationResults
+from sdv import ValidationResult
 import sdv.utils as utils
 
 NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
@@ -68,7 +68,7 @@ class SchematronError(object):
         return unicode(self).encode('utf-8')
 
 
-class SchematronValidationResults(ValidationResults):
+class SchematronValidationResult(ValidationResult):
     """Used to hold results of a Schematron validation process.
 
     Args:
@@ -81,14 +81,17 @@ class SchematronValidationResults(ValidationResults):
             errors found in the `svrl_report`.
 
     """
-    def __init__(self, doc, svrl_report):
-        super(SchematronValidationResults, self).__init__()
+    def __init__(self, is_valid, doc=None, svrl_report=None):
+        super(SchematronValidationResult, self).__init__(is_valid)
         self._svrl_report = svrl_report
         self._doc = doc
         self.errors = self._parse_errors(svrl_report)
 
 
     def _parse_errors(self, svrl_report):
+        if not svrl_report:
+            return None
+
         xpath = "//svrl:failed-assert | //svrl:successful-report"
         nsmap = {'svrl': NS_SVRL}
         errors = svrl_report.xpath(xpath, namespaces=nsmap)
@@ -97,7 +100,7 @@ class SchematronValidationResults(ValidationResults):
 
 
     def as_dict(self):
-        d = super(SchematronValidationResults, self).as_dict()
+        d = super(SchematronValidationResult, self).as_dict()
 
         if self.errors:
             errors = defaultdict(list)
@@ -179,8 +182,5 @@ class SchematronValidator(object):
         is_valid = self.schematron.validate(root)
         svrl_report = self.schematron.validation_report
 
-        results = SchematronValidationResults(root, svrl_report)
-        results.is_valid = is_valid
-
-        return results
+        return SchematronValidationResult(is_valid, root, svrl_report)
             
