@@ -9,6 +9,7 @@ from sdv import ValidationResult
 import sdv.utils as utils
 import common as stix
 
+TAG_XSI_TYPE = "{%s}type" % stix.NS_XSI
 
 class BestPracticeWarningCollection(collections.MutableSequence):
     def __init__(self, name=None):
@@ -28,13 +29,13 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         return len(self._warnings)
 
     def __nonzero__(self):
-        return bool(self.warnings)
+        return bool(self._warnings)
 
     def as_dict(self):
         d = {}
 
-        if self.warnings:
-            warnings = [x.as_dict() for x in self.warnings]
+        if self._warnings:
+            warnings = [x.as_dict() for x in self._warnings]
         else:
             warnings = None
 
@@ -42,12 +43,14 @@ class BestPracticeWarningCollection(collections.MutableSequence):
 
 
 class BestPracticeWarning(object):
-    def __init__(self, message=None, id_=None, idref=None,  node=None):
+    def __init__(self, node=None, message=None):
         self.message = message
-        self.id_ = id_
-        self.idref = idref
+        self.node = node
+        self.id_ = node.attrib.get('id') if node else None
+        self.idref = node.attrib.get('idref') if node else None
         self.line = node.sourceline if node else None
         self.tag = node.tag if node else None
+        self._inner = {}
 
     def __unicode__(self):
         return unicode(self.message)
@@ -55,8 +58,14 @@ class BestPracticeWarning(object):
     def __str__(self):
         return unicode(self).encode('utf-8')
 
+    def __getitem__(self, key):
+        return self._inner.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self._inner.__setitem__(key, value)
+
     def as_dict(self):
-        d = {}
+        d = dict(self._inner.items())
 
         if self.id_:
             d['id_'] = self.id_
@@ -130,7 +139,7 @@ class STIXBestPracticeValidator(object):
         :param kwargs:
         :return:
         '''
-        elements_to_check = (
+        to_check = (
              '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
              '%s:Campaign' % stix.PREFIX_STIX_CORE,
              '%s:Campaign' % stix.PREFIX_STIX_COMMON,
@@ -152,12 +161,13 @@ class STIXBestPracticeValidator(object):
         )
 
         results = BestPracticeWarningCollection('Missing IDs')
-        for tag in elements_to_check:
-            xpath = "//%s" % tag
-            for element in root.xpath(xpath, namespaces=namespaces):
-                if 'idref' not in element.attrib and 'id' not in element.attrib:
-                    warning = BestPracticeWarning(node=element)
-                    results.append(warning)
+        xpath = " | ".join("//%s" % x for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        for node in nodes:
+            if not any(x in node.attrib for x in ('id', 'idref')):
+                warning = BestPracticeWarning(node=node)
+                results.append(warning)
 
         return results
 
@@ -169,7 +179,7 @@ class STIXBestPracticeValidator(object):
         '''
         regex = re.compile(r'\w+:\w+-')
 
-        elements_to_check = (
+        to_check = (
              '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
              '%s:Campaign' % stix.PREFIX_STIX_CORE,
              '%s:Campaign' % stix.PREFIX_STIX_COMMON,
@@ -191,14 +201,17 @@ class STIXBestPracticeValidator(object):
         )
 
         results = BestPracticeWarningCollection('ID Format')
-        for tag in elements_to_check:
-            xpath = "//%s" % tag
-            for element in root.xpath(xpath, namespaces=namespaces):
-                if 'id' in element.attrib:
-                    id_ = element.attrib['id']
-                    if not regex.match(id_):
-                        result = BestPracticeWarning(id_=id_, node=element)
-                        results.append(result)
+        xpath = " | ".join("//%s" % x for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        for node in nodes:
+            if 'id' not in node.attrib:
+                continue
+
+            id_ = node.attrib['id']
+            if not regex.match(id_):
+                result = BestPracticeWarning(node=node)
+                results.append(result)
 
         return results
 
@@ -206,15 +219,13 @@ class STIXBestPracticeValidator(object):
         '''
         Checks for duplicate ids in the document.
         '''
-        dict_id_nodes = collections.defaultdict(list)
-        xpath_all_nodes_with_ids = "//*[@id]"
+        id_nodes = collections.defaultdict(list)
 
-        all_nodes_with_ids = root.xpath(xpath_all_nodes_with_ids)
-        for node in all_nodes_with_ids:
-            dict_id_nodes[node.attrib['id']].append(node)
+        for node in root.xpath("//*[@id]"):
+            id_nodes[node.attrib['id']].append(node)
 
         results = BestPracticeWarningCollection('Duplicate IDs')
-        for id, nodes in dict_id_nodes.iteritems():
+        for id, nodes in id_nodes.iteritems():
             if len(nodes) > 1:
                 results.extend(BestPracticeWarning(node=x) for x in nodes)
 
@@ -225,41 +236,32 @@ class STIXBestPracticeValidator(object):
         Checks that all idrefs resolve to a construct in the document
 
         '''
-        xpath_all_idrefs = "//*[@idref]"
-        xpath_all_ids = "//@id"
 
-        all_idrefs = root.xpath(xpath_all_idrefs)
-        all_ids = root.xpath(xpath_all_ids)
+        idrefs  = root.xpath("//*[@idref]")
+        ids     = root.xpath("//@id")
 
+        warnings = [x for x in idrefs if x.attrib['idref'] not in ids]
         results = BestPracticeWarningCollection("Unresolved IDREFs")
-        for element in all_idrefs:
-            idref = element.attrib['idref']
 
-            if idref not in all_ids:
-                result = BestPracticeWarning(node=element, idref=idref)
-                results.append(result)
+        for warning in warnings:
+            results.append(BestPracticeWarning(warning))
 
         return results
 
     def check_idref_with_content(self, root, namespaces, *args, **kwargs):
         '''
         Checks that constructs with idref set do not contain content
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
-        xpath = "//*[@idref]"
-        elements = root.xpath(xpath)
+
+        def _is_empty(node):
+            return bool(node.text) or len(node) > 0
+
+        nodes = root.xpath("//*[@idref]")
+        warnings = [BestPracticeWarning(x) for x in nodes if not _is_empty(x)]
+
         results = BestPracticeWarningCollection("IDREF with Content")
-
-        for element in elements:
-            idref = element.attrib['idref']
-
-            if element.text or len(element) > 0:
-                result = BestPracticeWarning(node=element, idref=idref)
-                results.append(result)
+        for warning in warnings:
+            results.append(warning)
 
         return results
 
@@ -274,34 +276,33 @@ class STIXBestPracticeValidator(object):
         :return:
         '''
         ns_indicator = namespaces[stix.PREFIX_STIX_INDICATOR]
-        xpath = "//%s:Indicator | //%s:Indicator" % (stix.PREFIX_STIX_CORE,
-                                                     stix.PREFIX_STIX_COMMON)
-        results = {}
-        list_indicators = []
+
+        xpath = (
+            "//%s:Indicator | //%s:Indicator" %
+            (stix.PREFIX_STIX_CORE, stix.PREFIX_STIX_COMMON)
+        )
+
+        results = BestPracticeWarningCollection("Indicator Suggestions")
         indicators = root.xpath(xpath, namespaces=namespaces)
+
         for indicator in indicators:
-
-            dict_indicator = defaultdict(list)
-            if 'idref' not in indicator.attrib:     # if this is not an idref
-                                                    # node, look at its content
+            missing = []
+            if 'idref' not in indicator.attrib:
                 if indicator.find('{%s}Description' % ns_indicator) is None:
-                    dict_indicator['missing'].append('Description')
+                    missing.append("Description")
                 if indicator.find('{%s}Type' % ns_indicator) is None:
-                    dict_indicator['missing'].append('Type')
+                    missing.append("Type")
                 if indicator.find('{%s}Valid_Time_Position' % ns_indicator) is None:
-                    dict_indicator['missing'].append('Valid_Time_Position')
+                    missing.append('Valid_Time_Position')
                 if indicator.find('{%s}Indicated_TTP' % ns_indicator) is None:
-                    dict_indicator['missing'].append('TTP')
+                    missing.append('Indicated_TTP')
                 if indicator.find('{%s}Confidence' % ns_indicator) is None:
-                    dict_indicator['missing'].append('Confidence')
+                    missing.append('Confidence')
 
-                if dict_indicator:
-                    dict_indicator['id'] = indicator.attrib.get('id')
-                    dict_indicator['line_number'] = indicator.sourceline
-                    list_indicators.append(dict_indicator)
-
-        if list_indicators:
-            results['indicator_suggestions'] = list_indicators
+                if missing:
+                    warning = BestPracticeWarning(node=indicator)
+                    warning['missing'] = missing
+                    results.append(warning)
 
         return results
 
@@ -318,13 +319,11 @@ class STIXBestPracticeValidator(object):
         :return:
         '''
         ns_stix_core = namespaces[stix.PREFIX_STIX_CORE]
-        results = {}
+        results = BestPracticeWarningCollection("Root Element")
 
         if root.tag != "{%s}STIX_Package" % (ns_stix_core):
-            result = {}
-            result['tag'] = root.tag
-            result['line_number'] = root.sourceline
-            results['root_element'] = result
+            warning = BestPracticeWarning(node=root)
+            results.append(warning)
 
         return results
 
@@ -395,25 +394,30 @@ class STIXBestPracticeValidator(object):
                       ]
         }
 
-        results = {}
-        list_vocabs = []
+        def _latest_version(name):
+            for version, vocabs in latest_map.iteritems():
+                if name in vocabs:
+                    return version
+
+
+        results = BestPracticeWarningCollection("Vocab Suggestions")
         xpath = "//*[contains(@xsi:type, 'Vocab-')]" # assumption: STIX/CybOX convention: end Vocab names with "Vocab-<version#>"
         vocabs = root.xpath(xpath, namespaces=namespaces)
-        for vocab in vocabs:
-            xsi_type = re.split(":|-", vocab.attrib["{%s}type" % namespaces[stix.PREFIX_XSI]])
-            if not xsi_type[1] in latest_map.get(xsi_type[2]):
-                dict_vocab = defaultdict(list)
-                dict_vocab['line_number'] = vocab.sourceline
-                dict_vocab['out_of_date'] = xsi_type[1]
-                dict_vocab['given_version'] = xsi_type[2]
-                for version_num in latest_map:
-                    if xsi_type[1] in latest_map[version_num]:
-                        dict_vocab['newest_version'] = version_num
-                        break
-                list_vocabs.append(dict_vocab)
 
-        if list_vocabs: # only add list to results if there are entries
-            results['vocab_suggestions'] = list_vocabs
+        for vocab in vocabs:
+            name, version = re.split(
+                ":|-", vocab.attrib[TAG_XSI_TYPE]
+            )
+
+            if name in latest_map.get(version):
+                continue
+
+            warning = BestPracticeWarning(node=vocab)
+            warning['name'] = name
+            warning['found version'] = version
+            warning['latest version'] = _latest_version(name)
+            results.append(warning)
+
         return results
 
     def check_content_versions(self, root, namespaces, *args, **kwargs):
@@ -428,66 +432,60 @@ class STIXBestPracticeValidator(object):
     def check_titles(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all major STIX constructs have a Title element
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
-        elements_to_check = (
-            '%s:STIX_Package/%s:STIX_Header' % (stix.PREFIX_STIX_CORE,
-                                                stix.PREFIX_STIX_CORE),
-            '%s:Campaign' % stix.PREFIX_STIX_CORE,
-            '%s:Campaign' % stix.PREFIX_STIX_COMMON,
-            '%s:Course_Of_Action' % stix.PREFIX_STIX_CORE,
-            '%s:Course_Of_Action' % stix.PREFIX_STIX_COMMON,
-            '%s:Exploit_Target' % stix.PREFIX_STIX_CORE,
-            '%s:Exploit_Target' % stix.PREFIX_STIX_COMMON,
-            '%s:Incident' % stix.PREFIX_STIX_CORE,
-            '%s:Incident' % stix.PREFIX_STIX_COMMON,
-            '%s:Indicator' % stix.PREFIX_STIX_CORE,
-            '%s:Indicator' % stix.PREFIX_STIX_COMMON,
-            '%s:Threat_Actor' % stix.PREFIX_STIX_COMMON,
-            '%s:TTP' % stix.PREFIX_STIX_CORE,
-            '%s:TTP' % stix.PREFIX_STIX_COMMON,
+        to_check = (
+            '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
+            '{}:Campaign'.format(stix.PREFIX_STIX_CORE),
+            '{}:Campaign'.format(stix.PREFIX_STIX_COMMON),
+            '{}:Course_Of_Action'.format(stix.PREFIX_STIX_CORE),
+            '{}:Course_Of_Action'.format(stix.PREFIX_STIX_COMMON),
+            '{}:Exploit_Target'.format(stix.PREFIX_STIX_CORE),
+            '{}:Exploit_Target'.format(stix.PREFIX_STIX_COMMON),
+            '{}:Incident'.format(stix.PREFIX_STIX_CORE),
+            '{}:Incident'.format(stix.PREFIX_STIX_COMMON),
+            '{}:Indicator'.format(stix.PREFIX_STIX_CORE),
+            '{}:Indicator'.format(stix.PREFIX_STIX_COMMON),
+            '{}:Threat_Actor'.format(stix.PREFIX_STIX_COMMON),
+            '{}:TTP'.format(stix.PREFIX_STIX_CORE),
+            '{}:TTP'.format( stix.PREFIX_STIX_COMMON)
         )
 
-        results = defaultdict(list)
-        for tag in elements_to_check:
-            xpath = "//%s" % tag
-            for element in root.xpath(xpath, namespaces=namespaces):
-                if 'idref' not in element.attrib:
-                    found_title = False
-                    for child in element:
-                        if child.tag.endswith("}Title"):
-                            found_title = True
-                            break
+        results = BestPracticeWarningCollection("Missing Titles")
+        xpath = " | ".join("//%s" % x for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
 
-                    if not found_title:
-                        result = {'tag': element.tag,
-                                  'line_number': element.sourceline,
-                                  'id': element.attrib.get('id')}
-                        results['missing_titles'].append(result)
+        for node in nodes:
+            if 'idref' in node.attrib:
+                continue
+
+            if not any(etree.QName(x).localname == 'Title' for x in node):
+                warning = BestPracticeWarning(node=node)
+                results.append(warning)
 
         return results
 
     def check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
-        results = defaultdict(list)
+        results = BestPracticeWarningCollection("Data Marking Control XPath")
         xpath = "//%s:Controlled_Structure" % stix.PREFIX_DATA_MARKING
+
         for elem in root.xpath(xpath, namespaces=namespaces):
             cs_xpath = elem.text
-            result = {'problem': None, 'line_number': elem.sourceline }
+            message = None
+
             if not cs_xpath:
-                result['problem'] = "No XPath supplied"
+                message = "No XPath supplied"
             else:
                 try:
                     res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
-                    if not res_set:
-                        result['problem'] = "XPath does not return any results"
-                except etree.XPathEvalError as e:
-                    result['problem'] = "Invalid XPath supplied"
-            if result['problem']:
-                results['marking_control_xpath_issues'].append(result)
+                    if len(res_set) == 0:
+                        message = "Controll XPath does not return any results"
+                except etree.XPathEvalError:
+                    message = "Invalid XPath supplied"
+
+            if message:
+                result = BestPracticeWarning(node=elem, message=message)
+                results.append(result)
+
         return results
 
     def _get_stix_construct_versions(self, version):
@@ -518,15 +516,15 @@ class STIXBestPracticeValidator(object):
         # allowed_vocabs = self._get_vocabs(version)
         # allowed_construct_versions = self._get_construct_versions(version)
 
-        warnings = {}
+        warnings = []
         rules = self.rules[None] + self.rules[version]
 
         for func in rules:
             results = func(root, namespaces, version=version)
-            warnings.update(results)
+            warnings.append(results)
 
-        results = BestPracticeResults()
-        results.is_valid = not(warnings)
+        results = BestPracticeValidationResult()
+        results.is_valid = not(any(warnings))
         results.warnings = warnings
 
         return results

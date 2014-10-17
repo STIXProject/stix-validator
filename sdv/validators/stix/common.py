@@ -26,6 +26,8 @@ class InvalidVersionError(ValidationError):
         self.expected = expected
         self.found = found
 
+NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
+
 PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'
 PREFIX_STIX_COMMON = 'stix-common'
@@ -88,7 +90,7 @@ def get_stix_namespaces(version):
     # between revisions of STIX. There is no need to look up specific sets
     # of namespaces for a given version of STIX.
     nsmap = {
-        PREFIX_XSI: "http://www.w3.org/2001/XMLSchema-instance",
+        PREFIX_XSI: NS_XSI,
         PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',
         PREFIX_STIX_COMMON: 'http://stix.mitre.org/common-1',
         PREFIX_STIX_CAMPAIGN: 'http://stix.mitre.org/Campaign-1',
