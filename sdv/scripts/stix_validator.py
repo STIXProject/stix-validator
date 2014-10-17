@@ -260,9 +260,8 @@ def _print_best_practice_results(fn, results):
 
         _print_level("-"*80, level)
 
-
     if results.is_valid:
-        print "[+] Best Practice validation results: %s : VALID" % fn
+        _print_level("[+] Best Practice validation results: %s : VALID", 0, fn)
     else:
         _print_level("[!] Best Practice validation results: %s : INVALID", 0, fn)
         _print_level("[!] Best Practice warnings", 0)
@@ -333,11 +332,11 @@ def _print_results(results, options):
         return
 
     for fn, result in results.iteritems():
-        if result.schema_results:
+        if result.schema_results is not None:
             _print_schema_results(fn, result.schema_results)
-        if result.best_practice_results:
+        if result.best_practice_results is not None:
             _print_best_practice_results(fn, result.best_practice_results)
-        if result.profile_results:
+        if result.profile_results is not None:
             _print_profile_results(fn, result.profile_results)
 
 
@@ -497,6 +496,7 @@ def _validate_file(fn, schema_validator, profile_validator,
             results.schema_results = _schema_validate(
                 schema_validator, fn, options
             )
+
         if best_practice_validator:
             results.best_practice_results = _best_practice_validate(
                 best_practice_validator, fn, options
