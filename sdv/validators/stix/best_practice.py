@@ -240,11 +240,9 @@ class STIXBestPracticeValidator(object):
         idrefs  = root.xpath("//*[@idref]")
         ids     = root.xpath("//@id")
 
-        warnings = [x for x in idrefs if x.attrib['idref'] not in ids]
+        warnings = [BestPracticeWarning(x) for x in idrefs if x.attrib['idref'] not in ids]
         results = BestPracticeWarningCollection("Unresolved IDREFs")
-
-        for warning in warnings:
-            results.append(BestPracticeWarning(warning))
+        results.extend(warnings)
 
         return results
 
@@ -260,8 +258,7 @@ class STIXBestPracticeValidator(object):
         warnings = [BestPracticeWarning(x) for x in nodes if not _is_empty(x)]
 
         results = BestPracticeWarningCollection("IDREF with Content")
-        for warning in warnings:
-            results.append(warning)
+        results.extend(warnings)
 
         return results
 
@@ -341,57 +338,58 @@ class STIXBestPracticeValidator(object):
         :return:
         '''
         latest_map = {
-            '1.0': [
-                    "AssetTypeVocab",
-                    "AttackerInfrastructureTypeVocab",
-                    "AttackerToolTypeVocab",
-                    "COAStageVocab",
-                    "CampaignStatusVocab",
-                    "CourseOfActionTypeVocab",
-                    "DiscoveryMethodVocab",
-                    "HighMediumLowVocab",
-                    "ImpactQualificationVocab",
-                    "ImpactRatingVocab",
-                    "IncidentCategoryVocab",
-                    "IncidentEffectVocab",
-                    "IncidentStatusVocab",
-                    "InformationSourceRoleVocab",
-                    "InformationTypeVocab",
-                    "IntendedEffectVocab",
-                    "LocationClassVocab",
-                    "LossDurationVocab",
-                    "LossPropertyVocab",
-                    "MalwareTypeVocab",
-                    "ManagementClassVocab",
-                    "OwnershipClassVocab",
-                    "PackageIntentVocab",
-                    "SecurityCompromiseVocab",
-                    "SystemTypeVocab",
-                    "ThreatActorSophisticationVocab",
-                    "ThreatActorTypeVocab",
-                    "ActionArgumentNameVocab", # cybox
-                    "ActionObjectAssociationTypeVocab", #cybox
-                    "ActionRelationshipTypeVocab", # cybox
-                    "ActionTypeVocab", # cybox
-                    "CharacterEncodingVocab", # cybox
-                    "EventTypeVocab", # cybox
-                    "HashNameVocab", # cybox
-                    "InformationSourceTypeVocab", # cybox
-                    "ObjectStateVocab" # cybox
-                    ],
-            '1.0.1': [
-                      "PlanningAndOperationalSupportVocab",
-                      "EventTypeVocab" # cybox
-                      ],
-            '1.1': ["IndicatorTypeVocab",
-                    "MotivationVocab",
-                    "ActionNameVocab", # cybox
-                    "ObjectRelationshipVocab", # cybox
-                    "ToolTypeVocab" # cybox
-                    ],
-            '1.1.1': [
-                      "AvailabilityLossTypeVocab"
-                      ]
+            '1.0': (
+                "AssetTypeVocab",
+                "AttackerInfrastructureTypeVocab",
+                "AttackerToolTypeVocab",
+                "COAStageVocab",
+                "CampaignStatusVocab",
+                "CourseOfActionTypeVocab",
+                "DiscoveryMethodVocab",
+                "HighMediumLowVocab",
+                "ImpactQualificationVocab",
+                "ImpactRatingVocab",
+                "IncidentCategoryVocab",
+                "IncidentEffectVocab",
+                "IncidentStatusVocab",
+                "InformationSourceRoleVocab",
+                "InformationTypeVocab",
+                "IntendedEffectVocab",
+                "LocationClassVocab",
+                "LossDurationVocab",
+                "LossPropertyVocab",
+                "MalwareTypeVocab",
+                "ManagementClassVocab",
+                "OwnershipClassVocab",
+                "PackageIntentVocab",
+                "SecurityCompromiseVocab",
+                "SystemTypeVocab",
+                "ThreatActorSophisticationVocab",
+                "ThreatActorTypeVocab",
+                "ActionArgumentNameVocab", # cybox
+                "ActionObjectAssociationTypeVocab", #cybox
+                "ActionRelationshipTypeVocab", # cybox
+                "ActionTypeVocab", # cybox
+                "CharacterEncodingVocab", # cybox
+                "EventTypeVocab", # cybox
+                "HashNameVocab", # cybox
+                "InformationSourceTypeVocab", # cybox
+                "ObjectStateVocab" # cybox
+            ),
+            '1.0.1': (
+                  "PlanningAndOperationalSupportVocab",
+                  "EventTypeVocab" # cybox
+            ),
+            '1.1': (
+                "IndicatorTypeVocab",
+                "MotivationVocab",
+                "ActionNameVocab", # cybox
+                "ObjectRelationshipVocab", # cybox
+                "ToolTypeVocab" # cybox
+            ),
+            '1.1.1': (
+                "AvailabilityLossTypeVocab",
+            )
         }
 
         def _latest_version(name):
@@ -478,7 +476,7 @@ class STIXBestPracticeValidator(object):
                 try:
                     res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
                     if len(res_set) == 0:
-                        message = "Controll XPath does not return any results"
+                        message = "Control XPath does not return any results"
                 except etree.XPathEvalError:
                     message = "Invalid XPath supplied"
 
