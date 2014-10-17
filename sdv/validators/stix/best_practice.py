@@ -4,11 +4,32 @@
 import re
 import collections
 import itertools
+import distutils.version
 from lxml import etree
 
 from sdv import ValidationResult
 import sdv.utils as utils
 import common as stix
+
+def rule(version=None):
+    def decorator(func):
+        func._is_rule = True
+        func._version = version
+        return func
+    return decorator
+
+
+class BestPracticeMeta(type):
+    def __new__(metacls, name, bases, dict_):
+        result = type.__new__(metacls, name, bases, dict_)
+
+        result._rules = collections.defaultdict(list)
+        rules =  (x for x in dict_.itervalues() if hasattr(x, '_is_rule'))
+
+        for rule in rules:
+            result._rules[rule._version].append(rule)
+
+        return result
 
 
 class BestPracticeWarning(collections.MutableMapping):
@@ -145,28 +166,12 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
         return d
 
 class STIXBestPracticeValidator(object):
-    def __init__(self):
-        # Best Practice rule dictionary
-        # STIX version => function list
-        # None means all versions
-        self.rules = {
-            None: (
-                self.check_id_presence, self.check_id_format,
-                self.check_duplicate_ids, self.check_idref_resolution,
-                self.check_idref_with_content, self.check_indicator_practices,
-                self.check_indicator_patterns,
-                self.check_root_element,
-                self.check_titles, self.check_marking_control_xpath,
-                self.check_latest_vocabs
-            ),
-            '1.1': (
-                self.check_timestamp_usage, self.check_timestamp_timezone
-            ),
-            '1.1.1': (
-                self.check_timestamp_usage, self.check_timestamp_timezone
-            )
-        }
+    __metaclass__ = BestPracticeMeta
 
+    def __init__(self):
+       pass
+
+    @rule()
     def check_id_presence(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all major STIX/CybOX constructs have id attributes set.
@@ -205,6 +210,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_id_format(self, root, namespaces, *args, **kwargs):
         '''
         Checks that the core STIX/CybOX constructs in the STIX instance
@@ -249,6 +255,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_duplicate_ids(self, root, namespaces, *args, **kwargs):
         '''
         Checks for duplicate ids in the document.
@@ -265,6 +272,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_idref_resolution(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all idrefs resolve to a construct in the document
@@ -280,6 +288,8 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+
+    @rule()
     def check_idref_with_content(self, root, namespaces, *args, **kwargs):
         '''
         Checks that constructs with idref set do not contain content
@@ -296,6 +306,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_indicator_practices(self, root, namespaces, *args, **kwargs):
         '''
         Looks for STIX Indicators that are missing a Description, Type,
@@ -330,9 +341,11 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_data_types(self, root, namespaces, *args, **kwargs):
         pass
 
+    @rule()
     def check_root_element(self, root, namespaces, *args, **kwargs):
         '''
         Checks that the root element is a STIX_Package
@@ -351,9 +364,11 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_indicator_patterns(self, root, namespaces, *args, **kwargs):
         pass
 
+    @rule()
     def check_latest_vocabs(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all STIX vocabs are using latest published versions.
@@ -438,15 +453,19 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_content_versions(self, root, namespaces, *args, **kwargs):
         pass
 
+    @rule(version='1.1')
     def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
         pass
 
+    @rule(version='1.1')
     def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
         pass
 
+    @rule()
     def check_titles(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all major STIX constructs have a Title element
@@ -482,6 +501,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule()
     def check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
         results = BestPracticeWarningCollection("Data Marking Control XPath")
         xpath = "//%s:Controlled_Structure" % stix.PREFIX_DATA_MARKING
@@ -510,8 +530,27 @@ class STIXBestPracticeValidator(object):
     def _get_stix_construct_versions(self, version):
         pass
 
+
     def _get_vocabs(self, version):
         pass
+
+
+    def _run_rules(self, root, version):
+        namespaces = stix.get_stix_namespaces(version)
+        checks = self._rules.iteritems()
+        sv = distutils.version.StrictVersion
+        results = BestPracticeValidationResult()
+
+        rules = itertools.chain(
+            *(funcs for (x, funcs) in checks if not x or sv(x) <= sv(version))
+        )
+
+        for func in rules:
+            result = func(self, root, namespaces, version=version)
+            results.append(result)
+
+        return results
+
 
     def validate(self, doc, version=None):
         root = utils.get_etree_root(doc)
@@ -523,20 +562,13 @@ class STIXBestPracticeValidator(object):
                 "Document did not contain a 'version' attribute"
             )
 
-        if version not in self.rules:
+        if version not in stix.STIX_VERSIONS:
             raise stix.InvalidVersionError(
-                "Unable to determine rules for STIX version %s" % version,
-                expected=[x for x in self.rules.keys() if x],
+                "Cannot run rules: '%s' is an invalid STIX version" % version,
+                expected=stix.STIX_VERSIONS,
                 found=version
             )
 
-        namespaces = stix.get_stix_namespaces(version)
-        rules = self.rules[None] + self.rules[version]
-        results = BestPracticeValidationResult()
-
-        for func in rules:
-            result = func(root, namespaces, version=version)
-            results.append(result)
-
+        results = self._run_rules(root, version)
         return results
 
