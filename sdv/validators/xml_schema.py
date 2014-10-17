@@ -57,6 +57,7 @@ class XmlValidationResult(ValidationResult):
         if self.errors:
             d['errors'] = self.errors
 
+        return d
 
 
 class XmlSchemaValidator(object):
