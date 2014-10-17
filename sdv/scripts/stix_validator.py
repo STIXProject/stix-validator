@@ -267,7 +267,7 @@ def _print_best_practice_results(fn, results):
         _print_level("[!] Best Practice warnings", 0)
 
         for collection in sorted(results, key=lambda x: x.name):
-            _print_level("[#] %s", 1, collection.name)
+            _print_level("[!] %s", 1, collection.name)
 
             for warning in collection:
                 _print_warning(warning, 2)

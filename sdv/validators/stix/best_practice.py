@@ -64,7 +64,7 @@ class BestPracticeWarning(collections.MutableMapping):
 
 
 class BestPracticeWarningCollection(collections.MutableSequence):
-    def __init__(self, name=None):
+    def __init__(self, name):
         super(BestPracticeWarningCollection, self).__init__()
         self.name = name
         self._warnings = []
@@ -108,6 +108,11 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
         super(BestPracticeValidationResult, self).__init__(is_valid)
         self._warnings = []
 
+    @ValidationResult.is_valid.getter
+    def is_valid(self):
+        return len(self) == 0
+
+
     def insert(self, idx, value):
         if not value:
             return
@@ -130,14 +135,12 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
         return bool(self._warnings)
 
     def as_dict(self):
-        d = super(BestPracticeValidationResult, self).as_dict()
+        d = ValidationResult.as_dict(self)
 
         if any(x for x in self):
-            chain = itertools.chain
-            warnings = dict(
-                chain(*(x.as_dict().items() for x in self if x))
+            d['warnings'] = dict(
+                itertools.chain(*(x.as_dict().items() for x in self if x))
             )
-            d['warnings'] = warnings
 
         return d
 
@@ -169,12 +172,6 @@ class STIXBestPracticeValidator(object):
         Checks that all major STIX/CybOX constructs have id attributes set.
         Constructs with idref attributes set should not have an id attribute
         and are thus omitted from the results.
-
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
         to_check = (
              '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
@@ -489,19 +486,20 @@ class STIXBestPracticeValidator(object):
         results = BestPracticeWarningCollection("Data Marking Control XPath")
         xpath = "//%s:Controlled_Structure" % stix.PREFIX_DATA_MARKING
 
+        def _test_xpath(node, xpath):
+            try:
+                res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
+                if len(res_set) == 0:
+                    return "Control XPath does not return any results"
+            except etree.XPathEvalError:
+                return "Invalid XPath supplied"
+
         for elem in root.xpath(xpath, namespaces=namespaces):
             cs_xpath = elem.text
-            message = None
-
             if not cs_xpath:
-                message = "No XPath supplied"
+                message = "Empty Control XPath"
             else:
-                try:
-                    res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
-                    if len(res_set) == 0:
-                        message = "Control XPath does not return any results"
-                except etree.XPathEvalError:
-                    message = "Invalid XPath supplied"
+                message = _test_xpath(elem, cs_xpath)
 
             if message:
                 result = BestPracticeWarning(node=elem, message=message)
@@ -533,19 +531,12 @@ class STIXBestPracticeValidator(object):
             )
 
         namespaces = stix.get_stix_namespaces(version)
-        # allowed_vocabs = self._get_vocabs(version)
-        # allowed_construct_versions = self._get_construct_versions(version)
-
-        results = BestPracticeValidationResult()
         rules = self.rules[None] + self.rules[version]
+        results = BestPracticeValidationResult()
 
         for func in rules:
             result = func(root, namespaces, version=version)
             results.append(result)
 
-        results.is_valid = (len(results) == 0)  # no warnings
-
         return results
-
-
 
