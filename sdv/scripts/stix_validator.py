@@ -304,11 +304,11 @@ def _print_json_results(results):
     json_results = {}
     for fn, result in results.iteritems():
         d = {}
-        if result.schema_results:
+        if result.schema_results is not None:
             d['schema_validation'] = result.schema_results.as_dict()
-        if result.profile_results:
+        if result.profile_results is not None:
             d['profile_results'] = result.profile_results.as_dict()
-        if result.best_practice_results:
+        if result.best_practice_results is not None:
             d['best_practice_results'] = result.best_practice_results.as_dict()
 
         json_results[fn] = d

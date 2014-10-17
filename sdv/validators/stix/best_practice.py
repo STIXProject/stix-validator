@@ -27,13 +27,13 @@ class BestPracticeWarning(collections.MutableMapping):
             self['tag'] = node.tag if node is not None else None
 
     def __unicode__(self):
-        return unicode(self.message)
+        return unicode(self._inner)
 
     def __str__(self):
         return unicode(self).encode('utf-8')
 
     def __getitem__(self, key):
-        return self.as_dict().__getitem__(key)
+        return self._inner.__getitem__(key)
 
     def __delitem__(self, key):
         self._inner.__delitem__(key)
@@ -44,10 +44,10 @@ class BestPracticeWarning(collections.MutableMapping):
         self._inner.__setitem__(key, value)
 
     def __len__(self):
-        return self.as_dict().__len__()
+        return self._inner.__len__()
 
     def __iter__(self):
-        return self.as_dict().__iter__()
+        return self._inner.__iter__()
 
     @property
     def core_keys(self):
@@ -59,21 +59,19 @@ class BestPracticeWarning(collections.MutableMapping):
         return [x for x in self.iterkeys() if x not in self.core_keys]
 
     def as_dict(self):
-        return dict(self._inner.items())
+        return dict(self.items())
 
 
 
 class BestPracticeWarningCollection(collections.MutableSequence):
     def __init__(self, name=None):
         super(BestPracticeWarningCollection, self).__init__()
-
         self.name = name
         self._warnings = []
 
     def insert(self, idx, value):
         if not value:
             return
-
         self._warnings.insert(idx, value)
 
     def __getitem__(self, key):
@@ -427,9 +425,8 @@ class STIXBestPracticeValidator(object):
 
         results = BestPracticeWarningCollection("Vocab Suggestions")
         xpath = "//*[contains(@xsi:type, 'Vocab-')]" # assumption: STIX/CybOX convention: end Vocab names with "Vocab-<version#>"
-        vocabs = root.xpath(xpath, namespaces=namespaces)
 
-        for vocab in vocabs:
+        for vocab in root.xpath(xpath, namespaces=namespaces):
             type_ = re.split(":|-", vocab.attrib[stix.TAG_XSI_TYPE])
             name, version = type_[1], type_[2]
 
@@ -546,7 +543,7 @@ class STIXBestPracticeValidator(object):
             result = func(root, namespaces, version=version)
             results.append(result)
 
-        results.is_valid = not(bool(results))
+        results.is_valid = (len(results) == 0)  # no warnings
 
         return results
 
