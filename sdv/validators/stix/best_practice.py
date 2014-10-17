@@ -3,18 +3,78 @@
 
 import re
 import collections
+import itertools
 from lxml import etree
 
 from sdv import ValidationResult
 import sdv.utils as utils
 import common as stix
 
-TAG_XSI_TYPE = "{%s}type" % stix.NS_XSI
+
+class BestPracticeWarning(collections.MutableMapping):
+    def __init__(self, node=None, message=None):
+        super(BestPracticeWarning, self).__init__()
+        self._inner = {}
+        self._node = node
+
+        if message:
+            self['message'] = message
+
+        if node is not None:
+            self['id'] = node.attrib.get('id')
+            self['idref'] = node.attrib.get('idref')
+            self['line'] = node.sourceline if node is not None else None
+            self['tag'] = node.tag if node is not None else None
+
+    def __unicode__(self):
+        return unicode(self.message)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def __getitem__(self, key):
+        return self.as_dict().__getitem__(key)
+
+    def __delitem__(self, key):
+        self._inner.__delitem__(key)
+
+    def __setitem__(self, key, value):
+        if value is None:
+            return
+        self._inner.__setitem__(key, value)
+
+    def __len__(self):
+        return self.as_dict().__len__()
+
+    def __iter__(self):
+        return self.as_dict().__iter__()
+
+    @property
+    def core_keys(self):
+        core =  ('id', 'idref', 'line', 'tag')
+        return [x for x in self.iterkeys() if x in core]
+
+    @property
+    def other_keys(self):
+        return [x for x in self.iterkeys() if x not in self.core_keys]
+
+    def as_dict(self):
+        return dict(self._inner.items())
+
+
 
 class BestPracticeWarningCollection(collections.MutableSequence):
     def __init__(self, name=None):
+        super(BestPracticeWarningCollection, self).__init__()
+
         self.name = name
         self._warnings = []
+
+    def insert(self, idx, value):
+        if not value:
+            return
+
+        self._warnings.insert(idx, value)
 
     def __getitem__(self, key):
         return self._warnings.__getitem__(key)
@@ -32,60 +92,14 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         return bool(self._warnings)
 
     def as_dict(self):
-        d = {}
+        if not self:
+            return {}
 
-        if self._warnings:
-            warnings = [x.as_dict() for x in self._warnings]
-        else:
-            warnings = None
-
-        d[self.name] = warnings
-
-
-class BestPracticeWarning(object):
-    def __init__(self, node=None, message=None):
-        self.message = message
-        self.node = node
-        self.id_ = node.attrib.get('id') if node else None
-        self.idref = node.attrib.get('idref') if node else None
-        self.line = node.sourceline if node else None
-        self.tag = node.tag if node else None
-        self._inner = {}
-
-    def __unicode__(self):
-        return unicode(self.message)
-
-    def __str__(self):
-        return unicode(self).encode('utf-8')
-
-    def __getitem__(self, key):
-        return self._inner.__getitem__(key)
-
-    def __setitem__(self, key, value):
-        self._inner.__setitem__(key, value)
-
-    def as_dict(self):
-        d = dict(self._inner.items())
-
-        if self.id_:
-            d['id_'] = self.id_
-
-        if self.idref:
-            d['idref'] = self.idref
-
-        if self.tag:
-            d['tag'] = self.tag
-
-        if self.line:
-            d['line'] = self.line
-
-        if self.message:
-            d['message'] = self.message
+        d = {self.name: [x.as_dict() for x in self]}
 
         return d
 
-
-class BestPracticeValidationResult(ValidationResult):
+class BestPracticeValidationResult(ValidationResult, collections.MutableSequence):
     """Used for recording STIX best practice results.
 
     Attributes:
@@ -94,13 +108,38 @@ class BestPracticeValidationResult(ValidationResult):
     """
     def __init__(self, is_valid=False):
         super(BestPracticeValidationResult, self).__init__(is_valid)
-        self.warnings = None
+        self._warnings = []
+
+    def insert(self, idx, value):
+        if not value:
+            return
+
+        self._warnings.insert(idx, value)
+
+    def __getitem__(self, key):
+        return self._warnings.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self._warnings.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self._warnings.__delitem__(key)
+
+    def __len__(self):
+        return len(self._warnings)
+
+    def __nonzero__(self):
+        return bool(self._warnings)
 
     def as_dict(self):
         d = super(BestPracticeValidationResult, self).as_dict()
 
-        if self.warnings:
-            d['warnings'] = self.warnings
+        if any(x for x in self):
+            chain = itertools.chain
+            warnings = dict(
+                chain(*(x.as_dict().items() for x in self if x))
+            )
+            d['warnings'] = warnings
 
         return d
 
@@ -251,11 +290,11 @@ class STIXBestPracticeValidator(object):
         Checks that constructs with idref set do not contain content
         '''
 
-        def _is_empty(node):
+        def _has_content(node):
             return bool(node.text) or len(node) > 0
 
         nodes = root.xpath("//*[@idref]")
-        warnings = [BestPracticeWarning(x) for x in nodes if not _is_empty(x)]
+        warnings = [BestPracticeWarning(x) for x in nodes if _has_content(x)]
 
         results = BestPracticeWarningCollection("IDREF with Content")
         results.extend(warnings)
@@ -266,34 +305,27 @@ class STIXBestPracticeValidator(object):
         '''
         Looks for STIX Indicators that are missing a Description, Type,
         Valid_Time_Position, Indicated_TTP, and/or Confidence
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
-        ns_indicator = namespaces[stix.PREFIX_STIX_INDICATOR]
-
         xpath = (
             "//%s:Indicator | //%s:Indicator" %
             (stix.PREFIX_STIX_CORE, stix.PREFIX_STIX_COMMON)
         )
-
+        ns = namespaces[stix.PREFIX_STIX_INDICATOR]
         results = BestPracticeWarningCollection("Indicator Suggestions")
         indicators = root.xpath(xpath, namespaces=namespaces)
 
         for indicator in indicators:
             missing = []
             if 'idref' not in indicator.attrib:
-                if indicator.find('{%s}Description' % ns_indicator) is None:
+                if indicator.find('{%s}Description' % ns) is None:
                     missing.append("Description")
-                if indicator.find('{%s}Type' % ns_indicator) is None:
+                if indicator.find('{%s}Type' % ns) is None:
                     missing.append("Type")
-                if indicator.find('{%s}Valid_Time_Position' % ns_indicator) is None:
+                if indicator.find('{%s}Valid_Time_Position' % ns) is None:
                     missing.append('Valid_Time_Position')
-                if indicator.find('{%s}Indicated_TTP' % ns_indicator) is None:
+                if indicator.find('{%s}Indicated_TTP' % ns) is None:
                     missing.append('Indicated_TTP')
-                if indicator.find('{%s}Confidence' % ns_indicator) is None:
+                if indicator.find('{%s}Confidence' % ns) is None:
                     missing.append('Confidence')
 
                 if missing:
@@ -304,7 +336,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     def check_data_types(self, root, namespaces, *args, **kwargs):
-        return {}
+        pass
 
     def check_root_element(self, root, namespaces, *args, **kwargs):
         '''
@@ -325,17 +357,12 @@ class STIXBestPracticeValidator(object):
         return results
 
     def check_indicator_patterns(self, root, namespaces, *args, **kwargs):
-        return {}
+        pass
 
     def check_latest_vocabs(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all STIX vocabs are using latest published versions.
         Triggers a warning if an out of date vocabulary is used.
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
         latest_map = {
             '1.0': (
@@ -403,15 +430,14 @@ class STIXBestPracticeValidator(object):
         vocabs = root.xpath(xpath, namespaces=namespaces)
 
         for vocab in vocabs:
-            name, version = re.split(
-                ":|-", vocab.attrib[TAG_XSI_TYPE]
-            )
+            type_ = re.split(":|-", vocab.attrib[stix.TAG_XSI_TYPE])
+            name, version = type_[1], type_[2]
 
             if name in latest_map.get(version):
                 continue
 
             warning = BestPracticeWarning(node=vocab)
-            warning['name'] = name
+            warning['vocab name'] = name
             warning['found version'] = version
             warning['latest version'] = _latest_version(name)
             results.append(warning)
@@ -419,13 +445,13 @@ class STIXBestPracticeValidator(object):
         return results
 
     def check_content_versions(self, root, namespaces, *args, **kwargs):
-        return {}
+        pass
 
     def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
-        return {}
+        pass
 
     def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
-        return {}
+        pass
 
     def check_titles(self, root, namespaces, *args, **kwargs):
         '''
@@ -433,19 +459,19 @@ class STIXBestPracticeValidator(object):
         '''
         to_check = (
             '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
-            '{}:Campaign'.format(stix.PREFIX_STIX_CORE),
-            '{}:Campaign'.format(stix.PREFIX_STIX_COMMON),
-            '{}:Course_Of_Action'.format(stix.PREFIX_STIX_CORE),
-            '{}:Course_Of_Action'.format(stix.PREFIX_STIX_COMMON),
-            '{}:Exploit_Target'.format(stix.PREFIX_STIX_CORE),
-            '{}:Exploit_Target'.format(stix.PREFIX_STIX_COMMON),
-            '{}:Incident'.format(stix.PREFIX_STIX_CORE),
-            '{}:Incident'.format(stix.PREFIX_STIX_COMMON),
-            '{}:Indicator'.format(stix.PREFIX_STIX_CORE),
-            '{}:Indicator'.format(stix.PREFIX_STIX_COMMON),
-            '{}:Threat_Actor'.format(stix.PREFIX_STIX_COMMON),
-            '{}:TTP'.format(stix.PREFIX_STIX_CORE),
-            '{}:TTP'.format( stix.PREFIX_STIX_COMMON)
+            '{0}:Campaign'.format(stix.PREFIX_STIX_CORE),
+            '{0}:Campaign'.format(stix.PREFIX_STIX_COMMON),
+            '{0}:Course_Of_Action'.format(stix.PREFIX_STIX_CORE),
+            '{0}:Course_Of_Action'.format(stix.PREFIX_STIX_COMMON),
+            '{0}:Exploit_Target'.format(stix.PREFIX_STIX_CORE),
+            '{0}:Exploit_Target'.format(stix.PREFIX_STIX_COMMON),
+            '{0}:Incident'.format(stix.PREFIX_STIX_CORE),
+            '{0}:Incident'.format(stix.PREFIX_STIX_COMMON),
+            '{0}:Indicator'.format(stix.PREFIX_STIX_CORE),
+            '{0}:Indicator'.format(stix.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(stix.PREFIX_STIX_COMMON),
+            '{0}:TTP'.format(stix.PREFIX_STIX_CORE),
+            '{0}:TTP'.format( stix.PREFIX_STIX_COMMON)
         )
 
         results = BestPracticeWarningCollection("Missing Titles")
@@ -492,7 +518,6 @@ class STIXBestPracticeValidator(object):
     def _get_vocabs(self, version):
         pass
 
-
     def validate(self, doc, version=None):
         root = utils.get_etree_root(doc)
 
@@ -514,16 +539,14 @@ class STIXBestPracticeValidator(object):
         # allowed_vocabs = self._get_vocabs(version)
         # allowed_construct_versions = self._get_construct_versions(version)
 
-        warnings = []
+        results = BestPracticeValidationResult()
         rules = self.rules[None] + self.rules[version]
 
         for func in rules:
-            results = func(root, namespaces, version=version)
-            warnings.append(results)
+            result = func(root, namespaces, version=version)
+            results.append(result)
 
-        results = BestPracticeValidationResult()
-        results.is_valid = not(any(warnings))
-        results.warnings = warnings
+        results.is_valid = not(bool(results))
 
         return results
 

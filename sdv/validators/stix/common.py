@@ -27,6 +27,7 @@ class InvalidVersionError(ValidationError):
         self.found = found
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
+TAG_XSI_TYPE = "{%s}type" % NS_XSI
 
 PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'

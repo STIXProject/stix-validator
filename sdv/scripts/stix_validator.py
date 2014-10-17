@@ -251,88 +251,29 @@ def _print_best_practice_results(fn, results):
         results (dict): The validation results.
 
     """
+    def _print_warning(warning, level):
+        for key in sorted(warning.core_keys):
+            _print_level("[-] %s : %s", level, key, warning[key])
+
+        for key in sorted(warning.other_keys):
+            _print_level("[-] %s : %s", level, key, warning[key])
+
+        _print_level("-"*80, level)
+
+
     if results.is_valid:
         print "[+] Best Practice validation results: %s : VALID" % fn
     else:
-        _print_level("[!] Best Practice validation results: %s : INVALID",
-                    0, fn)
+        _print_level("[!] Best Practice validation results: %s : INVALID", 0, fn)
         _print_level("[!] Best Practice warnings", 0)
 
-        warnings = results.warnings
-        root_element = warnings.get('root_element')
-        if root_element:
-            _print_level("[#] Root element not STIX_Package: [%s]", 1,
-                        root_element['tag'])
+        for collection in sorted(results, key=lambda x: x.name):
+            _print_level("[#] %s", 1, collection.name)
 
-        duplicate_ids = warnings.get('duplicate_ids')
-        if duplicate_ids:
-            _print_level("[#] Nodes with duplicate ids", 1)
-            for id_, list_nodes in duplicate_ids.iteritems():
-                _print_level("[~] id: [%s]", 2, id_)
-                for node in list_nodes:
-                    _print_level("[%s] line: [%s]", 3, node['tag'],
-                                node['line_number'])
+            for warning in collection:
+                _print_warning(warning, 2)
 
-        missing_ids = warnings.get('missing_ids')
-        if missing_ids:
-            _print_level("[#] Nodes with missing ids", 1)
-            for node in missing_ids:
-                _print_level("[~] [%s] line: [%s]", 2, node['tag'],
-                            node['line_number'])
 
-        unresolved_idrefs = warnings.get('unresolved_idrefs')
-        if unresolved_idrefs:
-            _print_level("[#] Nodes with idrefs that do not resolve", 1)
-            for node in unresolved_idrefs:
-                _print_level("[~] [%s] idref: [%s] line: [%s]", 2, node['tag'],
-                            node['idref'], node['line_number'])
-
-        formatted_ids = warnings.get('id_format')
-        if formatted_ids:
-            _print_level("[#] Nodes with ids not formatted as [ns_prefix]:"
-                        "[object-type]-[GUID]", 1)
-            for node in formatted_ids:
-                _print_level("[~] [%s] id: [%s] line: [%s]", 2, node['tag'],
-                            node['id'], node['line_number'])
-
-        idrefs_with_content = warnings.get('idref_with_content')
-        if idrefs_with_content:
-            _print_level("[#] Nodes that declare idrefs but also contain "
-                        "content", 1)
-            for node in idrefs_with_content:
-                _print_level("[~] [%s] idref: [%s] line: [%s]", 2, node['tag'],
-                            node['idref'], node['line_number'])
-
-        indicator_suggestions = warnings.get('indicator_suggestions')
-        if indicator_suggestions:
-            _print_level("[#] Indicator suggestions", 1)
-            for node in indicator_suggestions:
-                _print_level("[~] id: [%s] line: [%s] missing: %s", 2,
-                            node['id'], node['line_number'],
-                            node.get('missing'))
-
-        missing_titles = warnings.get('missing_titles')
-        if missing_titles:
-            _print_level("[#] Missing Titles", 1)
-            for node in missing_titles:
-                _print_level("[~] [%s] id: [%s] line: [%s]", 2,
-                            node['tag'], node['id'], node['line_number'])
-
-        marking_control_xpath_issues = warnings.get('marking_control_xpath_issues')
-        if marking_control_xpath_issues:
-            _print_level("[#] Controlled Structure XPath Issues", 1)
-            for node in marking_control_xpath_issues:
-                _print_level("[~] line: [%s]\tissue: %s", 2,
-                            node['line_number'], node['problem'])
-        
-        vocab_suggestions = warnings.get('vocab_suggestions')
-        if vocab_suggestions:
-            _print_level("[#] Vocab suggestions", 1)
-            for node in vocab_suggestions:
-                _print_level("[~] vocab: [%s] line: [%s] version used: [%s] version suggested: [%s]", 2,
-                            node['out_of_date'], node['line_number'],
-                            node['given_version'],
-                            node.get('newest_version', "???"))
 
 def _print_profile_results(fn, results):
     """Prints STIX Profile validation results to stdout.
