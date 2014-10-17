@@ -11,6 +11,7 @@ from sdv import ValidationResult
 import sdv.utils as utils
 import common as stix
 
+
 def rule(version=None):
     def decorator(func):
         func._is_rule = True
@@ -535,15 +536,19 @@ class STIXBestPracticeValidator(object):
         pass
 
 
-    def _run_rules(self, root, version):
-        namespaces = stix.get_stix_namespaces(version)
-        checks = self._rules.iteritems()
+    def _get_rules(self, version):
         sv = distutils.version.StrictVersion
-        results = BestPracticeValidationResult()
-
+        checks = self._rules.iteritems()
         rules = itertools.chain(
             *(funcs for (x, funcs) in checks if not x or sv(x) <= sv(version))
         )
+
+        return rules
+
+    def _run_rules(self, root, version):
+        namespaces = stix.get_stix_namespaces(version)
+        results = BestPracticeValidationResult()
+        rules = self._get_rules(version)
 
         for func in rules:
             result = func(self, root, namespaces, version=version)
