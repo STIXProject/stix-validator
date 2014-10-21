@@ -15,11 +15,9 @@ import sdv.utils as utils
 from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
     STIXBestPracticeValidator)
 
-QUIET_OUTPUT = False
-
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
-
+QUIET_OUTPUT = False
 
 class ValidationOptions(object):
     """Collection of validation options which can be set via command line.

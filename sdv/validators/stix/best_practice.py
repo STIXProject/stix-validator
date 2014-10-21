@@ -13,6 +13,14 @@ import common as stix
 
 
 def rule(version=None):
+    """Decorator that identifies methods as being a STIX best practice checking
+    rule.
+
+    Args:
+        version: Identifies the minmum version of STIX for which the decorated
+            method applies. ``None`` means that it is applicable to all
+            versions.
+    """
     def decorator(func):
         func._is_rule = True
         func._version = version
@@ -21,6 +29,10 @@ def rule(version=None):
 
 
 class BestPracticeMeta(type):
+    """Metaclass that collects all :meth:`rule` decorated methods and builds
+    an internal mapping of STIX version numbers to rules.
+
+    """
     def __new__(metacls, name, bases, dict_):
         result = type.__new__(metacls, name, bases, dict_)
 
@@ -34,6 +46,25 @@ class BestPracticeMeta(type):
 
 
 class BestPracticeWarning(collections.MutableMapping):
+    """Represents a best practice warning. These are built within best
+    practice rule checking methods and attached to
+    :class:`BestPracticeWarningCollection` instances.
+
+    Note:
+        This class acts like a dictionary and contains the following keys
+        at a minimum:
+
+        * 'message': A warning message.
+        * 'id': The id of a node associated with the warning.
+        * 'idref': The idref of a node associated with the warning.
+        * 'line': The line number of the offending node.
+        * 'tag' The lxml tag for the offending node.
+
+    Args:
+        node: The ``lxml._Element`` node associated with this warning.
+        message: A message for this warning.
+
+    """
     def __init__(self, node, message=None):
         super(BestPracticeWarning, self).__init__()
         self._inner = {}
@@ -42,12 +73,8 @@ class BestPracticeWarning(collections.MutableMapping):
         if message:
             self['message'] = message
 
-        if 'id' in node.attrib:
-            self['id'] = node.attrib.get('id')
-
-        if 'idref' in node.attrib:
-            self['idref'] = node.attrib.get('idref')
-
+        self['id'] = node.attrib.get('id')
+        self['idref'] = node.attrib.get('idref')
         self['line'] = node.sourceline
         self['tag'] = node.tag
 
@@ -87,8 +114,21 @@ class BestPracticeWarning(collections.MutableMapping):
         return dict(self.items())
 
 
-
 class BestPracticeWarningCollection(collections.MutableSequence):
+    """A collection of :class:`BestPracticeWarning` instances for a given
+    type of STIX Best Practice.
+
+    For example, all warnings about STIX constructs missing titles would
+    go within an instance of this class.
+
+    Note:
+        This class behaves like a mutable sequence (e.g., a ``list``).
+
+    Args:
+        name: The name of the STIX best practice for this collection (e.g.,
+            'Missing Titles').
+
+    """
     def __init__(self, name):
         super(BestPracticeWarningCollection, self).__init__()
         self.name = name
@@ -123,14 +163,13 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         return d
 
 class BestPracticeValidationResult(ValidationResult, collections.MutableSequence):
-    """Used for recording STIX best practice results.
-
-    Attributes:
-        warnings: TODO: write this
+    """Represents STIX best practice validation results. This class behaves
+    like a ``list`` and accepts instances of
+    :`class:BestPracticeWarningCollection`.
 
     """
-    def __init__(self, is_valid=False):
-        super(BestPracticeValidationResult, self).__init__(is_valid)
+    def __init__(self):
+        super(BestPracticeValidationResult, self).__init__(False)
         self._warnings = []
 
     @ValidationResult.is_valid.getter
@@ -141,6 +180,11 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
     def insert(self, idx, value):
         if not value:
             return
+
+        if not isinstance(value, BestPracticeWarningCollection):
+            raise ValueError(
+                "Value must be instance of BestPracticeWarningCollection"
+            )
 
         self._warnings.insert(idx, value)
 
