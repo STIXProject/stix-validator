@@ -34,7 +34,7 @@ class BestPracticeMeta(type):
 
 
 class BestPracticeWarning(collections.MutableMapping):
-    def __init__(self, node=None, message=None):
+    def __init__(self, node, message=None):
         super(BestPracticeWarning, self).__init__()
         self._inner = {}
         self._node = node
@@ -42,11 +42,14 @@ class BestPracticeWarning(collections.MutableMapping):
         if message:
             self['message'] = message
 
-        if node is not None:
+        if 'id' in node.attrib:
             self['id'] = node.attrib.get('id')
+
+        if 'idref' in node.attrib:
             self['idref'] = node.attrib.get('idref')
-            self['line'] = node.sourceline if node is not None else None
-            self['tag'] = node.tag if node is not None else None
+
+        self['line'] = node.sourceline
+        self['tag'] = node.tag
 
     def __unicode__(self):
         return unicode(self._inner)
@@ -132,7 +135,7 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
 
     @ValidationResult.is_valid.getter
     def is_valid(self):
-        return len(self) == 0
+        return (len(self) == 0)
 
 
     def insert(self, idx, value):

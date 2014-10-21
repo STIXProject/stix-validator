@@ -373,6 +373,7 @@ def _convert_profile(validator, options):
             xml_declaration=True,
             encoding="UTF-8"
         )
+
     if xslt_out_fn:
         _info("Writing xslt conversion of profile to %s" % xslt_out_fn)
         xslt.write(
@@ -632,40 +633,85 @@ def _get_arg_parser():
         Instance of ``argparse.ArgumentParser``
 
     """
-    parser = argparse.ArgumentParser(description="STIX Document Validator v%s"
-                                    % sdv.__version__)
-    parser.add_argument("--stix-version", dest="stix_version", default=None,
-                        help="The version of STIX to validate against")
-    parser.add_argument("--schema-dir", dest="schema_dir", default=None,
-                        help="Schema directory. If not provided, the STIX "
-                             "schemas bundled with the stix-validator library "
-                             "will be used.")
-    parser.add_argument("--use-schemaloc", dest="use_schemaloc",
-                        action='store_true', default=False,
-                        help="Use schemaLocation attribute to determine schema "
-                             "locations.")
-    parser.add_argument("--best-practices", dest="best_practices",
-                        action='store_true', default=False,
-                        help="Check that the document follows authoring "
-                             "best practices")
-    parser.add_argument("--profile", dest="profile", default=None,
-                        help="Path to STIX profile in excel")
-    parser.add_argument("--schematron-out", dest="schematron", default=None,
-                        help="Path to converted STIX profile schematron file "
-                        "output.")
-    parser.add_argument("--xslt-out", dest="xslt", default=None,
-                        help="Path to converted STIX profile schematron xslt "
-                        "output.")
-    parser.add_argument("--quiet", dest="quiet", action="store_true",
-                        default=False,
-                        help="Only print results and errors if they occur.")
-    parser.add_argument("--json-results", dest="json", action="store_true",
-                        default=False,
-                        help="Print results as raw JSON. This also sets "
-                             "--quiet.")
-    parser.add_argument("files", metavar="FILES", nargs="*",
-                        help="A whitespace separated list of STIX files or "
-                             "directories of STIX files to validate.")
+    parser = argparse.ArgumentParser(
+        description="STIX Document Validator v%s" % sdv.__version__
+    )
+
+    parser.add_argument(
+        "--stix-version",
+        dest="stix_version",
+        default=None,
+        help="The version of STIX to validate against"
+    )
+
+    parser.add_argument(
+        "--schema-dir",
+        dest="schema_dir",
+        default=None,
+        help="Schema directory. If not provided, the STIX schemas bundled with "
+             "the stix-validator library will be used."
+    )
+
+    parser.add_argument(
+        "--use-schemaloc",
+        dest="use_schemaloc",
+        action='store_true',
+        default=False,
+        help="Use schemaLocation attribute to determine schema locations."
+    )
+
+    parser.add_argument(
+        "--best-practices",
+        dest="best_practices",
+        action='store_true',
+        default=False,
+        help="Check that the document follows authoring best practices"
+    )
+
+    parser.add_argument(
+        "--profile",
+        dest="profile",
+        default=None,
+        help="Path to STIX profile in excel"
+    )
+
+    parser.add_argument(
+        "--schematron-out",
+        dest="schematron",
+        default=None,
+        help="Path to converted STIX profile schematron file output."
+    )
+
+    parser.add_argument(
+        "--xslt-out",
+        dest="xslt",
+        default=None,
+        help="Path to converted STIX profile schematron xslt output."
+    )
+
+    parser.add_argument(
+        "--quiet",
+        dest="quiet",
+        action="store_true",
+        default=False,
+        help="Only print results and errors if they occur."
+    )
+
+    parser.add_argument(
+        "--json-results",
+        dest="json",
+        action="store_true",
+        default=False,
+        help="Print results as raw JSON. This also sets --quiet."
+    )
+
+    parser.add_argument(
+        "files",
+        metavar="FILES",
+        nargs="*",
+        help="A whitespace separated list of STIX files or directories of STIX "
+             "files to validate."
+    )
 
     return parser
 
