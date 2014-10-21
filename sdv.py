@@ -328,7 +328,16 @@ def _print_best_practice_results(fn, results):
             for node in marking_control_xpath_issues:
                 _print_level("[~] line: [%s]\tissue: %s", 2,
                             node['line_number'], node['problem'])
-        
+
+        not_latest_version = warnings.get('not_latest_version')
+        if not_latest_version:
+            _print_level("[#] Latest Version Issues", 1)
+            for node in not_latest_version:
+                _print_level("[~] line: [%s]\tissue: Version should be '%s', but is '%s'", 2,
+                            node['line_number'],
+                            node['should_be'],
+                            node['is_instead'])
+
         vocab_suggestions = warnings.get('vocab_suggestions')
         if vocab_suggestions:
             _print_level("[#] Vocab suggestions", 1)

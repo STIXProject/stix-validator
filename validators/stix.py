@@ -86,7 +86,7 @@ class STIXBestPracticeValidator(object):
                    self.check_duplicate_ids, self.check_idref_resolution,
                    self.check_idref_with_content, self.check_indicator_practices,
                    self.check_indicator_patterns,
-                   self.check_root_element,
+                   self.check_root_element, self.check_latest_versions,
                    self.check_titles, self.check_marking_control_xpath,
                    self.check_latest_vocabs),
             '1.1': (self.check_timestamp_usage, self.check_timestamp_timezone),
@@ -305,9 +305,6 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    def check_data_types(self, root, namespaces, *args, **kwargs):
-        return {}
-
     def check_root_element(self, root, namespaces, *args, **kwargs):
         '''
         Checks that the root element is a STIX_Package
@@ -327,9 +324,6 @@ class STIXBestPracticeValidator(object):
             results['root_element'] = result
 
         return results
-
-    def check_indicator_patterns(self, root, namespaces, *args, **kwargs):
-        return {}
 
     def check_latest_vocabs(self, root, namespaces, *args, **kwargs):
         '''
@@ -416,15 +410,6 @@ class STIXBestPracticeValidator(object):
             results['vocab_suggestions'] = list_vocabs
         return results
 
-    def check_content_versions(self, root, namespaces, *args, **kwargs):
-        return {}
-
-    def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
-        return {}
-
-    def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
-        return {}
-
     def check_titles(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all major STIX constructs have a Title element
@@ -489,6 +474,61 @@ class STIXBestPracticeValidator(object):
             if result['problem']:
                 results['marking_control_xpath_issues'].append(result)
         return results
+
+    def check_content_versions(self, root, namespaces, *args, **kwargs):
+        return {}
+
+    def check_latest_versions(self, root, namespaces, *args, **kwargs):
+        '''
+        Checks that all major STIX constructs have match package version
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
+        elements_to_check = (
+            '%s:Campaign' % PREFIX_STIX_CORE,
+            '%s:Campaign' % PREFIX_STIX_COMMON,
+            '%s:Course_Of_Action' % PREFIX_STIX_CORE,
+            '%s:Course_Of_Action' % PREFIX_STIX_COMMON,
+            '%s:Exploit_Target' % PREFIX_STIX_CORE,
+            '%s:Exploit_Target' % PREFIX_STIX_COMMON,
+            '%s:Incident' % PREFIX_STIX_CORE,
+            '%s:Incident' % PREFIX_STIX_COMMON,
+            '%s:Indicator' % PREFIX_STIX_CORE,
+            '%s:Indicator' % PREFIX_STIX_COMMON,
+            '%s:Threat_Actor' % PREFIX_STIX_COMMON,
+            '%s:TTP' % PREFIX_STIX_CORE,
+            '%s:TTP' % PREFIX_STIX_COMMON,
+        )
+
+        results = defaultdict(list)
+        p_version = root.xpath("@version", namespaces=namespaces)[0]
+        for tag in elements_to_check:
+            if tag.endswith("Indicator"): # indicator versions start with '2'
+                p_version = "2%s" % p_version[1:]
+            xpath = "//%s[not(@version) or @version != '%s']" % (tag, p_version)
+            for element in root.xpath(xpath, namespaces=namespaces):
+                result = {'line_number': element.sourceline,
+                          'should_be': p_version,
+                          'is_instead': element.attrib.get('version', "MISSING")
+                          }
+                results['not_latest_version'].append(result)
+
+        return results
+
+    def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
+        return {}
+
+    def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
+        return {}
+
+    def check_indicator_patterns(self, root, namespaces, *args, **kwargs):
+        return {}
+
+    def check_data_types(self, root, namespaces, *args, **kwargs):
+        return {}
 
     def _get_stix_construct_versions(self, version):
         pass
