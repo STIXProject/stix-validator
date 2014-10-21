@@ -214,6 +214,8 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
         return d
 
 class STIXBestPracticeValidator(object):
+    """Performs STIX Best Practice validation."""
+
     __metaclass__ = BestPracticeMeta
 
     def __init__(self):
@@ -324,7 +326,6 @@ class STIXBestPracticeValidator(object):
     def check_idref_resolution(self, root, namespaces, *args, **kwargs):
         '''
         Checks that all idrefs resolve to a construct in the document
-
         '''
 
         idrefs  = root.xpath("//*[@idref]")
@@ -397,11 +398,6 @@ class STIXBestPracticeValidator(object):
     def check_root_element(self, root, namespaces, *args, **kwargs):
         '''
         Checks that the root element is a STIX_Package
-        :param root:
-        :param namespaces:
-        :param args:
-        :param kwargs:
-        :return:
         '''
         ns_stix_core = namespaces[stix.PREFIX_STIX_CORE]
         results = BestPracticeWarningCollection("Root Element")
