@@ -7,11 +7,11 @@ STIX Document Validator (sdv) - validates STIX v1.1.1 instance documents.
 '''
 
 import sys
-import os
 import logging
 import argparse
 import json
 import sdv
+import sdv.utils as utils
 from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
     STIXBestPracticeValidator)
 
@@ -176,44 +176,6 @@ def _print_level(fmt, level, *args):
     print "%s%s" % (spaces, msg)
 
 
-def _get_dir_files(dir_):
-    """Finds all the XML files under a directory.
-
-    Returns:
-        A list of file paths
-    """
-    files = []
-    for fn in os.listdir(dir_):
-        if fn.endswith('.xml'):
-            fp = os.path.join(dir_, fn)
-            files.append(fp)
-
-    return files
-
-def _get_files_to_validate(options):
-    """Returns a list of files to validate.
-
-    Returns:
-        A list of filenames. An empty list if `options` does not have
-        ``in_filea`` set.
-
-    """
-    files = options.in_files
-
-    if not files:
-        return []
-
-    to_validate = []
-    for fn in files:
-        if os.path.isdir(fn):
-            children = _get_dir_files(fn)
-            to_validate.extend(children)
-        else:
-            to_validate.append(fn)
-
-    return to_validate
-
-
 def _set_output_level(options):
     """Set the output level for the application.
 
@@ -260,6 +222,10 @@ def _print_best_practice_results(fn, results):
 
         _print_level("-"*80, level)
 
+    def _print_warnings(collection):
+         for warning in collection:
+            _print_warning(warning, 2)
+
     if results.is_valid:
         _print_level("[+] Best Practice validation results: %s : VALID", 0, fn)
     else:
@@ -268,10 +234,7 @@ def _print_best_practice_results(fn, results):
 
         for collection in sorted(results, key=lambda x: x.name):
             _print_level("[!] %s", 1, collection.name)
-
-            for warning in collection:
-                _print_warning(warning, 2)
-
+            _print_warnings(collection)
 
 
 def _print_profile_results(fn, results):
@@ -488,7 +451,7 @@ def _get_best_practice_validator(options):
 
 
 def _validate_file(fn, schema_validator, profile_validator,
-              best_practice_validator, options):
+        best_practice_validator, options):
 
     results = ValidationResults(fn)
 
@@ -526,7 +489,7 @@ def _validate(options):
             this validation run.
 
     """
-    files = _get_files_to_validate(options)
+    files = utils.get_xml_files(options.in_files)
     schema_validator = _get_schema_validator(options)
     profile_validator = _get_profile_validator(options)
     best_practice_validator = _get_best_practice_validator(options)
@@ -613,17 +576,21 @@ def _validate_args(args):
         profile_convert = True
 
     if all((args.stix_version, args.use_schemaloc)):
-        raise ArgumentError("Cannot set both --stix-version and "
-                            "--use-schemalocs")
+        raise ArgumentError(
+            "Cannot set both --stix-version and --use-schemalocs"
+        )
 
     if any((args.xslt, args.schematron)) and not args.profile:
-        raise ArgumentError("Profile filename is required when profile "
-                            "conversion options are set.")
+        raise ArgumentError(
+            "Profile filename is required when profile conversion options "
+            "are set."
+        )
 
     if (args.profile and not any((profile_validate, profile_convert))):
-        raise ArgumentError("Profile specified but no conversion options or "
-                            "validation options specified")
-
+        raise ArgumentError(
+            "Profile specified but no conversion options or validation options "
+            "specified"
+        )
 
 def _get_arg_parser():
     """Initializes and returns an argparse.ArgumentParser instance for this

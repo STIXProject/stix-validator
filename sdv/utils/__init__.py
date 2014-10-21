@@ -1,4 +1,6 @@
+import os
 from lxml import etree
+
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
@@ -68,3 +70,48 @@ def get_schemaloc_pairs(node):
     pairs = zip(l[::2], l[1::2])
 
     return pairs
+
+
+def list_xml_files(dir_):
+    """Returns a list of file paths for XML files contained within `dir_`.
+
+    Args:
+        dir_: A path to a directory
+
+    Returns:
+        A list of XML file paths directly under `dir_`.
+
+    """
+    xml = []
+    for fn in os.listdir(dir_):
+        if fn.endswith('.xml'):
+            fp = os.path.join(dir_, fn)
+            xml.append(fp)
+
+    return xml
+
+
+def get_xml_files(files):
+    """Returns a list of files to validate from `files`. If a member of `files`
+    is a directory, its children with a ``.xml`` extension will be added to
+    the return value.
+
+    Args:
+        A list of file paths and/or directory paths.
+
+    Returns:
+        A list of file paths to validate.
+
+    """
+    if not files:
+        return []
+
+    xml = []
+    for fn in files:
+        if os.path.isdir(fn):
+            children = list_xml_files(fn)
+            xml.extend(children)
+        else:
+            xml.append(fn)
+
+    return xml
