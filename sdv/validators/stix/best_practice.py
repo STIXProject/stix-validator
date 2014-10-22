@@ -17,7 +17,7 @@ def rule(version=None):
     rule.
 
     Args:
-        version: Identifies the minmum version of STIX for which the decorated
+        version: Identifies the minimum version of STIX for which the decorated
             method applies. ``None`` means that it is applicable to all
             versions.
     """
@@ -174,10 +174,24 @@ class BestPracticeValidationResult(ValidationResult, collections.MutableSequence
 
     @ValidationResult.is_valid.getter
     def is_valid(self):
-        return (len(self) == 0)
+        """Returns ``True`` if ``self`` contains no warning collections or
+        contains only empty warning collections.
+
+        """
+        return not(any(x for x in self))
 
 
     def insert(self, idx, value):
+        """Inserts an instance of :class:`BestPracticeWarningCollection`.
+
+        Note:
+            If ``bool(value) == False`` then `value` will not be inserted.
+
+        Raises:
+            ValueError: If `value` is not an instance of
+                :class:`BestPracticeWarningCollection`.
+
+        """
         if not value:
             return
 
