@@ -1,17 +1,19 @@
 import os
 from lxml import etree
 
-
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
 TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
 
 def get_xml_parser():
     """Returns an ``etree.ETCompatXMLParser`` instance."""
-    parser = etree.ETCompatXMLParser(huge_tree=True,
-                                     remove_comments=False,
-                                     strip_cdata=False,
-                                     remove_blank_text=True)
+
+    parser = etree.ETCompatXMLParser(
+        huge_tree=True,
+        remove_comments=False,
+        strip_cdata=False,
+        remove_blank_text=True
+    )
 
     return parser
 

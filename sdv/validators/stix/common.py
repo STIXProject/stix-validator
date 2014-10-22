@@ -1,30 +1,5 @@
-from sdv import ValidationError
+from sdv.errors import (UnknownSTIXVersionError, InvalidSTIXVersionError)
 import sdv.utils as utils
-
-class UnknownVersionError(ValidationError):
-    """Raised when no STIX version information can be found in an instance
-    document and no version information was provided to a method which
-    requires version information.
-
-    """
-    pass
-
-class InvalidVersionError(ValidationError):
-    """Raised when an invalid version of STIX is discovered within an instance
-    document or is passed into a method which depends on STIX version
-    information.
-
-    Args:
-        message: The error message.
-        expected: A version or list of expected versions.
-        found: The STIX version that was declared for an instance document or
-            found within an instance document.
-
-    """
-    def __init__(self, message, expected=None, found=None):
-        super(InvalidVersionError, self).__init__(message)
-        self.expected = expected
-        self.found = found
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
@@ -78,10 +53,10 @@ def get_stix_namespaces(version):
 
     """
     if not version:
-        raise UnknownVersionError("Version cannot be None")
+        raise UnknownSTIXVersionError("Version cannot be None")
 
     if version not in STIX_VERSIONS:
-         raise InvalidVersionError(
+         raise InvalidSTIXVersionError(
             "Unable to determine namespaces for version '%s'" % version,
             expected=STIX_VERSIONS,
             found=version

@@ -2,10 +2,11 @@
 # See LICENSE.txt for complete terms.
 
 import os
-from sdv import (XSD_ROOT, ValidationError)
+import common as stix
+from sdv import XSD_ROOT
+import sdv.errors as errors
 import sdv.utils as utils
 from sdv.validators import XmlSchemaValidator
-import common as stix
 
 
 class _XmlSchemaValidator(XmlSchemaValidator):
@@ -21,6 +22,7 @@ class _XmlSchemaValidator(XmlSchemaValidator):
             XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
         )
     }
+
 
 class STIXSchemaValidator(object):
     SCHEMAS = {
@@ -54,11 +56,37 @@ class STIXSchemaValidator(object):
 
 
     def validate(self, doc, version=None, schemaloc=False):
+        """Perforrms XML Schema validation against a STIx document.
+
+        Args:
+            doc: The STIX document. This can be a filename, file-like object,
+                lxml._Element, or lxml._ElementTree instance.
+            version: The version of the STIX document. If ``None`` an attempt
+                will be made to extract the version from `doc`.
+            schemaloc: If ``True``, the ``xsi:schemaLocation`` attribute on
+                `doc` will be used to drive the validation.
+
+        Returns:
+            An instance of :class:`XmlSchemaValidationResults`.
+
+        Raises:
+            errors.UnknownSTIXVersionException: If `version` is ``None`` and
+                `doc` does not contain STIX version information.
+            errors.InvalidSTIXVersionException: If `version` is an invalid
+                STIX version or `doc` contains an invalid STIX version number.
+            errors.ValidationError: If the class was not initialized with a
+                schema directory and `schemaloc` is ``False``.
+            errors.ImportProcessError: If an error occurs while processing the
+                schemas required for validation.
+            errors.IncludeProcessError: If an error occurs while processing
+                ``xs:include`` directives.
+
+        """
         root = utils.get_etree_root(doc)
         version = version or stix.get_version(root)
 
         if not any((version, schemaloc, self._is_user_defined)):
-            raise ValidationError(
+            raise errors.UnknownSTIXVersionError(
                 "Unable to validate instance document. STIX version not "
                 "found in instance document and not supplied to validate() "
                 "method"
@@ -72,7 +100,7 @@ class STIXSchemaValidator(object):
             try:
                 validator = self._xml_validators[version]
             except KeyError:
-                raise stix.InvalidVersionError(
+                raise errors.InvalidSTIXVersionError(
                     message="No schemas for STIX version %s" % version,
                     expected=self.SCHEMAS.keys(),
                     found=version

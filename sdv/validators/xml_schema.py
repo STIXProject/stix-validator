@@ -4,7 +4,8 @@
 import os
 from collections import defaultdict
 from lxml import etree
-from sdv import (ValidationResult, ValidationError)
+from sdv import ValidationResults
+import sdv.errors as errors
 import sdv.utils as utils
 
 NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
@@ -13,33 +14,28 @@ TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
 TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
 
 
-class IncludeProcessError(ValidationError):
-    """Raised when errors occur during the processing of ``xs:include``
-    directives found within schema documents.
-
-    """
-    pass
-
-
-class ImportProcessError(ValidationError):
-    """Raised when errors occur when generating ``xs:import`` directives for
-    the "uber" schema, used to validate XML instance documents.
-
-    """
-    pass
-
-
-class XmlValidationResult(ValidationResult):
+class XmlValidationResults(ValidationResults):
     """Results of XML schema validation. Returned from
     :meth:`XmlSchemaValidator.validate`.
 
+    Args:
+        is_valid: The validation result.
+        errors: A list of strings reported from the XML validation engine.
+
+    Attributes:
+        is_valid: ``True`` if the validation was successful and ``False``
+            otherwise.
+        errors: A list of validation errors reported from the underlying
+            XML validation engine.
+
     """
     def __init__(self, is_valid, errors=None):
-        super(XmlValidationResult, self).__init__(is_valid)
+        super(XmlValidationResults, self).__init__(is_valid)
         self.errors = errors
 
     @property
     def errors(self):
+        """"A list of validation errors"""
         return self._errors
 
     @errors.setter
@@ -52,7 +48,17 @@ class XmlValidationResult(ValidationResult):
             self._errors = [value]
 
     def as_dict(self):
-        d = super(XmlValidationResult, self).as_dict()
+        """A dictionary representation of the ``XmlValidationResults`` instance.
+
+        Keys:
+            'result': The validation results (``True`` or ``False``)
+            'errors': A list of validation errors.
+
+        Returns:
+            A dictionary representation of an instance of this class.
+
+        """
+        d = super(XmlValidationResults, self).as_dict()
 
         if self.errors:
             d['errors'] = self.errors
@@ -186,7 +192,7 @@ class XmlSchemaValidator(object):
                (len(graph[fp]) > 0)):
                 return fp
 
-        raise IncludeProcessError(
+        raise errors.XMLSchemaIncludeError(
             "Unable to determine base schema for %s" % ns
         )
 
@@ -309,7 +315,7 @@ class XmlSchemaValidator(object):
             imports = utils.get_schemaloc_pairs(root)
             return dict(imports)
         except KeyError:
-            raise ImportProcessError(
+            raise errors.XMLSchemaImportError(
                 "Cannot validate using xsi:schemaLocation. The "
                 "xsi:schemaLocation attribute was not found on the input "
                 "document"
@@ -371,7 +377,7 @@ class XmlSchemaValidator(object):
         imports = self._build_required_imports(root)
 
         if not imports:
-            raise ImportProcessError(
+            raise errors.XMLSchemaImportError(
                 "Cannot validate document. Error occurred while determining "
                 "schemas required for validation."
             )
@@ -412,16 +418,16 @@ class XmlSchemaValidator(object):
             An instance of :class:`XmlValidationResults`.
 
         Raises:
-            ValidationError: If the class was not initialized with a schema
-                directory and `schemaloc` is ``False``.
-            ImportProcessError: If an error occurs while processing the schemas
-                required for validation.
-            IncludeProcessError: If an error occurs while processing
+            errors.ValidationError: If the class was not initialized with a
+                schema directory and `schemaloc` is ``False``.
+            errors.ImportProcessError: If an error occurs while processing the
+                schemas required for validation.
+            errors.IncludeProcessError: If an error occurs while processing
                 ``xs:include`` directives.
 
         """
         if not any((schemaloc, self._schemalocs)):
-            raise ValidationError(
+            raise errors.ValidationError(
                 "No schemas to validate against! Try instantiating "
                 "XmlValidator with use_schemaloc=True or setting the "
                 "schema_dir param in __init__"
@@ -431,6 +437,6 @@ class XmlSchemaValidator(object):
         xsd = self._build_uber_schema(root, schemaloc)
         is_valid = xsd.validate(root)
 
-        return XmlValidationResult(is_valid, xsd.error_log)
+        return XmlValidationResults(is_valid, xsd.error_log)
 
 

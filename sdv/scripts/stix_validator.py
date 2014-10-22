@@ -259,7 +259,7 @@ def _print_json_results(results):
     """Prints `results` to stdout in JSON format.
 
     Args:
-        results: An instance of ``ValidationResult`` which contains the
+        results: An instance of ``ValidationResults`` which contains the
             results to print.
     """
     json_results = {}
@@ -282,7 +282,7 @@ def _print_results(results, options):
     results are printed in JSON format.
 
     Args:
-        results: An instance of ``ValidationResult`` which contains the
+        results: An instance of ``ValidationResults`` which contains the
             results to print.
         options: An instance of ``ValidationOptions`` which contains output
             options.

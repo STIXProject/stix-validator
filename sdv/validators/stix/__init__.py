@@ -3,5 +3,6 @@
 
 
 from .schema import STIXSchemaValidator
-from .profile import STIXProfileValidator
-from .best_practice import STIXBestPracticeValidator
+from .profile import (STIXProfileValidator, ProfileValidationResults)
+from .best_practice import (STIXBestPracticeValidator,
+    BestPracticeValidationResults)

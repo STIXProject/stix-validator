@@ -4,7 +4,7 @@
 from lxml import isoschematron
 from collections import defaultdict
 
-from sdv import ValidationResult
+from sdv import ValidationResults
 import sdv.utils as utils
 
 NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
@@ -68,7 +68,7 @@ class SchematronError(object):
         return unicode(self).encode('utf-8')
 
 
-class SchematronValidationResult(ValidationResult):
+class SchematronValidationResults(ValidationResults):
     """Used to hold results of a Schematron validation process.
 
     Args:
@@ -79,10 +79,12 @@ class SchematronValidationResult(ValidationResult):
     Attributes:
         errors: A list of :class:`SchematronError` instances representing
             errors found in the `svrl_report`.
+        is_valid: ``True`` if the validation was successful and ``False``
+            otherwise.
 
     """
     def __init__(self, is_valid, doc=None, svrl_report=None):
-        super(SchematronValidationResult, self).__init__(is_valid)
+        super(SchematronValidationResults, self).__init__(is_valid)
         self._svrl_report = svrl_report
         self._doc = doc
         self.errors = self._parse_errors(svrl_report)
@@ -100,7 +102,20 @@ class SchematronValidationResult(ValidationResult):
 
 
     def as_dict(self):
-        d = super(SchematronValidationResult, self).as_dict()
+        """A dictionary representation of the ``SchematronValidationResults``
+        instance.
+
+        Keys:
+            'result': The validation results (``True`` or ``False``)
+            'errors': A dictionary of validation errors. The key is the error
+                message and the value is a list of line numbers associated
+                with the error.
+
+        Returns:
+            A dictionary representation of an instance of this class.
+
+        """
+        d = super(SchematronValidationResults, self).as_dict()
 
         if self.errors:
             errors = defaultdict(list)
@@ -182,5 +197,5 @@ class SchematronValidator(object):
         is_valid = self.schematron.validate(root)
         svrl_report = self.schematron.validation_report
 
-        return SchematronValidationResult(is_valid, root, svrl_report)
+        return SchematronValidationResults(is_valid, root, svrl_report)
             
