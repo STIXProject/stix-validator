@@ -66,13 +66,13 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
         IOError: If `doc` is not a valid XML document or there is an issue
             processing `schemas`.
         errors.UnknownVersionError: If `version` is ``None`` and
-            `doc` does not contain verison information.
-        errors..validators.stix.InvalidVersionError: If `version` or the ``version`` attribute in `doc`
-            contains an invalid STIX version number.
+            `doc` does not contain versin information.
+        errors.InvalidVersionError: If `version` or the ``version`` attribute
+            in `doc` contains an invalid STIX version number.
         errors.ValidationError: If the class was not initialized with a schema
                 directory and `schemaloc` is ``False``.
-        errors.ImportProcessError: If an error occurs while processing the schemas
-                required for validation.
+        errors.ImportProcessError: If an error occurs while processing the
+            schemas required for validation.
         errors.IncludeProcessError: If an error occurs while processing
                 ``xs:include`` directives.
 
@@ -102,9 +102,9 @@ def validate_best_practices(doc, version=None):
     Raises:
         IOError: If `doc` is not a valid XML document.
         errors.UnknownVersionError: If `version` is ``None`` and
-            `doc` does not contain verison information.
-        errors.validators.stix.InvalidVersionError: If `version` or the ``version`` attribute in `doc`
-            contains an invalid STIX version number.
+            `doc` does not contain version information.
+        errors.InvalidVersionError: If `version` or the ``version`` attribute
+            in `doc` contains an invalid STIX version number.
 
     """
     from sdv.validators import STIXBestPracticeValidator
