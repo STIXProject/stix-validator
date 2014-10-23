@@ -4,6 +4,7 @@
 import xlrd
 import collections
 import functools
+import contextlib
 from StringIO import StringIO
 from lxml import etree
 
@@ -72,7 +73,7 @@ class Profile(collections.MutableSequence):
 
     def _collect_rules(self):
         """Builds and returns a dictionary of ``BaseProfileRule``
-        implementations. The key is the Rule context.
+        implementations from the internal storage. The key is the Rule context.
 
         Determining the context of a profile rule is done by examining the
         following properties of the rule:
@@ -86,7 +87,7 @@ class Profile(collections.MutableSequence):
             This is done to cut down on validation noise (otherwise a missing
             element would raise errors for a required element being missing AND
             the element not containing an allowed value because it wasn't found
-            at all.
+            at all).
         * If the rule checks for allowed values of an attribute, the rule
             context will pulled directly from the _BaseProfileRule instance's
             ``context`` property. This should probably follow the rules
@@ -534,11 +535,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
     """
     def __init__(self, profile_fn):
-        workbook = self._open_workbook(profile_fn)
-        profile = self._parse_profile(workbook)
-        self._unload_workbook(workbook)
-
-        super(STIXProfileValidator, self).__init__(schematron=profile)
+        with self._parse_profile(profile_fn) as profile:
+            super(STIXProfileValidator, self).__init__(schematron=profile)
 
 
     def _build_rules(self, label, info, field, occurrence, types, values):
@@ -769,8 +767,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return all_rules
 
-
-    def _parse_profile(self, workbook):
+    @contextlib.contextmanager
+    def _parse_profile(self, profile_fn):
         """Converts the supplied STIX profile into a Schematron representation.
          The Schematron schema is returned as a etree._Element instance.
 
@@ -780,17 +778,27 @@ class STIXProfileValidator(schematron.SchematronValidator):
         Returns:
             A Schematron ``etree._Element`` instance.
 
-        """
-        ws = workbook.sheet_by_name
-        namespaces = self._parse_namespace_worksheet(ws("Namespaces"))
-        instance_mapping = self._parse_instance_mapping_worksheet(
-                ws("Instance Mapping"),  namespaces
-        )
+        Raises:
+            ProfileParseError: If `profile_fn` does not point to a valid
+                STIX profile or an error occurs while parsing the STIX profile.
 
-        profile = Profile(namespaces)
-        rules = self._parse_workbook_rules(workbook, instance_mapping)
-        profile.extend(rules)
-        return profile.as_etree()
+        """
+        workbook = self._open_workbook(profile_fn)
+        ws = workbook.sheet_by_name
+
+        try:
+            namespaces = self._parse_namespace_worksheet(ws("Namespaces"))
+            instance_mapping = self._parse_instance_mapping_worksheet(
+                    ws("Instance Mapping"),  namespaces
+            )
+            rules = self._parse_workbook_rules(workbook, instance_mapping)
+
+            profile = Profile(namespaces)
+            profile.extend(rules)
+            yield profile.as_etree()
+
+        finally:
+            self._unload_workbook(workbook)
 
 
     def _unload_workbook(self, workbook):
@@ -805,7 +813,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
             raise errors.ProfileParseError("worksheet value was NoneType")
 
         return str(worksheet.cell_value(row, col))
-
 
     def _open_workbook(self, filename):
         """Returns xlrd.open_workbook(filename) or raises an Exception if the
@@ -822,7 +829,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             return xlrd.open_workbook(filename)
         except:
             raise errors.ProfileParseError(
-                "File does not seem to be valid XLSX."
+                "File does not seem to be a valid XLSX."
             )
 
     @schematron.SchematronValidator.xslt.getter
