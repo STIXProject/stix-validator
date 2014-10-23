@@ -1,6 +1,7 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+import os
 import xlrd
 import collections
 import functools
@@ -821,15 +822,21 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """
         if not filename.lower().endswith(".xlsx"):
             raise errors.ProfileParseError(
-                "File must have .XLSX extension. Filename provided: %s" %
+                "Profile must have .XLSX extension. Filename provided: '%s'" %
                 filename
+            )
+
+        if not os.path.exists(filename):
+            raise errors.ProfileParseError(
+                "The profile document '%s' does not exist" % filename
             )
 
         try:
             return xlrd.open_workbook(filename)
         except:
             raise errors.ProfileParseError(
-                "File does not seem to be a valid XLSX."
+                "Error occurred while opening '%s'. File may be an invalid or "
+                "corrupted XSLX document."
             )
 
     @schematron.SchematronValidator.xslt.getter

@@ -11,6 +11,7 @@ import logging
 import argparse
 import json
 import sdv
+import sdv.errors as errors
 import sdv.utils as utils
 from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
     STIXBestPracticeValidator)
@@ -705,6 +706,8 @@ def main():
     except ArgumentError as ex:
         if ex.show_help:
             parser.print_help()
+        _error(ex)
+    except errors.ValidationError as ex:
         _error(ex)
     except Exception:
         logging.exception("Fatal error occurred")
