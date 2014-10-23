@@ -403,7 +403,8 @@ class AllowedImplsRule(_BaseProfileRule):
     def _validate(self):
         if self.is_attr:
             raise errors.ProfileParseError(
-                "Allowed implementation rules cannot be applied to attributes"
+                "Implementation rules cannot be applied to attribute fields: "
+                "%s/%s" % (self.context, self.field)
             )
 
     @property
