@@ -33,6 +33,9 @@ OCCURRENCE_PROHIBITED = 'prohibited'
 OCCURRENCE_REQUIRED   = 'required'
 ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
 
+# Used by profile schematron for reporting error line numbers.
+SAXON_LINENO= '[<value-of select="saxon:line-number()"/>]'
+
 
 def _is_attr(fieldname):
     """Returns ``True`` if `fieldname` refers to an attribute."""
@@ -42,7 +45,6 @@ def _is_attr(fieldname):
 InstanceMapping = collections.namedtuple(
     "InstanceMapping", ('selectors', 'namespace', 'ns_alias')
 )
-
 
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
@@ -149,9 +151,8 @@ class Profile(collections.MutableSequence):
         rule = self._create_rule("/")
 
         assertion = etree.XML(
-            '<assert xmlns="%s" test="%s" role="error">%s '
-            '[<value-of select="saxon:line-number()"/>]</assert> ' %
-            (schematron.NS_SCHEMATRON, test, text)
+            '<assert xmlns="%s" test="%s" role="error">%s %s</assert> ' %
+            (schematron.NS_SCHEMATRON, test, text, SAXON_LINENO)
         )
 
         rule.append(assertion)
@@ -262,15 +263,13 @@ class _BaseProfileRule(object):
         profile rule.
 
         """
-        line_number = '[<value-of select="saxon:line-number()"/>]'
-
         args = (
             self.type_,                  # 'assert' or 'report'
             schematron.NS_SCHEMATRON,    # schematron namespace
             self.test,                   # test selector
             self.role,                   # "error"
             self.message,                # error message
-            line_number                  # line number function
+            SAXON_LINENO                 # line number function
         )
 
         rule = etree.XML(
@@ -888,8 +887,10 @@ class STIXProfileValidator(schematron.SchematronValidator):
         support Saxon extension functions at all.
 
         """
+        to_replace = ' %s' % SAXON_LINENO
+
         s = etree.tostring(self._schematron.schematron)
-        s = s.replace(' [<value-of select="saxon:line-number()"/>]', '')
+        s = s.replace(to_replace, '')
         s = s.replace('<ns prefix="saxon" uri="http://icl.com/saxon"/>', '')
 
         return etree.parse(StringIO(s))

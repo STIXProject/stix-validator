@@ -49,10 +49,22 @@ class ValidationResults(object):
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
     """Performs XML Schema validation against a STIX document.
 
+    Args:
+        doc: A STIX document to validate. This can be a filename, file-like
+            object, etree._Element or etree._ElementTree object.
+        version: The version of the STIX document being validated. If ``None``
+            an attempt will be made to extract the version from `doc`.
+        schemas: A string path to a directory of STIX schemas. If ``None``,
+            the validation code will leverage its bundled schemas.
+        schemaloc: Use ``xsi:schemaLocation`` attribute on `doc` to perform
+            validation.
+
     Returns:
         An instance of sdv.validators.XmlSchemaValidationResults.
 
     Raises:
+        IOError: If `doc` is not a valid XML document or there is an issue
+            processing `schemas`.
         errors.UnknownVersionError: If `version` is ``None`` and
             `doc` does not contain verison information.
         errors..validators.stix.InvalidVersionError: If `version` or the ``version`` attribute in `doc`
@@ -74,10 +86,21 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
 def validate_best_practices(doc, version=None):
     """Performs 'Best Practice' validation against a STIX document.
 
+    Note:
+        This should be used together with :meth:`validate_xml` since this only
+        checks best practices and not schema-conformance.
+
+    Args:
+        doc: A STIX document to validate. This can be a filename, file-like
+            object, etree._Element or etree._ElementTree object.
+        version: The version of the STIX document being validated. If ``None``
+            an attempt will be made to extract the version from `doc`.
+
     Returns:
         An instance of sdv.validators.BestPracticeValidationResults.
 
     Raises:
+        IOError: If `doc` is not a valid XML document.
         errors.UnknownVersionError: If `version` is ``None`` and
             `doc` does not contain verison information.
         errors.validators.stix.InvalidVersionError: If `version` or the ``version`` attribute in `doc`
@@ -93,13 +116,20 @@ def validate_best_practices(doc, version=None):
 def validate_profile(doc, profile):
     """Performs STIX Profile validation against a STIX document.
 
+    Note:
+        This should be used together with :meth:`validate_xml` since this only
+        checks profile-conformance and not schema-conformance.
+
     Args:
+        doc: A STIX document to validate. This can be a filename, file-like
+            object, etree._Element or etree._ElementTree object.
         profile: A filename to a STIX Profile document.
 
     Returns:
     `   An instance of sdv.validators.ProfileValidationResults.
 
     Raises:
+        IOError: If `doc` is not a valid XML document.
         errors.ProfileParseError: If an error occurred while attempting to
             parse the `profile`.
 

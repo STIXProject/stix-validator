@@ -129,7 +129,7 @@ def _error(msg):
         msg: The error message to print.
 
     """
-    sys.stderr.write("\n[!] %s\n" % str(msg))
+    sys.stderr.write("[!] %s\n" % str(msg))
     exit(EXIT_FAILURE)
 
 
@@ -495,8 +495,10 @@ def _validate(options):
 
     results = {}
     for fn in files:
-        result = _validate_file(fn, schema_validator, profile_validator,
-                                 best_practice_validator, options)
+        result = _validate_file(
+            fn, schema_validator, profile_validator, best_practice_validator,
+            options
+        )
         results[fn] = result
 
     _print_results(results, options)
@@ -707,7 +709,7 @@ def main():
         if ex.show_help:
             parser.print_help()
         _error(ex)
-    except errors.ValidationError as ex:
+    except (errors.ValidationError, IOError) as ex:
         _error(ex)
     except Exception:
         logging.exception("Fatal error occurred")

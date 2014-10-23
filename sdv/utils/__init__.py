@@ -29,6 +29,9 @@ def get_etree_root(doc):
     Returns:
         An ``lxml.etree._Element`` instance for `doc`.
 
+    Raises:
+        IOError: If `doc` is an invalid filename or file-like object
+
     """
     if isinstance(doc, etree._Element):
         root = doc
