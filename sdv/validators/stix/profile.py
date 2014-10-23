@@ -2,13 +2,287 @@
 # See LICENSE.txt for complete terms.
 
 import xlrd
+import collections
+import functools
 from StringIO import StringIO
-from collections import defaultdict
 from lxml import etree
 
 import sdv.utils as utils
 import sdv.errors as errors
-from  sdv.validators import schematron
+from sdv.validators import schematron
+
+# Rule worksheet columns
+COL_FIELD_NAME     = 0
+COL_OCCURRENCE     = 1
+COL_XSI_TYPES      = 3
+COL_ALLOWED_VALUES = 4
+
+# Instance mapping worksheet columns
+COL_LABEL = 0
+COL_SELECTORS = 1
+COL_TYPE_NAMESPACE = 2
+
+# Namespace worksheet columns
+COL_NAMESPACE = 0
+COL_ALIAS = 1
+
+# Occurrence values
+OCCURRENCE_PROHIBITED = 'prohibited'
+OCCURRENCE_REQUIRED   = 'required'
+ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
+
+
+def _is_attr(fieldname):
+    return fieldname.startswith("@")
+
+
+class Profile(collections.MutableSequence):
+    def __init__(self, namespaces):
+        self.id_ = "STIX_Schematron_Profile"
+        self._rules = []
+        self._namespaces = namespaces
+
+    def insert(self, idx, value):
+        if not value:
+            return
+        self._rules.insert(idx, value)
+
+    def __getitem__(self, key):
+        return self._rules.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self._rules.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self._rules.__delitem__(key)
+
+    def __len__(self):
+        return len(self._rules)
+
+    def __nonzero__(self):
+        return bool(self._rules)
+
+
+    def _collect_rules(self):
+        collected = collections.defaultdict(list)
+
+        def _build_ctx_path(test):
+            if test.is_attr:
+                return test.context
+            return "{0}/{1}".format(test.context, test.field)
+
+        for test in self:
+            if isinstance(test, (AllowedImplsRule, AllowedValuesRule)):
+                rule_ctx = _build_ctx_path(test)
+            else:
+                rule_ctx = test.context
+
+            collected[rule_ctx].append(test)
+
+        return collected
+
+    def _create_rule(self, ctx):
+        return etree.XML(
+            '<rule xmlns="%s" context="%s"/>' % (schematron.NS_SCHEMATRON, ctx)
+        )
+
+    @property
+    def rules(self):
+        rules = []
+        collected = self._collect_rules()
+
+        for ctx, tests in collected.iteritems():
+            rule = self._create_rule(ctx)
+            rule.extend([test.as_etree() for test in tests])
+            rules.append(rule)
+
+        return rules
+
+    def _get_root_rule(self):
+        ns_stix = "http://stix.mitre.org/stix-1"
+        text = "The root element must be a STIX_Package instance"
+        test = "%s:STIX_Package" % self._namespaces.get(ns_stix, 'stix')
+
+        rule = self._create_rule("/")
+
+        assertion = etree.XML(
+            '<assert xmlns="%s" test="%s" role="error">%s '
+            '[<value-of select="saxon:line-number()"/>]</assert> ' %
+            (schematron.NS_SCHEMATRON, test, text)
+        )
+
+        rule.append(assertion)
+        return rule
+
+    def _get_schema_node(self):
+        return etree.Element(
+            "{%s}schema" % schematron.NS_SCHEMATRON,
+            nsmap={None: schematron.NS_SCHEMATRON}
+        )
+
+
+    def _get_pattern_node(self):
+        return etree.XML(
+            "<pattern xmlns='%s' id='%s'/>" % (schematron.NS_SCHEMATRON, self.id_)
+        )
+
+    def _get_namespaces(self):
+        namespaces = []
+
+        for ns, prefix in self._namespaces.iteritems():
+            namespace = etree.Element("{%s}ns" % schematron.NS_SCHEMATRON)
+            namespace.set("prefix", prefix)
+            namespace.set("uri", ns)
+            namespaces.append(namespace)
+
+        return namespaces
+
+    def as_etree(self):
+        pattern = self._get_pattern_node()
+        pattern.append(self._get_root_rule())
+        pattern.extend(self.rules)
+
+        schema = self._get_schema_node()
+        schema.extend(self._get_namespaces())
+        schema.append(pattern)
+
+        return schema
+
+
+class ProfileRule(object):
+    _TYPE_REPORT  = "report"
+    _TYPE_ASSERT  = "assert"
+
+    def __init__(self, context, field):
+        self._type = ProfileRule._TYPE_ASSERT
+        self._role = "error"
+        self.context = context
+        self.field = field
+        self._validate()
+
+    def _validate(self):
+        pass
+
+    @property
+    def is_attr(self):
+        return self.field.startswith("@")
+
+
+    @property
+    def message(self):
+        return "{0}/{1} is required by this profile.".format(
+            self.context, self.field
+        )
+
+    @property
+    def test(self):
+        return self.field
+
+    def as_etree(self):
+        line_number = '[<value-of select="saxon:line-number()"/>]'
+
+        args = (
+            self._type,
+            schematron.NS_SCHEMATRON,
+            self.test,
+            self._role,
+            self.message,
+            line_number
+        )
+
+        element = etree.XML(
+            '<{0} xmlns="{1}" test="{2}" role="{3}">{4} {5}</{0}>'.format(*args)
+        )
+
+        return element
+
+
+class ProhibitedRule(ProfileRule):
+    def __init__(self, context, field):
+        super(ProhibitedRule, self).__init__(context, field)
+        self._type = ProfileRule._TYPE_REPORT
+
+    @ProfileRule.message.getter
+    def message(self):
+        return "{0}/{1} is prohibited by this profile.".format(
+            self.context, self.field
+        )
+
+class AllowedValuesRule(ProfileRule):
+    def __init__(self, context, field, values=None):
+        super(AllowedValuesRule, self).__init__(context, field)
+        self.values = values
+
+    @property
+    def values(self):
+        return self._values
+
+    @values.setter
+    def values(self, value):
+        if not value:
+            self._values = []
+        elif isinstance(value, basestring):
+            self._values = [x.strip() for x in value.split(',')]
+        elif hasattr(value, "__getitem__"):
+            self._values = value
+        else:
+            self._values = [value]
+
+    @ProfileRule.message.getter
+    def message(self):
+       return "The allowed values for {0}/{1} are {2}".format(
+           self.context, self.field, self.values
+       )
+
+    @ProfileRule.test.getter
+    def test(self):
+        name = self.field
+        allowed = self.values
+
+        if name.startswith("@"):
+            test = " or ".join("%s='%s'" % (name, x) for x in allowed)
+        else:
+            test = " or ".join(".='%s'" % (x) for x in allowed)
+
+        return test
+
+
+class AllowedImplsRule(ProfileRule):
+    def __init__(self, context, field, impls=None):
+        super(AllowedImplsRule, self).__init__(context, field)
+        self.impls = impls
+
+    def _validate(self):
+        if self.is_attr:
+            raise errors.ProfileParseError(
+                "Allowed implementation rules cannot be applied to attributes"
+            )
+
+    @property
+    def impls(self):
+        return self._impls
+
+    @impls.setter
+    def impls(self, value):
+        if not value:
+            self._impls = []
+        elif isinstance(value, basestring):
+            self._impls = [x.strip() for x in value.split(',')]
+        elif hasattr(value, "__getitem__"):
+            self._impls = value
+        else:
+            self._impls = [value]
+
+    @ProfileRule.message.getter
+    def message(self):
+       return "The allowed implementations for {0}/{1} are {2}".format(
+           self.context, self.field, self.impls
+       )
+
+    @ProfileRule.test.getter
+    def test(self):
+       return " or ".join("@xsi:type='%s'" % (x,) for x in self.impls)
+
 
 class ProfileError(schematron.SchematronError):
     """Represents STIX profile validation error."""
@@ -91,246 +365,80 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
     """
     def __init__(self, profile_fn):
-        profile = self._open_profile(profile_fn)
-        schema = self._parse_profile(profile)
+        workbook = self._open_workbook(profile_fn)
+        profile = self._parse_profile(workbook)
+        self._unload_workbook(workbook)
 
-        super(STIXProfileValidator, self).__init__(schematron=schema)
+        super(STIXProfileValidator, self).__init__(schematron=profile)
 
-    def _build_rule_dict(self, worksheet):
+
+    def _build_rules(self, label, instance_map, field, occurrence, types, values):
+        selectors = instance_map[label]['selectors']
+        ns_alias = instance_map[label]['ns_alias']
+
+        rules = []
+        for context in selectors:
+            if not _is_attr(field):
+                fieldname = "%s:%s" % (ns_alias, field)
+            else:
+                fieldname = field
+
+            if occurrence == OCCURRENCE_REQUIRED:
+                rule = ProfileRule(context, fieldname)
+                rules.append(rule)
+            elif occurrence == OCCURRENCE_PROHIBITED:
+                rule = ProhibitedRule(context, fieldname)
+                rules.append(rule)
+                continue  # Cannot set prohibited values or impls
+            else:
+                continue  # Only build rules for 'prohibited' and 'required'
+
+            if types:
+                rule = AllowedImplsRule(context, fieldname, types)
+                rules.append(rule)
+
+            if values:
+                rule = AllowedValuesRule(context, fieldname, values)
+                rules.append(rule)
+
+        return rules
+
+    def _parse_rules_worksheet(self, worksheet, instance_map):
         """Builds a dictionary representation of the rules defined by a STIX
         profile document.
 
         """
-        COL_FIELD_NAME     = 0
-        COL_OCCURRENCE     = 1
-        COL_XSI_TYPES      = 3
-        COL_ALLOWED_VALUES = 4
+        all_rules = []
+        value = functools.partial(self._get_value, worksheet)  # Tidy up!
 
-        def _is_empty_row(row):
-            return not any(self._get_cell_value(worksheet, row, x)
-                           for x in xrange(0, worksheet.ncols))
+        def _is_empty_row(worksheet, row):
+            return not any(value(row, x) for x in xrange(worksheet.ncols))
 
-        d = defaultdict(list)
         for i in xrange(1, worksheet.nrows):
-            if _is_empty_row(i):
+            if _is_empty_row(worksheet, i):
                 continue
 
-            if not self._get_cell_value(worksheet, i, COL_OCCURRENCE):
-                context = self._get_cell_value(worksheet, i, COL_FIELD_NAME)
+            if not value(i, COL_OCCURRENCE):
+                ctx_label = value(i, COL_FIELD_NAME)
                 continue
 
-            field = self._get_cell_value(worksheet, i, COL_FIELD_NAME)
-            occurrence = self._get_cell_value(worksheet, i, COL_OCCURRENCE).lower()
-            xsi_types = self._get_cell_value(worksheet, i, COL_XSI_TYPES)
-            allowed_values = self._get_cell_value(worksheet, i, COL_ALLOWED_VALUES)
+            field = value(i, COL_FIELD_NAME)
+            occurrence = value(i, COL_OCCURRENCE).lower()
+            types = value(i, COL_XSI_TYPES)
+            values = value(i, COL_ALLOWED_VALUES)
 
-            if xsi_types:
-                list_xsi_types = [x.strip() for x in xsi_types.split(',')]
-            else:
-                list_xsi_types = []
+            if occurrence not in ALLOWED_OCCURRENCES:
+                continue
 
-            if allowed_values:
-                list_allowed_values = [x.strip() for x in allowed_values.split(',')]
-            else:
-                list_allowed_values = []
-
-            if (occurrence in ('required', 'prohibited') or
-                    len(list_xsi_types) > 0 or
-                    len(list_allowed_values) > 0):  # ignore rows with no rules
-
-                rule = {
-                    'field': field,
-                    'occurrence': occurrence,
-                    'xsi_types': list_xsi_types,
-                    'allowed_values': list_allowed_values
-                }
-
-                d[context].append(rule)
-
-        return d
-
-    def _add_root_test(self, pattern, nsmap):
-        '''
-        Adds a root-level test that requires the root element of a STIX
-        document be a STIX_Package.
-
-        '''
-        ns_stix = "http://stix.mitre.org/stix-1"
-        rule_element = self._add_element(pattern, "rule", context="/")
-        text = "The root element must be a STIX_Package instance"
-        test = "%s:STIX_Package" % nsmap.get(ns_stix, 'stix')
-        element = etree.XML(
-            '<assert xmlns="%s" test="%s" role="error">%s '
-            '[<value-of select="saxon:line-number()"/>]</assert> ' %
-            (schematron.NS_SCHEMATRON, test, text)
-        )
-
-        rule_element.append(element)
-
-    def _add_required_test(self, rule_element, entity_name, context):
-        '''Adds a test to the rule element checking for the presence of a
-        required STIX field.
-
-        '''
-        entity_path = "%s/%s" % (context, entity_name)
-        text = "%s is required by this profile" % (entity_path)
-        test = entity_name
-        element = etree.XML(
-            '<assert xmlns="%s" test="%s" role="error">%s '
-            '[<value-of select="saxon:line-number()"/>]</assert> ' %
-            (schematron.NS_SCHEMATRON, test, text)
-        )
-
-        rule_element.append(element)
-
-    def _add_prohibited_test(self, rule_element, entity_name, context):
-        '''Adds a test to the rule element checking for the presence of a prohibited STIX field.'''
-        entity_path = (
-            "%s/%s" % (context, entity_name) if entity_name.startswith("@") else context
-        )
-
-        text = "%s is prohibited by this profile" % (entity_path)
-        test_field = entity_name if entity_name.startswith("@") else "true()"
-        element = etree.XML(
-            '<report xmlns="%s" test="%s" role="error">%s '
-            '[<value-of select="saxon:line-number()"/>]</report> ' %
-            (schematron.NS_SCHEMATRON, test_field, text)
-        )
-
-        rule_element.append(element)
-
-    def _add_allowed_xsi_types_test(self, rule_element, context,
-                                    entity_name, allowed_xsi_types):
-        '''Adds a test to the rule element which corresponds to values found in the Allowed Implementations
-        column of a STIX profile document.'''
-        entity_path = "%s/%s" % (context, entity_name)
-
-        if allowed_xsi_types:
-            test = " or ".join(
-                "@xsi:type='%s'" % (x) for x in allowed_xsi_types
+            rules = self._build_rules(
+                ctx_label, instance_map, field, occurrence, types, values
             )
 
-            text = (
-                'The allowed xsi:types for %s are %s' %
-                (entity_path, allowed_xsi_types)
-            )
+            all_rules.extend(rules)
 
-            element = etree.XML(
-                '<assert xmlns="%s" test="%s" role="error">%s '
-                '[<value-of select="saxon:line-number()"/>]</assert> ' %
-                (schematron.NS_SCHEMATRON, test, text)
-            )
+        return all_rules
 
-            rule_element.append(element)
 
-    def _add_allowed_values_test(self, rule_element, context, entity_name,
-                                 allowed_values):
-        '''Adds a test to the rule element corresponding to values found in the Allowed Values
-        column of a STIX profile document.'''
-        entity_path = "%s/%s" % (context, entity_name)
-        text = (
-            "The allowed values for %s are %s" % (entity_path, allowed_values)
-        )
-
-        if entity_name.startswith('@'):
-            test = " or ".join(
-                "%s='%s'" % (entity_name, x) for x in allowed_values
-            )
-        else:
-            test = " or ".join(
-                ".='%s'" % (x) for x in allowed_values
-            )
-
-        element = etree.XML(
-            '<assert xmlns="%s" test="%s" role="error">%s '
-            '[<value-of select="saxon:line-number()"/>]</assert> ' %
-            (schematron.NS_SCHEMATRON, test, text)
-        )
-        rule_element.append(element)
-
-    def _create_rule_element(self, context):
-        '''Returns an etree._Element representation of a Schematron rule element.'''
-        rule = etree.Element("{%s}rule" % schematron.NS_SCHEMATRON)
-        rule.set('context', context)
-        return rule
-
-    def _add_rules(self, pattern_element, selectors, field_ns, tests):
-        '''Adds all Schematron rules and tests to the overarching Schematron
-        <pattern> element. Each rule and test corresponds to entries found
-        in the STIX profile document.
-        '''
-
-        def get_rule(ctx):
-            rule = d_rules.setdefault(ctx, self._create_rule_element(ctx))
-            return rule
-
-        d_rules = {}
-        for selector in selectors:
-            for d_test in tests:
-                field = d_test['field']
-                occurrence = d_test['occurrence']
-                allowed_values = d_test['allowed_values']
-                allowed_xsi_types = d_test['xsi_types']
-
-                if field.startswith("@"):
-                    entity_name = field
-                else:
-                    entity_name = "%s:%s" % (field_ns, field)
-
-                if occurrence == "required":
-                    ctx = selector
-                    rule = get_rule(ctx)
-                    self._add_required_test(rule, entity_name, ctx)
-                elif occurrence == "prohibited":
-                    if entity_name.startswith("@"):
-                        ctx = selector
-                    else:
-                        ctx = "%s/%s" % (selector, entity_name)
-
-                    rule = get_rule(ctx)
-                    self._add_prohibited_test(rule, entity_name, ctx)
-
-                if allowed_values or allowed_xsi_types:
-                    if entity_name.startswith('@'):
-                        ctx = selector
-                    else:
-                        ctx = "%s/%s" % (selector, entity_name)
-
-                    rule = get_rule(ctx)
-                    if allowed_values:
-                        self._add_allowed_values_test(
-                            rule, selector, entity_name, allowed_values
-                        )
-                    if allowed_xsi_types:
-                        self._add_allowed_xsi_types_test(
-                            rule, selector, entity_name, allowed_xsi_types
-                        )
-
-        for rule in d_rules.itervalues():
-            pattern_element.append(rule)
-
-    def _build_schematron_xml(self, rules, nsmap, instance_map):
-        """Returns an etree._Element instance representation of the STIX
-        profile.
-
-        """
-        root = etree.Element(
-            "{%s}schema" %
-            schematron.NS_SCHEMATRON, nsmap={None: schematron.NS_SCHEMATRON}
-        )
-        pattern = self._add_element(
-            root, "pattern", id="STIX_Schematron_Profile"
-        )
-        self._add_root_test(pattern, nsmap)  # check the root element of the document
-
-        for label, tests in rules.iteritems():
-            d_instances = instance_map[label]
-            selectors = d_instances['selectors']
-            field_ns_alias = d_instances['ns_alias']
-            self._add_rules(pattern, selectors, field_ns_alias, tests)
-
-        self._map_ns(root, nsmap)  # add namespaces to the schematron document
-        return root
 
     def _parse_namespace_worksheet(self, worksheet):
         '''Parses the Namespaces worksheet of the profile. Returns a dictionary
@@ -342,23 +450,29 @@ class STIXProfileValidator(schematron.SchematronValidator):
         http://icl.com/saxon are added.
 
         '''
+        value = functools.partial(self._get_value, worksheet)
         nsmap = {schematron.NS_SAXON: 'saxon'}
+
+        def _is_empty_row(worksheet, row):
+            return not any(value(row, x) for x in xrange(worksheet.ncols))
+
         for i in xrange(1, worksheet.nrows):  # skip the first row
-            if not any(self._get_cell_value(worksheet, i, x)
-                       for x in xrange(0, worksheet.ncols)):  # empty row
+            if _is_empty_row(worksheet, i):
                 continue
 
-            ns = self._get_cell_value(worksheet, i, 0)
-            alias = self._get_cell_value(worksheet, i, 1)
+            ns = value(i, COL_NAMESPACE)
+            alias = value(i, COL_ALIAS)
 
-            if not (ns or alias):
+            if not all((ns, alias)):
                 raise errors.ProfileParseError(
                     "Missing namespace or alias: unable to parse "
                     "Namespaces worksheet"
                 )
 
             nsmap[ns] = alias
+
         return nsmap
+
 
     def _parse_instance_mapping_worksheet(self, worksheet, nsmap):
         '''Parses the supplied Instance Mapping worksheet and returns a
@@ -370,26 +484,28 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 'ns_alias' : The namespace alias associated with the namespace }
 
         '''
+        value = functools.partial(self._get_value, worksheet)
         instance_map = {}
+
+        def _is_empty_row(worksheet, row):
+            return not any(value(row, x) for x in xrange(worksheet.ncols))
+
         for i in xrange(1, worksheet.nrows):
-            if not any(self._get_cell_value(worksheet, i, x)
-                       for x in xrange(0, worksheet.ncols)):  # empty row
+            if _is_empty_row(worksheet, i):
                 continue
 
-            label = self._get_cell_value(worksheet, i, 0)
-            selectors = self._get_cell_value(worksheet, i,  1).split(",")
-            selectors = [x.strip().replace('"', "'") for x in selectors]
+            label = value(i, COL_LABEL)
+            namespace = value(i, COL_TYPE_NAMESPACE)
+            selectors = value(i, COL_SELECTORS)
+            selectors = [x.strip().replace('"', "'") for x in selectors.split(",")]
 
-            for selector in selectors:
-                if not selector:
-                    raise errors.ProfileParseError(
-                        "Empty selector for '%s' in Instance Mapping "
-                        "worksheet. Look for extra commas in field." % label
-                    )
+            if not all(selectors):
+                raise errors.ProfileParseError(
+                    "Empty selector for '%s' in Instance Mapping "
+                    "worksheet. Look for extra commas in field." % label
+                )
 
-            ns = self._get_cell_value(worksheet, i, 2)
-
-            if not (label or selectors or ns):
+            if not all((label, selectors, namespace)):
                 raise errors.ProfileParseError(
                     "Missing label, instance selector and/or "
                     "namespace for %s in Instance Mapping worksheet" % label
@@ -397,80 +513,51 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
             instance_map[label] = {
                 'selectors': selectors,
-                'ns': ns,
-                'ns_alias': nsmap[ns]
+                'ns': namespace,
+                'ns_alias': nsmap[namespace]
             }
 
         return instance_map
 
 
-    def _parse_validation_rules(self, profile):
+    def _parse_rules(self, workbook, instance_map):
         skip = ("Overview", "Namespaces", "Instance Mapping")
-        all_rules = defaultdict(list)
 
-        for worksheet in profile.sheets():
-            if worksheet.name not in skip:
-                rules = self._build_rule_dict(worksheet)
-                for context, d in rules.iteritems():
-                    all_rules[context].extend(d)
+        all_rules = []
+        for worksheet in workbook.sheets():
+            if worksheet.name in skip:
+                continue
+
+            rules = self._parse_rules_worksheet(worksheet, instance_map)
+            all_rules.extend(rules)
 
         return all_rules
 
-    def _parse_profile(self, profile):
+
+    def _parse_profile(self, workbook):
         """Converts the supplied STIX profile into a Schematron representation.
          The Schematron schema is returned as a etree._Element instance.
 
         """
-        namespace_ws = profile.sheet_by_name("Namespaces")
-        namespaces = self._parse_namespace_worksheet(namespace_ws)
-
-        instance_mapping_ws = profile.sheet_by_name("Instance Mapping")
+        ws = workbook.sheet_by_name
+        namespaces = self._parse_namespace_worksheet(ws("Namespaces"))
         instance_mapping = self._parse_instance_mapping_worksheet(
-            instance_mapping_ws,  namespaces
+                ws("Instance Mapping"),  namespaces
         )
 
-        all_rules = self._parse_validation_rules(profile)
+        profile = Profile(namespaces)
+        rules = self._parse_rules(workbook, instance_mapping)
+        profile.extend(rules)
+        return profile.as_etree()
 
-        schema = self._build_schematron_xml(
-            all_rules, namespaces, instance_mapping
-        )
-
-        self._unload_workbook(profile)
-
-        return schema
-
-    def _map_ns(self, doc, nsmap):
-        """Adds <ns> nodes to the supplied schematron document for each entry
-        supplied by the nsmap.
-
-        """
-        for ns, prefix in nsmap.iteritems():
-            ns_element = etree.Element("{%s}ns" % schematron.NS_SCHEMATRON)
-            ns_element.set("prefix", prefix)
-            ns_element.set("uri", ns)
-            doc.insert(0, ns_element)
-
-    def _add_element(self, node, name, text=None, **kwargs):
-        """Adds an etree._Element child to the supplied node. The child
-        node is returned
-
-        """
-        child = etree.SubElement(node, "{%s}%s" % (schematron.NS_SCHEMATRON, name))
-
-        if text:
-            child.text = text
-
-        for k, v in kwargs.iteritems():
-            child.set(k, v)
-
-        return child
 
     def _unload_workbook(self, workbook):
         '''Unloads the xlrd workbook.'''
         for worksheet in workbook.sheets():
             workbook.unload_sheet(worksheet.name)
 
-    def _get_cell_value(self, worksheet, row, col):
+
+    def _get_value(self, worksheet, row, col):
         '''Returns the worksheet cell value found at (row,col).'''
         if not worksheet:
             raise errors.ProfileParseError("worksheet value was NoneType")
@@ -478,17 +565,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         return str(worksheet.cell_value(row, col))
 
 
-    def _convert_to_string(self, value):
-        """Returns the str(value) or an 8-bit string version of value
-        encoded as UTF-8.
-
-        """
-        if isinstance(value, unicode):
-            return value.encode("UTF-8")
-        else:
-            return str(value)
-
-    def _open_profile(self, filename):
+    def _open_workbook(self, filename):
         """Returns xlrd.open_workbook(filename) or raises an Exception if the
         filename extension is not .xlsx or the open_workbook() call fails.
 
@@ -498,6 +575,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 "File must have .XLSX extension. Filename provided: %s" %
                 filename
             )
+
         try:
             return xlrd.open_workbook(filename)
         except:
