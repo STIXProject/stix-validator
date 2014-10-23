@@ -18,13 +18,13 @@ COL_XSI_TYPES      = 3
 COL_ALLOWED_VALUES = 4
 
 # Instance mapping worksheet columns
-COL_LABEL = 0
-COL_SELECTORS = 1
+COL_LABEL          = 0
+COL_SELECTORS      = 1
 COL_TYPE_NAMESPACE = 2
 
 # Namespace worksheet columns
-COL_NAMESPACE = 0
-COL_ALIAS = 1
+COL_NAMESPACE      = 0
+COL_ALIAS          = 1
 
 # Occurrence values
 OCCURRENCE_PROHIBITED = 'prohibited'
@@ -33,9 +33,10 @@ ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
 
 
 def _is_attr(fieldname):
+    """Returns ``True`` if `fieldname` refers to an attribute."""
     return fieldname.startswith("@")
 
-
+# Holds information found in an Instance Mapping worksheet row.
 InstanceMapping = collections.namedtuple(
     "InstanceMapping", ('selectors', 'namespace', 'ns_alias')
 )
@@ -50,6 +51,7 @@ class Profile(collections.MutableSequence):
     def insert(self, idx, value):
         if not value:
             return
+
         self._rules.insert(idx, value)
 
     def __getitem__(self, key):
@@ -69,12 +71,38 @@ class Profile(collections.MutableSequence):
 
 
     def _collect_rules(self):
+        """Builds and returns a dictionary of ``BaseProfileRule``
+        implementations. The key is the Rule context.
+
+        Determining the context of a profile rule is done by examining the
+        following properties of the rule:
+
+        * If the rule is a Prohibits or Requires occurrence check, the
+            context is pulled directly from the _BaseProfileRule instance's
+            ``context`` property. This value is derived from the context
+            label associated with the rule entry in the profile worksheet.
+        * If the rule checks for allowed values or implementations of an element
+            the context will be a selector pointing directly to the element.
+            This is done to cut down on validation noise (otherwise a missing
+            element would raise errors for a required element being missing AND
+            the element not containing an allowed value because it wasn't found
+            at all.
+        * If the rule checks for allowed values of an attribute, the rule
+            context will pulled directly from the _BaseProfileRule instance's
+            ``context`` property. This should probably follow the rules
+            described above, but doesn't for no good reason.
+
+        Returns:
+            A dictionary of lists of rules associated by ``<rule>`` context.
+
+        """
         collected = collections.defaultdict(list)
 
         def _build_ctx_path(test):
             if test.is_attr:
                 return test.context
-            return "{0}/{1}".format(test.context, test.field)
+            else:
+                return "{0}/{1}".format(test.context, test.field)
 
         for test in self:
             if isinstance(test, (AllowedImplsRule, AllowedValuesRule)):
@@ -93,6 +121,10 @@ class Profile(collections.MutableSequence):
 
     @property
     def rules(self):
+        """Builds and returns a dictionary of ``BaseProfileRule``
+        implementations. The key is the Rule context.
+
+        """
         rules = []
         collected = self._collect_rules()
 
@@ -104,6 +136,10 @@ class Profile(collections.MutableSequence):
         return rules
 
     def _get_root_rule(self):
+        """Returns a Schematron rule which checks that the root element of
+        the XML instance document is a ``STIX_Package``
+
+        """
         ns_stix = "http://stix.mitre.org/stix-1"
         text = "The root element must be a STIX_Package instance"
         test = "%s:STIX_Package" % self._namespaces.get(ns_stix, 'stix')
@@ -132,6 +168,10 @@ class Profile(collections.MutableSequence):
         )
 
     def _get_namespaces(self):
+        """Returns a list of etree Elements that represent Schematron
+        ``<ns prefix='foo' uri='bar'>`` elements.
+
+        """
         namespaces = []
 
         for ns, prefix in self._namespaces.iteritems():
@@ -143,6 +183,7 @@ class Profile(collections.MutableSequence):
         return namespaces
 
     def as_etree(self):
+        """Returns an etree Schematron document for this ``Profile``."""
         pattern = self._get_pattern_node()
         pattern.append(self._get_root_rule())
         pattern.extend(self.rules)
@@ -155,6 +196,21 @@ class Profile(collections.MutableSequence):
 
 
 class _BaseProfileRule(object):
+    """Base class for profile rules.
+
+    Attributes:
+        context: The context selector for this rule. This is determined by
+            linking the rule context label to a selector.
+        field: The name of the element or attribute for which this rule
+            applies.
+
+    Args:
+        context: The context selector for this rule. This is determined by
+            linking the rule context label to a selector.
+        field: Tne name of the element or attribute for which this rule
+            applies.
+
+    """
     _TYPE_REPORT  = "report"
     _TYPE_ASSERT  = "assert"
 
@@ -166,39 +222,51 @@ class _BaseProfileRule(object):
         self._validate()
 
     def _validate(self):
+        """Perform validation/sanity checks on the input values."""
         pass
 
     @property
     def role(self):
+        """Returns the Schematron assertion role for this rule."""
         return self._role
 
     @property
     def type_(self):
+        """The type of Schematron test: ``report`` or ``assert``."""
         return self._type
 
     @property
     def is_attr(self):
+        """Returns ``True`` if this rule is defined for an attribute field."""
         return self.field.startswith("@")
-
 
     @property
     def message(self):
+        """Returns the error message to be displayed if this rule does not
+        evaluate successfully.
+
+        """
         raise NotImplementedError()
 
 
     @property
     def test(self):
+        """The xpath test to evaluate against a node."""
         raise NotImplementedError()
 
 
     def as_etree(self):
+        """Returns a Schematron ``<assert>`` or ``<report>`` for this
+        profile rule.
+
+        """
         line_number = '[<value-of select="saxon:line-number()"/>]'
 
         args = (
-            self.type_,                  # assert or report
+            self.type_,                  # 'assert' or 'report'
             schematron.NS_SCHEMATRON,    # schematron namespace
             self.test,                   # test selector
-            self.role,                  # "error"
+            self.role,                   # "error"
             self.message,                # error message
             line_number                  # line number function
         )
@@ -211,6 +279,14 @@ class _BaseProfileRule(object):
 
 
 class RequiredRule(_BaseProfileRule):
+    """Represents a profile rule which requires the presence of an element
+    or attribute.
+
+    This serializes to a Schematron ``<assert>`` directive as
+    it will raise an error if the field is **not** found in the instance
+    document.
+
+    """
     def __init__(self, context, field):
         super(RequiredRule, self).__init__(context, field)
         self._type = self._TYPE_ASSERT
@@ -227,6 +303,14 @@ class RequiredRule(_BaseProfileRule):
 
 
 class ProhibitedRule(_BaseProfileRule):
+    """Represents a profile rule which prohibits the use of a particular
+    attribute or field.
+
+    This serializes to a Schematron ``<report>`` directive
+    as it will raise an error if the field **is found** in the instance
+    document.
+
+    """
     def __init__(self, context, field):
         super(ProhibitedRule, self).__init__(context, field)
         self._type = self._TYPE_REPORT
@@ -243,6 +327,12 @@ class ProhibitedRule(_BaseProfileRule):
 
 
 class AllowedValuesRule(_BaseProfileRule):
+    """Represents a profile rule which requires that a field value be one
+    of a defined set of allowed values.
+
+    This serializes to a schematron ``<assert>`` directive.
+
+    """
     def __init__(self, context, field, values=None):
         super(AllowedValuesRule, self).__init__(context, field)
         self._type = self._TYPE_ASSERT
@@ -254,12 +344,23 @@ class AllowedValuesRule(_BaseProfileRule):
 
     @values.setter
     def values(self, value):
+        """Parses the cell value found in the Excel STIX profile for allowable
+        values.
+
+        Args:
+            value: An allowed value, list of allowed values, or a
+            comma-delimited string of allowed values.
+
+        Returns:
+            A list of allowed values.
+
+        """
         if not value:
             self._values = []
         elif isinstance(value, basestring):
             self._values = [x.strip() for x in value.split(',')]
         elif hasattr(value, "__getitem__"):
-            self._values = value
+            self._values = [str(x) for x in value]
         else:
             self._values = [value]
 
@@ -271,6 +372,17 @@ class AllowedValuesRule(_BaseProfileRule):
 
     @_BaseProfileRule.test.getter
     def test(self):
+        """Returns a test to check that a field is equal to one of the
+        allowable values.
+
+        This expects the ``<assert>`` directive to be places within a rule
+        where the selector is the field name if this rule applies to an
+        element name.
+
+        If the resulting ``<assert>`` applies to an attribute, this assumes
+        that the ``<rule>`` context will point to a parent element.
+
+        """
         name = self.field
         allowed = self.values
 
@@ -300,24 +412,44 @@ class AllowedImplsRule(_BaseProfileRule):
 
     @impls.setter
     def impls(self, value):
+        """Parses the cell value found in the Excel STIX profile for allowable
+        implementations.
+
+        Args:
+            value: An allowed implementation value, list of allowed
+            implementations, or a comma-delimited string of allowed
+            implementations.
+
+        Returns:
+            A list of allowed implementations.
+
+        """
         if not value:
             self._impls = []
         elif isinstance(value, basestring):
             self._impls = [x.strip() for x in value.split(',')]
         elif hasattr(value, "__getitem__"):
-            self._impls = value
+            self._impls = [str(x) for x in value]
         else:
             self._impls = [value]
 
     @_BaseProfileRule.message.getter
     def message(self):
-       return "The allowed implementations for {0}/{1} are {2}".format(
-           self.context, self.field, self.impls
-       )
+        return "The allowed implementations for {0}/{1} are {2}".format(
+            self.context, self.field, self.impls
+        )
 
     @_BaseProfileRule.test.getter
     def test(self):
-       return " or ".join("@xsi:type='%s'" % (x,) for x in self.impls)
+        """Returns a test to check that a field implementation is set to
+        one of the allowable values.
+
+        This expects the ``<assert>`` directive to be places within a rule
+        where the selector is the field name if this rule applies to an
+        element name.
+
+        """
+        return " or ".join("@xsi:type='%s'" % (x,) for x in self.impls)
 
 
 class ProfileError(schematron.SchematronError):
@@ -523,7 +655,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
             all_rules.extend(rules)
 
         return all_rules
-
 
 
     def _parse_namespace_worksheet(self, worksheet):
