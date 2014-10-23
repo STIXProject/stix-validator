@@ -149,12 +149,12 @@ class Profile(collections.MutableSequence):
         return schema
 
 
-class ProfileRule(object):
+class _BaseProfileRule(object):
     _TYPE_REPORT  = "report"
     _TYPE_ASSERT  = "assert"
 
     def __init__(self, context, field):
-        self._type = ProfileRule._TYPE_ASSERT
+        self._type = None
         self._role = "error"
         self.context = context
         self.field = field
@@ -164,30 +164,38 @@ class ProfileRule(object):
         pass
 
     @property
+    def role(self):
+        return self._role
+
+    @property
+    def type_(self):
+        return self._type
+
+    @property
     def is_attr(self):
         return self.field.startswith("@")
 
 
     @property
     def message(self):
-        return "{0}/{1} is required by this profile.".format(
-            self.context, self.field
-        )
+        raise NotImplementedError()
+
 
     @property
     def test(self):
-        return self.field
+        raise NotImplementedError()
+
 
     def as_etree(self):
         line_number = '[<value-of select="saxon:line-number()"/>]'
 
         args = (
-            self._type,
-            schematron.NS_SCHEMATRON,
-            self.test,
-            self._role,
-            self.message,
-            line_number
+            self.type_,                  # assert or report
+            schematron.NS_SCHEMATRON,    # schematron namespace
+            self.test,                   # test selector
+            self.role,                  # "error"
+            self.message,                # error message
+            line_number                  # line number function
         )
 
         rule = etree.XML(
@@ -197,20 +205,42 @@ class ProfileRule(object):
         return rule
 
 
-class ProhibitedRule(ProfileRule):
+class RequiredRule(_BaseProfileRule):
+    def __init__(self, context, field):
+        super(RequiredRule, self).__init__(context, field)
+        self._type = self._TYPE_ASSERT
+
+    @_BaseProfileRule.test.getter
+    def test(self):
+        return self.field
+
+    @_BaseProfileRule.test.getter
+    def message(self):
+        return "{0}/{1} is required by this profile.".format(
+            self.context, self.field
+        )
+
+
+class ProhibitedRule(_BaseProfileRule):
     def __init__(self, context, field):
         super(ProhibitedRule, self).__init__(context, field)
-        self._type = ProfileRule._TYPE_REPORT
+        self._type = self._TYPE_REPORT
 
-    @ProfileRule.message.getter
+    @_BaseProfileRule.test.getter
+    def test(self):
+        return self.field
+
+    @_BaseProfileRule.message.getter
     def message(self):
         return "{0}/{1} is prohibited by this profile.".format(
             self.context, self.field
         )
 
-class AllowedValuesRule(ProfileRule):
+
+class AllowedValuesRule(_BaseProfileRule):
     def __init__(self, context, field, values=None):
         super(AllowedValuesRule, self).__init__(context, field)
+        self._type = self._TYPE_ASSERT
         self.values = values
 
     @property
@@ -228,13 +258,13 @@ class AllowedValuesRule(ProfileRule):
         else:
             self._values = [value]
 
-    @ProfileRule.message.getter
+    @_BaseProfileRule.message.getter
     def message(self):
        return "The allowed values for {0}/{1} are {2}".format(
            self.context, self.field, self.values
        )
 
-    @ProfileRule.test.getter
+    @_BaseProfileRule.test.getter
     def test(self):
         name = self.field
         allowed = self.values
@@ -247,9 +277,10 @@ class AllowedValuesRule(ProfileRule):
         return test
 
 
-class AllowedImplsRule(ProfileRule):
+class AllowedImplsRule(_BaseProfileRule):
     def __init__(self, context, field, impls=None):
         super(AllowedImplsRule, self).__init__(context, field)
+        self._type = self._TYPE_ASSERT
         self.impls = impls
 
     def _validate(self):
@@ -273,13 +304,13 @@ class AllowedImplsRule(ProfileRule):
         else:
             self._impls = [value]
 
-    @ProfileRule.message.getter
+    @_BaseProfileRule.message.getter
     def message(self):
        return "The allowed implementations for {0}/{1} are {2}".format(
            self.context, self.field, self.impls
        )
 
-    @ProfileRule.test.getter
+    @_BaseProfileRule.test.getter
     def test(self):
        return " or ".join("@xsi:type='%s'" % (x,) for x in self.impls)
 
@@ -384,7 +415,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 fieldname = field
 
             if occurrence == OCCURRENCE_REQUIRED:
-                rule = ProfileRule(context, fieldname)
+                rule = RequiredRule(context, fieldname)
                 rules.append(rule)
             elif occurrence == OCCURRENCE_PROHIBITED:
                 rule = ProhibitedRule(context, fieldname)
