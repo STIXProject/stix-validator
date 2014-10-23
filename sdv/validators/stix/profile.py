@@ -190,11 +190,11 @@ class ProfileRule(object):
             line_number
         )
 
-        element = etree.XML(
+        rule = etree.XML(
             '<{0} xmlns="{1}" test="{2}" role="{3}">{4} {5}</{0}>'.format(*args)
         )
 
-        return element
+        return rule
 
 
 class ProhibitedRule(ProfileRule):
