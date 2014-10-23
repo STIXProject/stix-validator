@@ -409,12 +409,54 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
 
     def _build_rules(self, label, info, field, occurrence, types, values):
+        """Builds a ``_BaseProfileRule`` implementation list for the rule
+        parameters.
+
+        Each rule can be broken up into the following components:
+
+        * Context Label: Any label that can be mapped to one or more instance
+            document selectors. For example: 'indicator:Indicator' which could
+            be mapped ('//indicator:Indicator', '//stixCommon:Indicator',
+            '//stix:Indicator'). The context label does not need to refer to
+            a schema data type, but often does.
+        * Field Name: An element or attribute name held by structure pointed
+            to by the context label. For example, if the context label is
+            'indicator:Indicator' a field name could be '@version' or
+            'Title'. Attributes are prefaced by '@'.
+        * Occurrence: These are typically, 'prohibited', 'required', 'optional'
+            or 'suggested'. Rules are only created for 'required' and
+            'prohibited' occurrence entries.
+        * Implementation Type(s): These are allowed implementations of a
+            ``Field Name``. This is often used to define controlled vocabulary
+            or CybOX Object requirements. Example: ``stixVocabs:IndicatorType``.
+            Multiple entries are comma delimited.
+        * Allowed Value(s): Allowable values for a ``Field Name``. Examples
+            are allowable `@version` values, or controlled vocabulary terms.
+
+        Entries marked as ``Required`` may also have ``Allowed Value`` and
+        ``Implementation Types`` tests applied to the field as well.
+
+        Entries marked as ``Prohibited`` are only checked for presence. Any
+        values found in the ``Implementation Types` or ``Allowed Values`` fields
+        will be ignored.
+
+        Returns:
+            A list of ``_BaseProfileRule`` implementations for the given
+            rule parameters.  Because a ``Context Label`` can be mapped to
+            multiple instance selectors, this method returns a list of rules
+            for each selector. If a ``Context Label`` maps to only one
+            selector, a list containing one element will be returned.
+
+        """
         selectors = info.selectors
         ns_alias = info.ns_alias
 
         rules = []
         for context in selectors:
             if not _is_attr(field):
+                # elements must have a namespace alias attached which maps to
+                # the defining namespace for the underlying data type of the
+                # instance selector.
                 fieldname = "%s:%s" % (ns_alias, field)
             else:
                 fieldname = field
@@ -440,8 +482,16 @@ class STIXProfileValidator(schematron.SchematronValidator):
         return rules
 
     def _parse_worksheet_rules(self, worksheet, instance_map):
-        """Builds a dictionary representation of the rules defined by a STIX
-        profile document.
+        """Parses the rules from the profile `workheet`.
+
+        Args:
+            worksheet: A profile worksheet containing rules.
+            instance_map: A dictionary representation of the ``Instance
+                Mapping`` worksheet.
+
+        Returns:
+            A list of ``_BaseProfileRule`` implementations for the rules
+            defined in the `worksheet`.
 
         """
         all_rules = []
@@ -514,7 +564,14 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """Parses the supplied Instance Mapping worksheet and returns a
         dictionary representation.
 
+        Args:
+            worksheet: The instance mapping worksheet of the profile.
+            nsmap: The namespace dictionary derived from the ``Namespace``
+                worksheet of the profile.
 
+        Returns:
+            A dictionary where the key is a Profile ruleset label and the value
+            is an instance of the :class:`InstanceMapping` ``namedtuple``.
 
         """
         value = functools.partial(self._get_value, worksheet)
@@ -553,7 +610,21 @@ class STIXProfileValidator(schematron.SchematronValidator):
         return instance_map
 
 
-    def _parse_rules(self, workbook, instance_map):
+    def _parse_workbook_rules(self, workbook, instance_map):
+        """Parses all worksheets contained in `workbook` which contain
+        profile rules. This will skip over the 'Overview', 'Namespace', and
+        'Instance Mapping' worksheets.
+
+        Args:
+            workbook: The profile Excel workbook.
+            instance_map: A dictionary representation of the
+                ``Instance Mapping`` worksheet.
+
+        Returns:
+            A list of ``_BaseProfileRule`` implementations containing every
+            rule in the `workbook` profile.
+
+        """
         skip = ("Overview", "Namespaces", "Instance Mapping")
 
         all_rules = []
@@ -571,6 +642,12 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """Converts the supplied STIX profile into a Schematron representation.
          The Schematron schema is returned as a etree._Element instance.
 
+        Args:
+            workbook: The profile Excel workbook.
+
+        Returns:
+            A Schematron ``etree._Element`` instance.
+
         """
         ws = workbook.sheet_by_name
         namespaces = self._parse_namespace_worksheet(ws("Namespaces"))
@@ -579,7 +656,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         )
 
         profile = Profile(namespaces)
-        rules = self._parse_rules(workbook, instance_mapping)
+        rules = self._parse_workbook_rules(workbook, instance_mapping)
         profile.extend(rules)
         return profile.as_etree()
 
