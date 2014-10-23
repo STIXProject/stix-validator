@@ -41,3 +41,6 @@ nosetests.xml
 # pycharm
 .idea/
 .idea
+
+# sphinx
+docs/_build
