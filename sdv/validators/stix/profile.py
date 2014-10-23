@@ -36,6 +36,11 @@ def _is_attr(fieldname):
     return fieldname.startswith("@")
 
 
+InstanceMapping = collections.namedtuple(
+    "InstanceMapping", ('selectors', 'namespace', 'ns_alias')
+)
+
+
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
         self.id_ = "STIX_Schematron_Profile"
@@ -403,9 +408,9 @@ class STIXProfileValidator(schematron.SchematronValidator):
         super(STIXProfileValidator, self).__init__(schematron=profile)
 
 
-    def _build_rules(self, label, instance_map, field, occurrence, types, values):
-        selectors = instance_map[label]['selectors']
-        ns_alias = instance_map[label]['ns_alias']
+    def _build_rules(self, label, info, field, occurrence, types, values):
+        selectors = info.selectors
+        ns_alias = info.ns_alias
 
         rules = []
         for context in selectors:
@@ -434,7 +439,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return rules
 
-    def _parse_rules_worksheet(self, worksheet, instance_map):
+    def _parse_worksheet_rules(self, worksheet, instance_map):
         """Builds a dictionary representation of the rules defined by a STIX
         profile document.
 
@@ -462,7 +467,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 continue
 
             rules = self._build_rules(
-                ctx_label, instance_map, field, occurrence, types, values
+                ctx_label, instance_map[ctx_label], field, occurrence, types, values
             )
 
             all_rules.extend(rules)
@@ -472,15 +477,15 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
 
     def _parse_namespace_worksheet(self, worksheet):
-        '''Parses the Namespaces worksheet of the profile. Returns a dictionary
-        representation:
+        """Parses the Namespaces worksheet of a STIX profile. Returns a
+        dictionary representation.
 
-        d = { <namespace> : <namespace alias> }
+        ``d = { <namespace> : <namespace alias> }``
 
-        By default, entries for http://stix.mitre.org/stix-1 and
-        http://icl.com/saxon are added.
+        By default, libxml2-required Saxon namespace is added to the return
+        dictionary.
 
-        '''
+        """
         value = functools.partial(self._get_value, worksheet)
         nsmap = {schematron.NS_SAXON: 'saxon'}
 
@@ -506,15 +511,12 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
 
     def _parse_instance_mapping_worksheet(self, worksheet, nsmap):
-        '''Parses the supplied Instance Mapping worksheet and returns a
+        """Parses the supplied Instance Mapping worksheet and returns a
         dictionary representation.
 
-        d0  = { <STIX type label> : d1 }
-        d1  = { 'selectors' : XPath selectors to instances of the XML datatype',
-                'ns' : The namespace where the STIX type is defined,
-                'ns_alias' : The namespace alias associated with the namespace }
 
-        '''
+
+        """
         value = functools.partial(self._get_value, worksheet)
         instance_map = {}
 
@@ -542,11 +544,11 @@ class STIXProfileValidator(schematron.SchematronValidator):
                     "namespace for %s in Instance Mapping worksheet" % label
                 )
 
-            instance_map[label] = {
-                'selectors': selectors,
-                'ns': namespace,
-                'ns_alias': nsmap[namespace]
-            }
+            instance_map[label] = InstanceMapping(
+                selectors=selectors,
+                namespace=namespace,
+                ns_alias = nsmap[namespace]
+            )
 
         return instance_map
 
@@ -559,7 +561,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             if worksheet.name in skip:
                 continue
 
-            rules = self._parse_rules_worksheet(worksheet, instance_map)
+            rules = self._parse_worksheet_rules(worksheet, instance_map)
             all_rules.extend(rules)
 
         return all_rules
@@ -583,13 +585,13 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
 
     def _unload_workbook(self, workbook):
-        '''Unloads the xlrd workbook.'''
+        """Unloads the xlrd workbook."""
         for worksheet in workbook.sheets():
             workbook.unload_sheet(worksheet.name)
 
 
     def _get_value(self, worksheet, row, col):
-        '''Returns the worksheet cell value found at (row,col).'''
+        """Returns the worksheet cell value found at (row,col)."""
         if not worksheet:
             raise errors.ProfileParseError("worksheet value was NoneType")
 
