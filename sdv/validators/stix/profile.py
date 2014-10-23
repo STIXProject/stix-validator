@@ -386,7 +386,7 @@ class AllowedValuesRule(_BaseProfileRule):
         name = self.field
         allowed = self.values
 
-        if name.startswith("@"):
+        if self.is_attr:
             test = " or ".join("%s='%s'" % (name, x) for x in allowed)
         else:
             test = " or ".join(".='%s'" % (x) for x in allowed)
