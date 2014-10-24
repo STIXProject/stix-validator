@@ -19,7 +19,7 @@ COL_OCCURRENCE     = 1
 COL_XSI_TYPES      = 3
 COL_ALLOWED_VALUES = 4
 
-# Instance mapping worksheet columns
+# Instance Mapping worksheet columns
 COL_LABEL          = 0
 COL_SELECTORS      = 1
 COL_TYPE_NAMESPACE = 2
@@ -35,12 +35,6 @@ ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
 
 # Used by profile schematron for reporting error line numbers.
 SAXON_LINENO= '[<value-of select="saxon:line-number()"/>]'
-
-
-# Holds information found in an Instance Mapping worksheet row.
-InstanceMapping = collections.namedtuple(
-    "InstanceMapping", ('selectors', 'namespace', 'ns_alias')
-)
 
 
 class InstanceMapping(object):
@@ -694,7 +688,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         return rules
 
     def _parse_worksheet_rules(self, worksheet, instance_map):
-        """Parses the rules from the profile `workheet`.
+        """Parses the rules from the profile sheet `workheet`.
 
         Args:
             worksheet: A profile worksheet containing rules.
