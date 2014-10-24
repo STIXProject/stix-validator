@@ -1,4 +1,4 @@
-from sdv.errors import (UnknownSTIXVersionError, InvalidSTIXVersionError)
+import sdv.errors as errors
 import sdv.utils as utils
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
@@ -53,10 +53,10 @@ def get_stix_namespaces(version):
 
     """
     if not version:
-        raise UnknownSTIXVersionError("Version cannot be None")
+        raise errors.UnknownSTIXVersionError("Version cannot be None")
 
     if version not in STIX_VERSIONS:
-         raise InvalidSTIXVersionError(
+         raise errors.InvalidSTIXVersionError(
             "Unable to determine namespaces for version '%s'" % version,
             expected=STIX_VERSIONS,
             found=version
