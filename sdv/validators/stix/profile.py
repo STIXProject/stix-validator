@@ -37,14 +37,100 @@ ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
 SAXON_LINENO= '[<value-of select="saxon:line-number()"/>]'
 
 
-def _is_attr(fieldname):
-    """Returns ``True`` if `fieldname` refers to an attribute."""
-    return fieldname.startswith("@")
-
 # Holds information found in an Instance Mapping worksheet row.
 InstanceMapping = collections.namedtuple(
     "InstanceMapping", ('selectors', 'namespace', 'ns_alias')
 )
+
+
+class InstanceMapping(object):
+    """Contains information about an entry in the Instance Mapping worksheet
+    of a Profile.
+
+    Args:
+        nsmap: A dictionary representation of the Namespaces worksheet.
+
+    Attributes:
+        selectors: A list of instance selectors for an Instance Mapping entry.
+        namespace: The type namespace for an Instance Mapping entry.
+        ns_alias: The namespace alias for the `namespace` to be used in the
+            output profile schematron.
+    """
+    def __init__(self, nsmap):
+        self._nsmap = nsmap
+        self._ns_alias  = None
+        self.selectors = None
+        self.namespace = None
+
+    @property
+    def selectors(self):
+        return self._selectors
+
+    @selectors.setter
+    def selectors(self, value):
+        """Parses the cell value found in the Excel STIX profile for Instance
+        Mapping selectors.
+
+        Args:
+            value: An single selector, list of selectors, or a
+            comma-delimited string of selectors.
+
+        """
+        if not value:
+            self._selectors = []
+        elif isinstance(value, basestring):
+            self._selectors = [
+                x.strip().replace('"', "'") for x in value.split(",")
+            ]
+        elif hasattr(value, "__getitem__"):
+            self._selectors = [str(x) for x in value]
+        else:
+            self._selectors = [value]
+
+    @property
+    def namespace(self):
+        return self._namespace
+
+    @namespace.setter
+    def namespace(self, value):
+        """Sets the namespace and ns_alias properties.
+
+        Raises:
+            KeyError: if `value` is not found in the internal namespace
+                dictionary.
+
+        """
+        if not value:
+            self._namespace = None
+            self._ns_alias = None
+        else:
+            self._namespace = value
+            self._ns_alias = self._nsmap[value]
+
+    @property
+    def ns_alias(self):
+        return self._ns_alias
+
+
+    def validate(self):
+        """Checks that this is a valid InstanceMapping instance.
+
+        Raises:
+            errors.ProfileParseError: If ``namespace`` is ``None`` or
+                any of the selector values are empty.
+
+        """
+        if not self.namespace:
+            raise errors.ProfileParseError(
+                "Missing namespace for '%s' in Instance Mapping "
+                "worksheet" % self.label
+            )
+
+        if not (self.selectors and all(self.selectors)):
+            raise errors.ProfileParseError(
+                "Empty selector for '%s' in Instance Mapping "
+                "worksheet. Look for extra commas in field." % self.label
+            )
 
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
@@ -76,7 +162,8 @@ class Profile(collections.MutableSequence):
 
     def _collect_rules(self):
         """Builds and returns a dictionary of ``BaseProfileRule``
-        implementations from the internal storage. The key is the Rule context.
+        implementations from the internal storage. The key is the Rule context
+        (e.g., "/", "stix:Indicator", "stix:STIX_Header/stix:Package_Intent").
 
         Determining the context of a profile rule is done by examining the
         following properties of the rule:
@@ -352,9 +439,6 @@ class AllowedValuesRule(_BaseProfileRule):
             value: An allowed value, list of allowed values, or a
             comma-delimited string of allowed values.
 
-        Returns:
-            A list of allowed values.
-
         """
         if not value:
             self._values = []
@@ -421,9 +505,6 @@ class AllowedImplsRule(_BaseProfileRule):
             value: An allowed implementation value, list of allowed
             implementations, or a comma-delimited string of allowed
             implementations.
-
-        Returns:
-            A list of allowed implementations.
 
         """
         if not value:
@@ -582,16 +663,16 @@ class STIXProfileValidator(schematron.SchematronValidator):
         selectors = info.selectors
         ns_alias = info.ns_alias
 
+        if not field.startswith("@"):
+            # elements must have a namespace alias attached which maps to
+            # the defining namespace for the underlying data type of the
+            # instance selector.
+            fieldname = "%s:%s" % (ns_alias, field)
+        else:
+            fieldname = field
+
         rules = []
         for context in selectors:
-            if not _is_attr(field):
-                # elements must have a namespace alias attached which maps to
-                # the defining namespace for the underlying data type of the
-                # instance selector.
-                fieldname = "%s:%s" % (ns_alias, field)
-            else:
-                fieldname = field
-
             if occurrence == OCCURRENCE_REQUIRED:
                 rule = RequiredRule(context, fieldname)
                 rules.append(rule)
@@ -624,19 +705,29 @@ class STIXProfileValidator(schematron.SchematronValidator):
             A list of ``_BaseProfileRule`` implementations for the rules
             defined in the `worksheet`.
 
+        Raises:
+            errors.ProfileParseError: If a rule context label has no associated
+                entry in `instance_map`.
+
         """
         all_rules = []
-        value = functools.partial(self._get_value, worksheet)  # Tidy up!
+        value = functools.partial(self._get_value, worksheet)
+        is_empty_row = functools.partial(self._is_empty_row, worksheet)
 
-        def _is_empty_row(worksheet, row):
-            return not any(value(row, x) for x in xrange(worksheet.ncols))
+        def check_label(label):
+            if label not in instance_map:
+                raise errors.ProfileParseError(
+                    "Worksheet '%s' context label '%s' has no Instance Mapping "
+                    "entry." % (worksheet.name, label)
+                )
 
         for i in xrange(1, worksheet.nrows):
-            if _is_empty_row(worksheet, i):
+            if is_empty_row(i):
                 continue
 
             if not value(i, COL_OCCURRENCE):
                 ctx_label = value(i, COL_FIELD_NAME)
+                check_label(ctx_label)
                 continue
 
             field = value(i, COL_FIELD_NAME)
@@ -648,7 +739,12 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 continue
 
             rules = self._build_rules(
-                ctx_label, instance_map[ctx_label], field, occurrence, types, values
+                label=ctx_label,
+                info=instance_map[ctx_label],
+                field=field,
+                occurrence=occurrence,
+                types=types,
+                values=values
             )
 
             all_rules.extend(rules)
@@ -667,13 +763,11 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         """
         value = functools.partial(self._get_value, worksheet)
+        is_empty_row = functools.partial(self._is_empty_row, worksheet)
         nsmap = {schematron.NS_SAXON: 'saxon'}
 
-        def _is_empty_row(worksheet, row):
-            return not any(value(row, x) for x in xrange(worksheet.ncols))
-
         for i in xrange(1, worksheet.nrows):  # skip the first row
-            if _is_empty_row(worksheet, i):
+            if is_empty_row(i):
                 continue
 
             ns = value(i, COL_NAMESPACE)
@@ -700,42 +794,39 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 worksheet of the profile.
 
         Returns:
-            A dictionary where the key is a Profile ruleset label and the value
-            is an instance of the :class:`InstanceMapping` ``namedtuple``.
+            A dictionary where the key is a Profile rule context label and the
+            value is an instance of the :class:`InstanceMapping`.
 
         """
         value = functools.partial(self._get_value, worksheet)
+        is_empty_row = functools.partial(self._is_empty_row, worksheet)
         instance_map = {}
 
-        def _is_empty_row(worksheet, row):
-            return not any(value(row, x) for x in xrange(worksheet.ncols))
+        def check_label(label):
+            if not label:
+                raise errors.ProfileParseError(
+                    "Found empty type label in Instance Mapping worksheet"
+                )
+
+            if label in instance_map:
+                raise errors.ProfileParseError(
+                    "Found duplicate type label in Instance Mapping worksheet: "
+                    "'%s'" % label
+            )
 
         for i in xrange(1, worksheet.nrows):
-            if _is_empty_row(worksheet, i):
+            if is_empty_row(i):
                 continue
 
             label = value(i, COL_LABEL)
-            namespace = value(i, COL_TYPE_NAMESPACE)
-            selectors = value(i, COL_SELECTORS)
-            selectors = [x.strip().replace('"', "'") for x in selectors.split(",")]
+            check_label(label)
 
-            if not all(selectors):
-                raise errors.ProfileParseError(
-                    "Empty selector for '%s' in Instance Mapping "
-                    "worksheet. Look for extra commas in field." % label
-                )
+            mapping = InstanceMapping(nsmap)
+            mapping.namespace = value(i, COL_TYPE_NAMESPACE)
+            mapping.selectors = value(i, COL_SELECTORS)
+            mapping.validate()
 
-            if not all((label, selectors, namespace)):
-                raise errors.ProfileParseError(
-                    "Missing label, instance selector and/or "
-                    "namespace for %s in Instance Mapping worksheet" % label
-                )
-
-            instance_map[label] = InstanceMapping(
-                selectors=selectors,
-                namespace=namespace,
-                ns_alias = nsmap[namespace]
-            )
+            instance_map[label] = mapping
 
         return instance_map
 
@@ -757,15 +848,15 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """
         skip = ("Overview", "Namespaces", "Instance Mapping")
 
-        all_rules = []
+        rules = []
         for worksheet in workbook.sheets():
             if worksheet.name in skip:
                 continue
 
-            rules = self._parse_worksheet_rules(worksheet, instance_map)
-            all_rules.extend(rules)
+            wksht_rules = self._parse_worksheet_rules(worksheet, instance_map)
+            rules.extend(wksht_rules)
 
-        return all_rules
+        return rules
 
     @contextlib.contextmanager
     def _parse_profile(self, profile_fn):
@@ -805,6 +896,16 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """Unloads the xlrd workbook."""
         for worksheet in workbook.sheets():
             workbook.unload_sheet(worksheet.name)
+
+
+    def _is_empty_row(self, worksheet, row):
+        """Returns true if the `row` in `worksheet` does not contain any values
+        in any columns.
+
+        """
+        return not any(
+            self._get_value(worksheet, row, x) for x in xrange(worksheet.ncols)
+        )
 
 
     def _get_value(self, worksheet, row, col):
