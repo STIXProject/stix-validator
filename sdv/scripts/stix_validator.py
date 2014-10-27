@@ -16,9 +16,31 @@ import sdv.utils as utils
 from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
     STIXBestPracticeValidator)
 
-EXIT_SUCCESS = 0
-EXIT_FAILURE = 1
+# Exit status codes. Status codes can be combined and discovered via bitmask.
+
+# Execution finished successfully. All STIX documents were valid for all user-
+# specified validation scenarios.
+EXIT_SUCCESS                = 0x0
+
+# Execution finished with fatal system error. Some unhandled system exception
+# was raised during execution.
+EXIT_FAILURE                = 0x1
+
+# Execution finished with at least one input document found to be schema-
+# invalid.
+EXIT_SCHEMA_INVALID         = 0x2
+
+# Execution finished with at least one input document found to be profile
+# invalid.
+EXIT_PROFILE_INVALID        = 0x4
+
+# Execution finished with at least one input document found to be best practice
+# invalid.
+EXIT_BEST_PRACTICE_INVALID  = 0x8
+
+# Only print results and/or system errors.
 QUIET_OUTPUT = False
+
 
 class ValidationOptions(object):
     """Collection of validation options which can be set via command line.
