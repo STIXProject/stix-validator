@@ -35,7 +35,7 @@ import sdv
 import sdv.errors as errors
 import sdv.utils as utils
 from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
-    STIXBestPracticeValidator)
+    STIXBestPracticeValidator, ValidationErrorResults)
 
 # Exit status codes. Status codes can be combined and discovered via bitmasks.
 
@@ -555,7 +555,7 @@ def _validate_file(fn, options, schema_validator=None, profile_validator=None,
             )
             _info(msg)
     except Exception as ex:
-        results.fatal = sdv.ValidationErrorResults(ex)
+        results.fatal = ValidationErrorResults(ex)
         _info("Unexpected error occurred with file %s'. No further validation "
               "will be performed: %s" % (fn, str(ex)))
 

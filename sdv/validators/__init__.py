@@ -55,7 +55,7 @@ class ValidationErrorResults(ValidationResults):
         exception: The exception which produced these results.
 
     """
-    def __init__(self, error=None):
+    def __init__(self, error):
         self._is_valid = False
         self.error = str(error)
         self.exception = error
