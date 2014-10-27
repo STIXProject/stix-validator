@@ -556,7 +556,7 @@ def _validate_file(fn, options, schema_validator=None, profile_validator=None,
             _info(msg)
     except Exception as ex:
         results.fatal = ValidationErrorResults(ex)
-        _info("Unexpected error occurred with file %s'. No further validation "
+        _info("Unexpected error occurred with file %s. No further validation "
               "will be performed: %s" % (fn, str(ex)))
 
     return results
