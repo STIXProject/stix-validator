@@ -46,7 +46,7 @@ extras_require = {
 
 setup(
     name='stix-validator',
-    description='Validates STIX documents',
+    description='STIX Document Validator',
     author='The MITRE Corporation',
     author_email='stix@mitre.org',
     url='http://stix.mitre.org/',
