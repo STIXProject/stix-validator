@@ -1,4 +1,5 @@
 import os
+import sdv.errors as errors
 from lxml import etree
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
@@ -33,14 +34,17 @@ def get_etree_root(doc):
         IOError: If `doc` is an invalid filename or file-like object
 
     """
-    if isinstance(doc, etree._Element):
-        root = doc
-    elif isinstance(doc, etree._ElementTree):
-        root = doc.getroot()
-    else:
-        parser = get_xml_parser()
-        tree = etree.parse(doc, parser=parser)
-        root = tree.getroot()
+    try:
+        if isinstance(doc, etree._Element):
+            root = doc
+        elif isinstance(doc, etree._ElementTree):
+            root = doc.getroot()
+        else:
+            parser = get_xml_parser()
+            tree = etree.parse(doc, parser=parser)
+            root = tree.getroot()
+    except Exception as ex:
+        raise errors.ValidationError(str(ex))
 
     return root
 

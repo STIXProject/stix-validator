@@ -2,10 +2,31 @@
 
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
-'''
-STIX Document Validator (sdv) - validates STIX v1.1.1 instance documents.
-'''
 
+"""STIX Document Validator (sdv) - validates STIX instance documents.
+
+The STIX Document Validator can perform the following forms of STIX document
+validator:
+
+* STIX XML Schema validation
+* STIX Profile validation
+* STIX Best Practice validation
+
+This script uses different exit status codes to indicate various forms of
+errors that can occur during validation. Because validation errors are
+additive, users can bitmask the return values to determine what errors
+occurred at a glance:
+
+* ``0x0``. No errors occurred.
+* ``0x1``. A fatal system error occurred.
+* ``0x2``. At least one schema-invalid document was processed.
+* ``0x4``. At least one profile-invalid document was processed.
+* ``0x8``. At least on best-practice-invalid document was processed.
+* ``0x10``. A non-fatal error occurred during validation. This usually indicates
+    scenarios where malformed XML documents are validated or missing files are
+    attempted to be validated.
+
+"""
 import sys
 import logging
 import argparse
@@ -16,7 +37,7 @@ import sdv.utils as utils
 from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
     STIXBestPracticeValidator)
 
-# Exit status codes. Status codes can be combined and discovered via bitmask.
+# Exit status codes. Status codes can be combined and discovered via bitmasks.
 
 # Execution finished successfully. All STIX documents were valid for all user-
 # specified validation scenarios.
@@ -38,9 +59,12 @@ EXIT_PROFILE_INVALID        = 0x4
 # invalid.
 EXIT_BEST_PRACTICE_INVALID  = 0x8
 
-# Only print results and/or system errors.
-QUIET_OUTPUT = False
+# An error occurred while validating an instance document. This can be caused
+# by malformed input documents or file names that do not resolve to actual files.
+EXIT_VALIDATION_ERROR       = 0x10
 
+# Only print results and/or system errors.
+quiet = False
 
 class ValidationOptions(object):
     """Collection of validation options which can be set via command line.
@@ -90,8 +114,6 @@ class ValidationOptions(object):
         self.in_files = None
         self.in_profile = None
 
-        # self.in_schemas = None # Not supported yet.
-
 
 class ValidationResults(object):
     """Stores validation results for given file.
@@ -104,6 +126,7 @@ class ValidationResults(object):
         schema_results: XML schema validation results.
         best_practice_results: STIX Best Practice validation results.
         profile_resutls: STIX Profile validation results.
+        fatal: Fatal error
 
     """
     def __init__(self, fn=None):
@@ -111,6 +134,7 @@ class ValidationResults(object):
         self.schema_results = None
         self.best_practice_results = None
         self.profile_results = None
+        self.fatal = None
 
 
 class ArgumentError(Exception):
@@ -136,7 +160,7 @@ class SchemaInvalidError(Exception):
     STIX document.
 
     Attributes:
-        results (dict): A dictionary of schema validation results.
+        results: An instance of sdv.validators.XmlValidationResults.
 
     """
     def __init__(self, msg=None, results=None):
@@ -144,15 +168,17 @@ class SchemaInvalidError(Exception):
         self.results = results
 
 
-def _error(msg):
-    """Prints a message to the stderr prepended by '[!]'.
+def _error(msg, status=EXIT_FAILURE):
+    """Prints a message to the stderr prepended by '[!]' and calls
+    ```sys.exit(status)``.
 
     Args:
         msg: The error message to print.
+        status: The exit status code. Defaults to ``EXIT_FAILURE`` (1).
 
     """
     sys.stderr.write("[!] %s\n" % str(msg))
-    exit(EXIT_FAILURE)
+    sys.exit(status)
 
 
 def _info(msg):
@@ -160,16 +186,17 @@ def _info(msg):
 
     Note:
         If the application is running in "Quiet Mode"
-        (i.e., ``QUIET_OUTPUT == True``), this function will return
+        (i.e., ``quiet == True``), this function will return
         immediately and no message will be printed.
 
     Args:
         msg: The message to print.
 
     """
-    if QUIET_OUTPUT:
+    if quiet:
         return
-    print "[-] %s" % msg
+
+    print  "[-] %s" % msg
 
 
 def _print_level(fmt, level, *args):
@@ -184,12 +211,12 @@ def _print_level(fmt, level, *args):
             format string.
 
     Examples:
-        >>> _print_level("%s", 0, "TEST")
-        TEST
-        >>> _print_level("%s", 1, "TEST")
-            TEST
-        >>> _print_level("%s", 2, "TEST")
-                TEST
+        >>> _print_level("%s %d", 0, "TEST", 0)
+        TEST 0
+        >>> _print_level("%s %d", 1, "TEST", 1)
+            TEST 1
+        >>> _print_level("%s %d", 2, "TEST", 2)
+                TEST 2
 
     """
     msg = fmt % args
@@ -205,33 +232,37 @@ def _set_output_level(options):
     results or fatal errors are printed to stdout.
 
     """
-    global QUIET_OUTPUT
-    QUIET_OUTPUT = options.quiet_output or options.json_results
+    global quiet
+    quiet = options.quiet_output or options.json_results
 
 
-def _print_schema_results(fn, results):
+def _print_fatal_results(results, level=0):
+    """Prints fatal errors that occurred during validation runs."""
+    _print_level("[!] Fatal Error: %s", level, results.error)
+
+
+def _print_schema_results(results, level=0):
     """Prints STIX Schema validation results to stdout.
 
     Args:
-        fn: The name/path of the file that was validated.
-        results (dict): The validation results.
+        results: An instance of sdv.validators.XmlSchemaResults.
+        level: The level to print the results.
 
     """
-    if results.is_valid:
-        _print_level("[+] XML schema validation results: %s : VALID", 0, fn)
-    else:
-        _print_level("[!] XML schema validation results: %s : INVALID", 0, fn)
-        _print_level("[!] Validation errors", 0)
+    marker = "+" if results.is_valid else "!"
+    _print_level("[%s] XML Schema: %s", level, marker, results.is_valid)
+
+    if not results.is_valid:
         for error in results.errors:
-            _print_level("[!] %s", 1, error)
+            _print_level("[!] %s", level+1, error)
 
 
-def _print_best_practice_results(fn, results):
+def _print_best_practice_results(results, level=0):
     """Prints STIX Best Practice validation results to stdout.
 
     Args:
-        fn: The name/path of the file that was validated.
-        results (dict): The validation results.
+        results: An instance of sdv.validators.STIXBestPracticeResults
+        level: The level to print the results.
 
     """
     def _print_warning(warning, level):
@@ -241,41 +272,37 @@ def _print_best_practice_results(fn, results):
         for key in sorted(warning.other_keys):
             _print_level("[-] %s : %s", level, key, warning[key])
 
-        _print_level("-"*80, level)
-
-    def _print_warnings(collection):
+    def _print_warnings(collection, level):
          for warning in collection:
-            _print_warning(warning, 2)
+            _print_warning(warning, level)
 
-    if results.is_valid:
-        _print_level("[+] Best Practice validation results: %s : VALID", 0, fn)
-    else:
-        _print_level("[!] Best Practice validation results: %s : INVALID", 0, fn)
-        _print_level("[!] Best Practice warnings", 0)
+            if warning is not collection[-1]:
+                _print_level("-"*80, level)
 
+    marker = "+" if results.is_valid else "!"
+    _print_level("[%s] Best Practices: %s", level, marker, results.is_valid)
+
+    if not results.is_valid:
         for collection in sorted(results, key=lambda x: x.name):
-            _print_level("[!] %s", 1, collection.name)
-            _print_warnings(collection)
+            _print_level("[!] %s", level+1, collection.name)
+            _print_warnings(collection, level+2)
 
 
-def _print_profile_results(fn, results):
+def _print_profile_results(results, level):
     """Prints STIX Profile validation results to stdout.
 
     Args:
-        fn: The name/path of the file that was validated.
-        results (dict): The validation results.
+        results: An instance of sdv.validators.STIXProfileResults.
+        level: The level to print the results.
 
     """
+    marker = "+" if results.is_valid else "!"
+    _print_level("[%s] Profile: %s", level, marker, results.is_valid)
 
-    if results.is_valid:
-        _print_level("[+] Profile validation results: %s : VALID", 0, fn)
-    else:
-        _print_level("[!] Profile validation results: %s : INVALID", 0, fn)
-        _print_level("[!] Profile Errors", 0)
-
+    if not results.is_valid:
         errors = results.as_dict()['errors']
         for msg, line_numbers in errors.iteritems():
-            _print_level("[!] %s [%s]", 1, msg, ', '.join(line_numbers))
+            _print_level("[!] %s [%s]", level+1, msg, ', '.join(line_numbers))
 
 
 def _print_json_results(results):
@@ -294,6 +321,8 @@ def _print_json_results(results):
             d['profile_results'] = result.profile_results.as_dict()
         if result.best_practice_results is not None:
             d['best_practice_results'] = result.best_practice_results.as_dict()
+        if result.fatal is not None:
+            d['fatal'] = result.fatal.as_dict()
 
         json_results[fn] = d
 
@@ -305,8 +334,8 @@ def _print_results(results, options):
     results are printed in JSON format.
 
     Args:
-        results: An instance of ``ValidationResults`` which contains the
-            results to print.
+        results: A dictionary of ValidationResults instances. The key is the
+            file path to the validated document.
         options: An instance of ``ValidationOptions`` which contains output
             options.
 
@@ -315,14 +344,19 @@ def _print_results(results, options):
         _print_json_results(results)
         return
 
-    for fn, result in results.iteritems():
-        if result.schema_results is not None:
-            _print_schema_results(fn, result.schema_results)
-        if result.best_practice_results is not None:
-            _print_best_practice_results(fn, result.best_practice_results)
-        if result.profile_results is not None:
-            _print_profile_results(fn, result.profile_results)
+    level = 0
+    for fn, result in sorted(results.iteritems()):
+        print "=" * 80
+        _print_level("[-] Results: %s", level, fn)
 
+        if result.schema_results is not None:
+            _print_schema_results(result.schema_results, level)
+        if result.best_practice_results is not None:
+            _print_best_practice_results(result.best_practice_results, level)
+        if result.profile_results is not None:
+            _print_profile_results(result.profile_results, level)
+        if result.fatal is not None:
+            _print_fatal_results(result.fatal, level)
 
 def _convert_profile(validator, options):
     """Converts a STIX Profile to XSLT and/or Schematron formats.
@@ -335,7 +369,7 @@ def _convert_profile(validator, options):
 
     Args:
         validator: An instance of STIXProfileValidator
-        options: ValidationOptions intance with validation options for this
+        options: ValidationOptions instance with validation options for this
             validation run.
 
     """
@@ -437,6 +471,7 @@ def _get_schema_validator(options):
 
     """
     if options.schema_validate:
+        _info("Initializing STIX XML Schema validator")
         return STIXSchemaValidator(schema_dir=options.schema_dir)
     return None
 
@@ -452,6 +487,7 @@ def _get_profile_validator(options):
 
     """
     if any((options.profile_validate, options.profile_convert)):
+        _info("Initializing STIX Profile validator")
         return STIXProfileValidator(options.in_profile)
     return None
 
@@ -467,13 +503,33 @@ def _get_best_practice_validator(options):
 
     """
     if options.best_practice_validate:
+        _info("Initializing STIX Best Practice validator")
         return STIXBestPracticeValidator()
     return None
 
 
-def _validate_file(fn, schema_validator, profile_validator,
-        best_practice_validator, options):
+def _validate_file(fn, options, schema_validator=None, profile_validator=None,
+        best_practice_validator=None):
+    """Validates the input document `fn` with the validators that are passed
+    in.
 
+    Profile and/or Best Practice validation will only occur if `fn` is
+    schema-valid.
+
+    If any exceptions are raised during validation, no further validation
+    will take place.
+
+    Args:
+        schema_validator: An instance of STIXSchemaValidator (optional)
+        profile_validator: An instance of STIXProfileValidator (optional)
+        best_practice_validator: An instance of STIXBestPracticeValidator
+            (optional).
+        options: An instance of ValidationOptions.
+
+    Returns:
+        An instance of ValidationResults.
+
+    """
     results = ValidationResults(fn)
 
     try:
@@ -494,10 +550,14 @@ def _validate_file(fn, schema_validator, profile_validator,
         results.schema_results = ex.results
         if any((profile_validator, best_practice_validator)):
             msg = (
-                "File %s was schema-invalid. No other validation will be "
+                "File %s was schema-invalid. No further validation will be "
                 "performed." % fn
             )
             _info(msg)
+    except Exception as ex:
+        results.fatal = sdv.ValidationErrorResults(ex)
+        _info("Unexpected error occurred with file %s'. No further validation "
+              "will be performed: %s" % (fn, str(ex)))
 
     return results
 
@@ -515,18 +575,24 @@ def _validate(options):
     profile_validator = _get_profile_validator(options)
     best_practice_validator = _get_best_practice_validator(options)
 
+    if options.schema_validate:
+        _info("Collecting validation results")
+
     results = {}
     for fn in files:
         result = _validate_file(
-            fn, schema_validator, profile_validator, best_practice_validator,
-            options
+            fn,
+            options,
+            schema_validator=schema_validator,
+            profile_validator=profile_validator,
+            best_practice_validator=best_practice_validator
         )
         results[fn] = result
 
-    _print_results(results, options)
-
     if options.profile_convert:
         _convert_profile(profile_validator, options)
+
+    return results
 
 
 def _set_validation_options(args):
@@ -706,6 +772,27 @@ def _get_arg_parser():
     return parser
 
 
+def _status_code(results):
+    status = EXIT_SUCCESS
+
+    for result in results.itervalues():
+        schema = result.schema_results
+        best_practice = result.best_practice_results
+        profile = result.profile_results
+        fatal = result.fatal
+
+        if schema and not schema.is_valid:
+            status |= EXIT_SCHEMA_INVALID
+        if best_practice and not best_practice.is_valid:
+            status |= EXIT_BEST_PRACTICE_INVALID
+        if profile and not profile.is_valid:
+            status |= EXIT_PROFILE_INVALID
+        if fatal:
+            status |= EXIT_VALIDATION_ERROR
+
+    sys.exit(status)
+
+
 def main():
     """Entry point for sdv.py.
 
@@ -724,15 +811,18 @@ def main():
     try:
         _validate_args(args)
         options = _set_validation_options(args)
-
         _set_output_level(options)
-        _validate(options)
+        results = _validate(options)
+        _print_results(results, options)
+        sys.exit(_status_code(results))
     except ArgumentError as ex:
         if ex.show_help:
             parser.print_help()
         _error(ex)
     except (errors.ValidationError, IOError) as ex:
-        _error(ex)
+        _error(
+            "Validation error occurred: '%s'" % str(ex), EXIT_VALIDATION_ERROR
+        )
     except Exception:
         logging.exception("Fatal error occurred")
         sys.exit(EXIT_FAILURE)

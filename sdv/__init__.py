@@ -46,6 +46,33 @@ class ValidationResults(object):
         return json.dumps(self.as_dict())
 
 
+class ValidationErrorResults(ValidationResults):
+    """Can be used to communicate a failed validation due to a raised Exception.
+
+    Note:
+        This is only used by the ``stix_validator.py`` script at the moment.
+
+    Args:
+        error: An ``Exception`` instance raised by validation code.
+
+    Attributes:
+        is_valid: Always ``False``.
+        error: The string representation of the Exception being passed in.
+        exception: The exception which produced these results.
+
+    """
+    def __init__(self, error=None):
+        self._is_valid = False
+        self.error = str(error)
+        self.exception = error
+
+    def as_dict(self):
+        d = super(ValidationErrorResults, self).as_dict()
+        d['error'] = self.error
+
+        return d
+
+
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
     """Performs XML Schema validation against a STIX document.
 
