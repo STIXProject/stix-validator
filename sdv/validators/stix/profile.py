@@ -560,6 +560,14 @@ class ProfileError(schematron.SchematronError):
 
 
     def _parse_message(self, error):
+        """Parses the message component from the SVRL report error message.
+
+        Profile error messages are formatted as follows:
+        ``<Error message text> [<line number>]``.
+
+        This method returns everything left of the line number marker `` [``.
+
+        """
         text = super(ProfileError, self)._parse_message(error)
 
         if not text:
@@ -760,19 +768,20 @@ class STIXProfileValidator(schematron.SchematronValidator):
         is_empty_row = functools.partial(self._is_empty_row, worksheet)
         nsmap = {schematron.NS_SAXON: 'saxon'}
 
+        def check_namespace(ns, alias):
+            if not all((ns, alias)):
+                raise errors.ProfileParseError(
+                    "Missing namespace or alias: unable to parse Namespaces "
+                    "worksheet"
+                )
+
         for i in xrange(1, worksheet.nrows):  # skip the first row
             if is_empty_row(i):
                 continue
 
             ns = value(i, COL_NAMESPACE)
             alias = value(i, COL_ALIAS)
-
-            if not all((ns, alias)):
-                raise errors.ProfileParseError(
-                    "Missing namespace or alias: unable to parse "
-                    "Namespaces worksheet"
-                )
-
+            check_namespace(ns, alias)
             nsmap[ns] = alias
 
         return nsmap
