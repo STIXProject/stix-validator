@@ -7,7 +7,7 @@ import itertools
 import distutils.version
 from lxml import etree
 
-from sdv import ValidationResults
+from sdv.validators import ValidationResults
 import sdv.errors as errors
 import sdv.utils as utils
 import common as stix

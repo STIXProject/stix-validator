@@ -4,7 +4,7 @@
 from lxml import isoschematron
 from collections import defaultdict
 
-from sdv import ValidationResults
+from sdv.validators import ValidationResults
 import sdv.utils as utils
 
 NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
