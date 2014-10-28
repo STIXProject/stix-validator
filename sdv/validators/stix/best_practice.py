@@ -613,6 +613,13 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    def _get_version(self, doc):
+        try:
+            return stix.get_version(doc)
+        except KeyError:
+            raise errors.UnknownSTIXVersionError(
+                "Document did not contain a 'version' attribute"
+            )
 
     def validate(self, doc, version=None):
         """Checks that a SITX document aligns with suggested authoring
@@ -637,21 +644,10 @@ class STIXBestPracticeValidator(object):
 
         """
         root = utils.get_etree_root(doc)
+        version = version or self._get_version(doc)
 
-        try:
-            version = version or stix.get_version(doc)
-        except KeyError:
-            raise errors.UnknownSTIXVersionError(
-                "Document did not contain a 'version' attribute"
-            )
-
-        if version not in stix.STIX_VERSIONS:
-            raise errors.InvalidSTIXVersionError(
-                "Cannot run rules: '%s' is an invalid STIX version" % version,
-                expected=stix.STIX_VERSIONS,
-                found=version
-            )
-
+        stix.check_version(version)
         results = self._run_rules(root, version)
+
         return results
 

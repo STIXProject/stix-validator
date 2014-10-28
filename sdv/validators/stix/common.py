@@ -40,6 +40,27 @@ def get_version(doc):
     return root.attrib['version']
 
 
+def check_version(version):
+    """Raises an exception if `version` is not a valid STIX version.
+
+    Args:
+        version: A string STIX version. Example: '1.1.1'
+
+    Raises:
+        errors.InvalidSTIXVersionError: If `version` is not a valid version of
+            STIX.
+
+    """
+    if version in STIX_VERSIONS:
+        return
+
+    raise errors.InvalidSTIXVersionError(
+        message="Invalid STIX version: '%s'" % version,
+        expected=STIX_VERSIONS,
+        found=version
+    )
+
+
 def get_stix_namespaces(version):
     """Returns namespaces required to perform xpath evaluation on STIX
     documents.

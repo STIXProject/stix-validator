@@ -93,22 +93,15 @@ class STIXSchemaValidator(object):
 
         """
         root = utils.get_etree_root(doc)
-        if not any((schemaloc, self._is_user_defined, version)):
-            version = self._get_version(doc)
 
         if schemaloc:
             validator = self._xml_validators[self._KEY_SCHEMALOC]
         elif self._is_user_defined:
             validator = self._xml_validators[self._KEY_USER_DEFINED]
         else:
-            try:
-                validator = self._xml_validators[version]
-            except KeyError:
-                raise errors.InvalidSTIXVersionError(
-                    message="No schemas for STIX version '%s'" % version,
-                    expected=self.SCHEMAS.keys(),
-                    found=version
-                )
+            version = version or self._get_version(doc)
+            stix.check_version(version)
+            validator = self._xml_validators[version]
 
         results = validator.validate(root, schemaloc)
         return results
