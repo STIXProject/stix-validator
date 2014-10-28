@@ -42,6 +42,22 @@ STIX_1_1_1_XML = \
 </stix:STIX_Package>
 """
 
+STIX_INVALID = \
+"""
+<stix:STIX_Package
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:stix="http://stix.mitre.org/stix-1"
+    version="1.1.1"
+    badAttr="True"
+    >
+    <stix:STIX_Header>
+        <stix:Title>Unknown version of STIX</stix:Title>
+        <stix:INVALID>this is an invalid field</stix:INVALID>
+    </stix:STIX_Header>
+</stix:STIX_Package>
+"""
+
+
 STIX_NO_VERSION_XML = \
 """
 <stix:STIX_Package
@@ -55,23 +71,31 @@ STIX_NO_VERSION_XML = \
 """
 
 class STIXSchemaTests(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        cls.XML = StringIO(STIX_1_1_1_XML)
+        StringIO(STIX_1_1_1_XML)
 
     def test_invalid(self):
-        results = sdv.validate_xml(self.XML, version="1.0")
+        xml = StringIO(STIX_INVALID)
+        results = sdv.validate_xml(xml)
+
+        # Assert that the document is identified as being invalid
         self.assertFalse(results.is_valid)
 
+        # Assert that the badAttr attribute and stix:INVALID element are
+        # errors are recorded.
+        self.assertEqual(len(results.errors), 2)
+
     def test_valid(self):
-        results = sdv.validate_xml(self.XML)
+        xml = StringIO(STIX_1_1_1_XML)
+        results = sdv.validate_xml(xml)
         self.assertTrue(results.is_valid)
 
     def test_invalid_version(self):
+        xml = StringIO(STIX_1_1_1_XML)
         func = sdv.validate_xml
         self.assertRaises(
-            errors.InvalidSTIXVersionError, func, self.XML, version="INVALID"
+            errors.InvalidSTIXVersionError, func, xml, version="INVALID"
         )
 
     def test_unknown_version(self):
