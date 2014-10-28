@@ -374,7 +374,7 @@ class XmlSchemaValidator(object):
 
         """
         root = utils.get_etree_root(doc)
-        imports = self._build_required_imports(root)
+        imports = self._build_required_imports(root, schemaloc)
 
         if not imports:
             raise errors.XMLSchemaImportError(
@@ -392,11 +392,11 @@ class XmlSchemaValidator(object):
             """
         )
 
-        for ns, schemaloc in imports.iteritems():
-            schemaloc = schemaloc.replace("\\", "/")
+        for ns, loc in imports.iteritems():
+            loc = loc.replace("\\", "/")
             attrib = {
                 'namespace': ns,
-                'schemaLocation': schemaloc
+                'schemaLocation': loc
             }
             import_ = etree.Element(TAG_XS_IMPORT, attrib=attrib)
             xsd.append(import_)
@@ -419,7 +419,8 @@ class XmlSchemaValidator(object):
 
         Raises:
             errors.ValidationError: If the class was not initialized with a
-                schema directory and `schemaloc` is ``False``.
+                schema directory and `schemaloc` is ``False`` or if there are
+                any issues parsing `doc`.
             errors.ImportProcessError: If an error occurs while processing the
                 schemas required for validation.
             errors.IncludeProcessError: If an error occurs while processing

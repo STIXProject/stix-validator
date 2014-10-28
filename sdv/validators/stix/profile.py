@@ -712,7 +712,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 entry in `instance_map`.
 
         """
-        all_rules = []
         value = functools.partial(self._get_value, worksheet)
         is_empty_row = functools.partial(self._is_empty_row, worksheet)
 
@@ -722,7 +721,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                     "Worksheet '%s' context label '%s' has no Instance Mapping "
                     "entry." % (worksheet.name, label)
                 )
-
+        all_rules = []
         for i in xrange(1, worksheet.nrows):
             if is_empty_row(i):
                 continue
@@ -1015,6 +1014,9 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         Returns:
             An instance of :class:`ProfileValidationResults`.
+
+        Raises:
+            errors.ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)

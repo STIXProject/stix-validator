@@ -192,6 +192,9 @@ class SchematronValidator(object):
         Returns:
             An instance of :class:`SchematronValidationResults`.
 
+        Raises:
+              errors.ValidationError: If there are any issues parsing `doc`.
+
         """
         root = utils.get_etree_root(doc)
         is_valid = self.schematron.validate(root)

@@ -54,6 +54,15 @@ class STIXSchemaValidator(object):
 
         return validators
 
+    def _get_version(self, doc):
+        try:
+            return stix.get_version(doc)
+        except KeyError:
+            raise errors.UnknownSTIXVersionError(
+                "Unable to validate instance document. STIX version not "
+                "found in instance document and not supplied to validate() "
+                "method"
+            )
 
     def validate(self, doc, version=None, schemaloc=False):
         """Perforrms XML Schema validation against a STIx document.
@@ -80,17 +89,12 @@ class STIXSchemaValidator(object):
                 schemas required for validation.
             errors.IncludeProcessError: If an error occurs while processing
                 ``xs:include`` directives.
+            errors.ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)
-        version = version or stix.get_version(root)
-
-        if not any((version, schemaloc, self._is_user_defined)):
-            raise errors.UnknownSTIXVersionError(
-                "Unable to validate instance document. STIX version not "
-                "found in instance document and not supplied to validate() "
-                "method"
-            )
+        if not any((schemaloc, self._is_user_defined, version)):
+            version = self._get_version(doc)
 
         if schemaloc:
             validator = self._xml_validators[self._KEY_SCHEMALOC]
@@ -101,7 +105,7 @@ class STIXSchemaValidator(object):
                 validator = self._xml_validators[version]
             except KeyError:
                 raise errors.InvalidSTIXVersionError(
-                    message="No schemas for STIX version %s" % version,
+                    message="No schemas for STIX version '%s'" % version,
                     expected=self.SCHEMAS.keys(),
                     found=version
                 )

@@ -44,7 +44,8 @@ class ValidationErrorResults(ValidationResults):
     """Can be used to communicate a failed validation due to a raised Exception.
 
     Note:
-        This is only used by the ``stix_validator.py`` script at the moment.
+        This is only used by the ``stix_validator.py`` script at the moment and
+        not actually returned from any ``validate()`` methods.
 
     Args:
         error: An ``Exception`` instance raised by validation code.

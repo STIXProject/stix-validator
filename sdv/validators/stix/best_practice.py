@@ -237,11 +237,11 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_id_presence(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that all major STIX/CybOX constructs have id attributes set.
         Constructs with idref attributes set should not have an id attribute
         and are thus omitted from the results.
-        '''
+        """
         to_check = (
              '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
              '%s:Campaign' % stix.PREFIX_STIX_CORE,
@@ -276,11 +276,11 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_id_format(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that the core STIX/CybOX constructs in the STIX instance
         document have ids and that each id is formatted as
         [ns_prefix]:[object-type]-[GUID].
-        '''
+        """
         regex = re.compile(r'\w+:\w+-')
 
         to_check = (
@@ -321,9 +321,9 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_duplicate_ids(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks for duplicate ids in the document.
-        '''
+        """
         id_nodes = collections.defaultdict(list)
 
         for node in root.xpath("//*[@id]"):
@@ -338,9 +338,9 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_idref_resolution(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that all idrefs resolve to a construct in the document
-        '''
+        """
 
         idrefs  = root.xpath("//*[@idref]")
         ids     = root.xpath("//@id")
@@ -354,9 +354,9 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_idref_with_content(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that constructs with idref set do not contain content
-        '''
+        """
 
         def _has_content(node):
             return bool(node.text) or len(node) > 0
@@ -371,10 +371,10 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_indicator_practices(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Looks for STIX Indicators that are missing a Description, Type,
         Valid_Time_Position, Indicated_TTP, and/or Confidence
-        '''
+        """
         xpath = (
             "//%s:Indicator | //%s:Indicator" %
             (stix.PREFIX_STIX_CORE, stix.PREFIX_STIX_COMMON)
@@ -410,9 +410,9 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_root_element(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that the root element is a STIX_Package
-        '''
+        """
         ns_stix_core = namespaces[stix.PREFIX_STIX_CORE]
         results = BestPracticeWarningCollection("Root Element")
 
@@ -428,10 +428,10 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_latest_vocabs(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that all STIX vocabs are using latest published versions.
         Triggers a warning if an out of date vocabulary is used.
-        '''
+        """
         latest_map = {
             '1.0': (
                 "AssetTypeVocab",
@@ -525,9 +525,9 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_titles(self, root, namespaces, *args, **kwargs):
-        '''
+        """
         Checks that all major STIX constructs have a Title element
-        '''
+        """
         to_check = (
             '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
             '{0}:Campaign'.format(stix.PREFIX_STIX_CORE),
@@ -629,10 +629,11 @@ class STIXBestPracticeValidator(object):
             An instance of ``BestPracticeValidationResults``.
 
         Raises:
-            stix.UnknownVersionError: If `version` was ``None`` and `doc` did
-                not contain any version information.
-            stix.InvalidVersionError: If discovered version or `version`
+            errors.UnknownSTIXVersionError: If `version` was ``None`` and `doc`
+                did not contain any version information.
+            errors.InvalidSTIXVersionError: If discovered version or `version`
                 argument contains an invalid STIX version number.
+            errors.ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)

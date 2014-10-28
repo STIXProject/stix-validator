@@ -8,6 +8,9 @@ import errors
 _PKG_DIR = os.path.dirname(__file__)
 XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 
+from sdv.validators import STIXSchemaValidator
+DEFAULT_STIX_VALIDATOR = STIXSchemaValidator()  # Makes validate_xml() faster
+
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
     """Performs XML Schema validation against a STIX document.
 
@@ -39,10 +42,12 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
                 ``xs:include`` directives.
 
     """
-    from sdv.validators import STIXSchemaValidator
-    validator = STIXSchemaValidator(schema_dir=schemas)
-    results = validator.validate(doc, version=version, schemaloc=schemaloc)
-    return results
+    if schemas:
+        validator = STIXSchemaValidator(schema_dir=schemas)
+    else:
+        validator = DEFAULT_STIX_VALIDATOR
+
+    return validator.validate(doc, version=version, schemaloc=schemaloc)
 
 
 def validate_best_practices(doc, version=None):
@@ -70,9 +75,9 @@ def validate_best_practices(doc, version=None):
 
     """
     from sdv.validators import STIXBestPracticeValidator
+
     validator = STIXBestPracticeValidator()
-    results = validator.validate(doc, version=version)
-    return results
+    return validator.validate(doc, version=version)
 
 
 def validate_profile(doc, profile):
@@ -97,6 +102,7 @@ def validate_profile(doc, profile):
 
     """
     from sdv.validators import STIXProfileValidator
+
     validator = STIXProfileValidator(profile)
-    results = validator.validate(doc)
-    return results
+    return validator.validate(doc)
+

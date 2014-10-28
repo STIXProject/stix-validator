@@ -34,7 +34,7 @@ def get_version(doc):
     Raises:
         KeyError: If the document does not contain a ``version`` attribute
             on the root node.
-
+        errors.ValidationError: If there are any issues parsing `doc`.
     """
     root = utils.get_etree_root(doc)
     return root.attrib['version']
@@ -48,8 +48,9 @@ def get_stix_namespaces(version):
         A dictionary mapping of namespace aliases to STIX namespaces.
 
     Raises:
-        UnknownVersionError: If the `version` is ``None``.
-        InvalidVersionError: If the `version` is not a valid version of STIX.
+        errors.UnknownSTIXVersionError: If the `version` is ``None``.
+        errors.InvalidSTIXVersionError: If the `version` is not a valid version
+            of STIX.
 
     """
     if not version:
