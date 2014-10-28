@@ -956,6 +956,10 @@ class STIXProfileValidator(schematron.SchematronValidator):
         "http://icl.com/saxon". The freely distributed SaxonHE library does not
         support Saxon extension functions at all.
 
+
+        Returns:
+            An etree._ElementTree XSLT document.
+
         """
         if not self._schematron:
             return None
@@ -989,6 +993,9 @@ class STIXProfileValidator(schematron.SchematronValidator):
         "http://saxon.sf.net/" while libxslt expects it to be
         "http://icl.com/saxon". The freely distributed SaxonHE library does not
         support Saxon extension functions at all.
+
+        Returns:
+            An etree._ElementTree Schematron document.
 
         """
         to_replace = ' %s' % SAXON_LINENO
