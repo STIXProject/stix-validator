@@ -26,6 +26,9 @@ occurred at a glance:
     scenarios where malformed XML documents are validated or missing files are
     attempted to be validated.
 
+Attributes:
+    quiet: If ``True`` only validation results and fatal errors will be printed.
+
 """
 import sys
 import logging
@@ -773,6 +776,13 @@ def _get_arg_parser():
 
 
 def _status_code(results):
+    """Determines the exit status code to be returned from this script
+    by inspecting the results returned from validating file(s).
+
+    Status codes are binary OR'd together, so exit codes can communicate
+    multiple error conditions.
+
+    """
     status = EXIT_SUCCESS
 
     for result in results.itervalues():
@@ -809,12 +819,24 @@ def main():
     args = parser.parse_args()
 
     try:
+        # Validate the input command line arguments
         _validate_args(args)
+
+        # Parse the input options
         options = _set_validation_options(args)
+
+        # Set the output level (e.g., quiet vs. verbose)
         _set_output_level(options)
+
+        # Validate input documents
         results = _validate(options)
+
+        # Print validation results
         _print_results(results, options)
+
+        # Determine exit status code and exit.
         sys.exit(_status_code(results))
+
     except ArgumentError as ex:
         if ex.show_help:
             parser.print_help()
