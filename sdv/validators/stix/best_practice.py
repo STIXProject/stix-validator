@@ -181,6 +181,15 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         return not(any(x for x in self))
 
 
+    @property
+    def errors(self):
+        """This exists because all other validation results classes have an
+        ``errors`` property.
+
+        """
+        return self._warnings
+
+
     def insert(self, idx, value):
         """Inserts an instance of :class:`BestPracticeWarningCollection`.
 
