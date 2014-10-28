@@ -328,7 +328,7 @@ def _print_best_practice_results(fn, results):
             for node in marking_control_xpath_issues:
                 _print_level("[~] line: [%s]\tissue: %s", 2,
                             node['line_number'], node['problem'])
-        
+
         vocab_suggestions = warnings.get('vocab_suggestions')
         if vocab_suggestions:
             _print_level("[#] Vocab suggestions", 1)
@@ -337,6 +337,23 @@ def _print_best_practice_results(fn, results):
                             node['out_of_date'], node['line_number'],
                             node['given_version'],
                             node.get('newest_version', "???"))
+
+        invalid_idref_timestamp = warnings.get('invalid_idref_timestamp')
+        if invalid_idref_timestamp:
+            _print_level("[#] Element references a non-existent idref/timestamp combination", 1)
+            for node in invalid_idref_timestamp:
+                _print_level("[~] Element: [%s] line: [%s] idref: [%s] timestamp: [%s]", 2,
+                            node['tag'], node['line_number'],
+                            node['idref'],
+                            node['timestamp'])
+
+        id_timestamp_suggested = warnings.get('id_timestamp_suggested')
+        if id_timestamp_suggested:
+            _print_level("[#] Elements with IDs should also be timestamped", 1)
+            for node in id_timestamp_suggested:
+                _print_level("[~] Element: [%s] line: [%s] with ID: [%s]", 2,
+                            node['tag'], node['line_number'],
+                            node['id'])
 
 def _print_profile_results(fn, results):
     """Prints STIX Profile validation results to stdout.
