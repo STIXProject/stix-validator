@@ -71,7 +71,7 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
     """
     def __init__(self, node, message=None):
         super(BestPracticeWarning, self).__init__()
-        
+
         self._inner = {}
         self._node = node
 
