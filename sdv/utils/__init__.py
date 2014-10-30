@@ -8,7 +8,6 @@ TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
 
 def get_xml_parser():
     """Returns an ``etree.ETCompatXMLParser`` instance."""
-
     parser = etree.ETCompatXMLParser(
         huge_tree=True,
         remove_comments=False,
@@ -31,7 +30,8 @@ def get_etree_root(doc):
         An ``lxml.etree._Element`` instance for `doc`.
 
     Raises:
-        IOError: If `doc` is an invalid filename or file-like object
+        .ValidationError: If `doc` cannot be found or is not a well-formed
+            XML document.
 
     """
     try:
@@ -58,6 +58,8 @@ def get_target_ns(doc):
 
     Raises:
         KeyError: If `doc` does not contain a ``targetNamespace`` attribute.
+        .ValidationError: If `doc` cannot be found or is not a well-formed
+            XML document.
 
     """
     root = get_etree_root(doc)
@@ -91,13 +93,13 @@ def list_xml_files(dir_):
         A list of XML file paths directly under `dir_`.
 
     """
-    xml = []
+    files = []
     for fn in os.listdir(dir_):
         if fn.endswith('.xml'):
             fp = os.path.join(dir_, fn)
-            xml.append(fp)
+            files.append(fp)
 
-    return xml
+    return files
 
 
 def get_xml_files(files):
@@ -106,7 +108,7 @@ def get_xml_files(files):
     the return value.
 
     Args:
-        A list of file paths and/or directory paths.
+        files: A list of file paths and/or directory paths.
 
     Returns:
         A list of file paths to validate.
@@ -115,12 +117,12 @@ def get_xml_files(files):
     if not files:
         return []
 
-    xml = []
+    xml_files = []
     for fn in files:
         if os.path.isdir(fn):
             children = list_xml_files(fn)
-            xml.extend(children)
+            xml_files.extend(children)
         else:
-            xml.append(fn)
+            xml_files.append(fn)
 
-    return xml
+    return xml_files

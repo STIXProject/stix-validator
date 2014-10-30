@@ -16,7 +16,7 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
 
     Args:
         doc: A STIX document to validate. This can be a filename, file-like
-            object, etree._Element or etree._ElementTree object.
+            object, ``etree._Element`` or ``etree._ElementTree`` object.
         version: The version of the STIX document being validated. If ``None``
             an attempt will be made to extract the version from `doc`.
         schemas: A string path to a directory of STIX schemas. If ``None``,
@@ -25,21 +25,22 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
             validation.
 
     Returns:
-        An instance of sdv.validators.XmlSchemaValidationResults.
+        An instance of
+        :class:`.XmlValidationResults`.
 
     Raises:
         IOError: If `doc` is not a valid XML document or there is an issue
             processing `schemas`.
-        errors.UnknownVersionError: If `version` is ``None`` and
+        .UnknownSTIXVersionError: If `version` is ``None`` and
             `doc` does not contain versin information.
-        errors.InvalidVersionError: If `version` or the ``version`` attribute
-            in `doc` contains an invalid STIX version number.
-        errors.ValidationError: If the class was not initialized with a schema
+        .InvalidSTIXVersionError: If `version` or the ``version``
+            attribute in `doc` contains an invalid STIX version number.
+        .ValidationError: If the class was not initialized with a schema
                 directory and `schemaloc` is ``False``.
-        errors.ImportProcessError: If an error occurs while processing the
-            schemas required for validation.
-        errors.IncludeProcessError: If an error occurs while processing
-                ``xs:include`` directives.
+        .XMLSchemaImportError: If an error occurs while processing
+            the schemas required for validation.
+        .XMLSchemaIncludeError: If an error occurs while
+            processing ``xs:include`` directives.
 
     """
     if schemas:
@@ -51,7 +52,9 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
 
 
 def validate_best_practices(doc, version=None):
-    """Performs 'Best Practice' validation against a STIX document.
+    """Performs `Best Practices`_ validation against a STIX document.
+
+    .. _Best Practices: http://stixproject.github.io/documentation/suggested-practices/
 
     Note:
         This should be used together with :meth:`validate_xml` since this only
@@ -59,18 +62,19 @@ def validate_best_practices(doc, version=None):
 
     Args:
         doc: A STIX document to validate. This can be a filename, file-like
-            object, etree._Element or etree._ElementTree object.
+            object, ``etree._Element`` or ``etree._ElementTree`` object.
         version: The version of the STIX document being validated. If ``None``
             an attempt will be made to extract the version from `doc`.
 
     Returns:
-        An instance of sdv.validators.BestPracticeValidationResults.
+        An instance of
+        :class:`.BestPracticeValidationResults`.
 
     Raises:
         IOError: If `doc` is not a valid XML document.
-        errors.UnknownVersionError: If `version` is ``None`` and
+        .UnknownSTIXVersionError: If `version` is ``None`` and
             `doc` does not contain version information.
-        errors.InvalidVersionError: If `version` or the ``version`` attribute
+        .InvalidSTIXVersionError: If `version` or the ``version`` attribute
             in `doc` contains an invalid STIX version number.
 
     """
@@ -89,15 +93,16 @@ def validate_profile(doc, profile):
 
     Args:
         doc: A STIX document to validate. This can be a filename, file-like
-            object, etree._Element or etree._ElementTree object.
+            object, ``etree._Element`` or ``etree._ElementTree`` object.
         profile: A filename to a STIX Profile document.
 
     Returns:
-    `   An instance of sdv.validators.ProfileValidationResults.
+        An instance of
+        :class:`.ProfileValidationResults`.
 
     Raises:
         IOError: If `doc` is not a valid XML document.
-        errors.ProfileParseError: If an error occurred while attempting to
+        .ProfileParseError: If an error occurred while attempting to
             parse the `profile`.
 
     """

@@ -4,7 +4,7 @@
 from lxml import isoschematron
 from collections import defaultdict
 
-from sdv.validators import ValidationResults
+from sdv.validators import (ValidationError, ValidationResults)
 import sdv.utils as utils
 
 NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
@@ -12,26 +12,34 @@ NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
 NS_SAXON = "http://icl.com/saxon"   # libxml2 requires this namespace
 NS_SAXON_SF_NET = "http://saxon.sf.net/"
 
-class SchematronError(object):
+class SchematronError(ValidationError):
     """Represents an error found in a SVRL report.
 
     Args:
         doc: The instance document which was validated and produced this error.
-        report: The etree._ElementTree SVRL report containing the error.
-        error: The svrl:failed-assert or svrl:successful-report etree._Element
-            instance.
+        error: The ``svrl:failed-assert`` or ``svrl:successful-report``
+            ``etree._Element`` instance.
 
     Attributes:
-        message: The error message generated during the Schematron validation
-            run.
+        message: The Schematron validation error message.
+
     """
     def __init__(self, doc, error):
+        super(SchematronError, self).__init__()
+
         self._doc = doc
         self._error = error
         self._xpath_location = error.attrib.get('location')
         self._test = error.attrib.get('test')
         self._line = None
         self.message = self._parse_message(error)
+
+    def __unicode__(self):
+        return unicode(self.message)
+
+    def __str__(self):
+        return unicode(self).encode("utf-8")
+
 
     def _get_line(self):
         """Returns the line number in the input document associated with this
@@ -56,22 +64,31 @@ class SchematronError(object):
     def _parse_message(self, error):
         message = error.find("{%s}text" % NS_SVRL)
 
-        if message == None:
-            return None
+        if message is None:
+            return ""
 
         return message.text
 
-    def __unicode__(self):
-        return unicode(self.message)
+    def as_dict(self):
+        """Returns a dictionary representation.
 
-    def __str__(self):
-        return unicode(self).encode('utf-8')
+        Keys:
+            * ``'message'``: The error message
+            * ``'line'``: The line number associated with the error
+        """
+        d = {
+            'message': self.message,
+            'line': self.line
+        }
+
+        return d
 
 
 class SchematronValidationResults(ValidationResults):
     """Used to hold results of a Schematron validation process.
 
     Args:
+        is_valid: The boolean validation result.
         doc: The document which produced these validation results.
         svrl_report: The etree._ElementTree SVRL report produced during the
             validation run.
@@ -79,7 +96,7 @@ class SchematronValidationResults(ValidationResults):
     Attributes:
         errors: A list of :class:`SchematronError` instances representing
             errors found in the `svrl_report`.
-        is_valid: ``True`` if the validation was successful and ``False``
+        is_valid: Returns ``True`` if the validation was successful and ``False``
             otherwise.
 
     """
@@ -92,7 +109,7 @@ class SchematronValidationResults(ValidationResults):
 
     def _parse_errors(self, svrl_report):
         if not svrl_report:
-            return None
+            return []
 
         xpath = "//svrl:failed-assert | //svrl:successful-report"
         nsmap = {'svrl': NS_SVRL}
@@ -102,14 +119,15 @@ class SchematronValidationResults(ValidationResults):
 
 
     def as_dict(self):
-        """A dictionary representation of the ``SchematronValidationResults``
-        instance.
+        """A dictionary representation of the
+        :class:`.SchematronValidationResults` instance.
 
         Keys:
-            'result': The validation results (``True`` or ``False``)
-            'errors': A dictionary of validation errors. The key is the error
-                message and the value is a list of line numbers associated
-                with the error.
+            * ``'result'``: The validation results. Values can be
+              ``True`` or ``False``.
+            * ``'errors'``: A dictionary of validation errors. The key is the error
+              message and the value is a list of line numbers associated
+              with the error.
 
         Returns:
             A dictionary representation of an instance of this class.
@@ -136,7 +154,7 @@ class SchematronValidator(object):
 
     Args:
         schematron: A Schematron document. This can be a filename, file-like
-            object, etree._Element, or etree._ElementTree instance.
+            object, ``etree._Element``, or ``etree._ElementTree`` instance.
 
     """
     def __init__(self, schematron):
@@ -187,13 +205,14 @@ class SchematronValidator(object):
 
         Args:
             doc: An XML instance document. This can be a filename, file-like
-                object, etree._Element or etree._ElementTree instance.
+                object, ``etree._Element`` or ``etree._ElementTree`` instance.
 
         Returns:
-            An instance of :class:`SchematronValidationResults`.
+            An instance of
+            :class:`.SchematronValidationResults`.
 
         Raises:
-              errors.ValidationError: If there are any issues parsing `doc`.
+              .ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)

@@ -4,7 +4,7 @@
 import os
 from collections import defaultdict
 from lxml import etree
-from sdv.validators import ValidationResults
+from sdv.validators import (ValidationError, ValidationResults)
 import sdv.errors as errors
 import sdv.utils as utils
 
@@ -12,6 +12,54 @@ NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
 NS_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
 TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
 TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
+
+class XmlSchemaError(ValidationError):
+    """Represents an XML Schema validation error.
+
+    Args:
+        error: An error returned from ``etree`` XML Schema validation error log.
+
+    Attributes:
+        message: The XML validation error message.
+
+    """
+    def __init__(self, error):
+        super(XmlSchemaError, self).__init__()
+        self.message = str(error)
+
+    @property
+    def line(self):
+        """Returns the line number associated with the error."""
+        if not self.message:
+            return None
+
+        try:
+            error = self.message
+            tokenized = error.split(":")
+            return tokenized[1]
+        except:
+            return "ERROR"
+
+    def as_dict(self):
+        """Returns a dictionary representation.
+
+        Keys:
+            * ``'message'``: The error message
+            * ``'line'``: The line number associated with the error
+        """
+        d = {
+            'message': self.message,
+            'line': self.line
+        }
+
+        return d
+
+    def __unicode__(self):
+        return unicode(self.message)
+
+    def __str__(self):
+        return unicode(self).encode("utf-8")
+
 
 
 class XmlValidationResults(ValidationResults):
@@ -25,8 +73,6 @@ class XmlValidationResults(ValidationResults):
     Attributes:
         is_valid: ``True`` if the validation was successful and ``False``
             otherwise.
-        errors: A list of validation errors reported from the underlying
-            XML validation engine.
 
     """
     def __init__(self, is_valid, errors=None):
@@ -35,24 +81,25 @@ class XmlValidationResults(ValidationResults):
 
     @property
     def errors(self):
-        """"A list of validation errors"""
+        """"A list of :class:`XmlSchemaError` validation errors."""
         return self._errors
 
     @errors.setter
     def errors(self, value):
         if not value:
-            self._errors = None
+            self._errors = []
         elif hasattr(value, '__getitem__'):
-            self._errors = [str(x) for x in value]
+            self._errors = [XmlSchemaError(x) for x in value]
         else:
-            self._errors = [value]
+            self._errors = [XmlSchemaError(value)]
 
     def as_dict(self):
-        """A dictionary representation of the ``XmlValidationResults`` instance.
+        """A dictionary representation of the :class:`.XmlValidationResults`
+        instance.
 
         Keys:
-            'result': The validation results (``True`` or ``False``)
-            'errors': A list of validation errors.
+            * ``'result'``: The validation results (``True`` or ``False``)
+            * ``'errors'``: A list of validation errors.
 
         Returns:
             A dictionary representation of an instance of this class.
@@ -61,7 +108,7 @@ class XmlValidationResults(ValidationResults):
         d = super(XmlValidationResults, self).as_dict()
 
         if self.errors:
-            d['errors'] = self.errors
+            d['errors'] = [x.as_dict() for x in self.errors]
 
         return d
 
@@ -70,8 +117,8 @@ class XmlSchemaValidator(object):
     """Validates XML instance documents.
 
     Note:
-        If validating against a single XML schema document, use etree.XMLSchema
-        instead.
+        If validating against a single XML schema document, use
+        ``lxml.etree.XMLSchema`` instead.
 
     Args:
         schema_dir: A directory of schema files used to validate XML instance
@@ -287,7 +334,7 @@ class XmlSchemaValidator(object):
             schema file path.
 
         Raises:
-            IncludeProcessError: If an error occurs while processing
+            .XMlSchemaIncludeError: If an error occurs while processing
                 ``xs:include`` directives.
 
         """
@@ -307,7 +354,7 @@ class XmlSchemaValidator(object):
             A dictionary of namespaces to schema locations.
 
         Raises:
-            ImportProcessError: If `root` did not contain an
+            .XMLSchemaImportError: If `root` did not contain an
                 ``xsi:schemaLocation`` attribute.
 
         """
@@ -368,7 +415,7 @@ class XmlSchemaValidator(object):
             An ``etree.XMLSchema`` instance used to validate `doc`.
 
         Raise:
-            ImportProcessError: If an error occurred while building the
+            .XMLSchemaImportError: If an error occurred while building the
                 dictionary of namespace to schemalocation mappings used to
                 drive the uber schema creation.
 
@@ -415,15 +462,16 @@ class XmlSchemaValidator(object):
                 document root.
 
         Returns:
-            An instance of :class:`XmlValidationResults`.
+            An instance of
+            :class:`.XmlValidationResults`.
 
         Raises:
-            errors.ValidationError: If the class was not initialized with a
+            .ValidationError: If the class was not initialized with a
                 schema directory and `schemaloc` is ``False`` or if there are
                 any issues parsing `doc`.
-            errors.ImportProcessError: If an error occurs while processing the
+            .XMLSchemaIncludeError: If an error occurs while processing the
                 schemas required for validation.
-            errors.IncludeProcessError: If an error occurs while processing
+            .XMLSchemaIncludeError: If an error occurs while processing
                 ``xs:include`` directives.
 
         """

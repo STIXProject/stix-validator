@@ -65,31 +65,32 @@ class STIXSchemaValidator(object):
             )
 
     def validate(self, doc, version=None, schemaloc=False):
-        """Perforrms XML Schema validation against a STIx document.
+        """Performs XML Schema validation against a STIX document.
 
         Args:
             doc: The STIX document. This can be a filename, file-like object,
-                lxml._Element, or lxml._ElementTree instance.
+                ``etree._Element``, or ``etree._ElementTree`` instance.
             version: The version of the STIX document. If ``None`` an attempt
                 will be made to extract the version from `doc`.
             schemaloc: If ``True``, the ``xsi:schemaLocation`` attribute on
                 `doc` will be used to drive the validation.
 
         Returns:
-            An instance of :class:`XmlSchemaValidationResults`.
+            An instance of
+            :class:`.XmlValidationResults`.
 
         Raises:
-            errors.UnknownSTIXVersionException: If `version` is ``None`` and
+            .UnknownSTIXVersionError: If `version` is ``None`` and
                 `doc` does not contain STIX version information.
-            errors.InvalidSTIXVersionException: If `version` is an invalid
+            .InvalidSTIXVersionError: If `version` is an invalid
                 STIX version or `doc` contains an invalid STIX version number.
-            errors.ValidationError: If the class was not initialized with a
+            .ValidationError: If the class was not initialized with a
                 schema directory and `schemaloc` is ``False``.
-            errors.ImportProcessError: If an error occurs while processing the
+            .XMLSchemaImportError: If an error occurs while processing the
                 schemas required for validation.
-            errors.IncludeProcessError: If an error occurs while processing
+            .XMLSchemaIncludeError: If an error occurs while processing
                 ``xs:include`` directives.
-            errors.ValidationError: If there are any issues parsing `doc`.
+            .ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)

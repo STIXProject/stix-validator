@@ -7,7 +7,7 @@ import itertools
 import distutils.version
 from lxml import etree
 
-from sdv.validators import ValidationResults
+from sdv.validators import (ValidationError, ValidationResults)
 import sdv.errors as errors
 import sdv.utils as utils
 import common as stix
@@ -45,7 +45,7 @@ class BestPracticeMeta(type):
         return result
 
 
-class BestPracticeWarning(collections.MutableMapping):
+class BestPracticeWarning(collections.MutableMapping, ValidationError):
     """Represents a best practice warning. These are built within best
     practice rule checking methods and attached to
     :class:`BestPracticeWarningCollection` instances.
@@ -54,11 +54,15 @@ class BestPracticeWarning(collections.MutableMapping):
         This class acts like a dictionary and contains the following keys
         at a minimum:
 
-        * 'message': A warning message.
-        * 'id': The id of a node associated with the warning.
-        * 'idref': The idref of a node associated with the warning.
-        * 'line': The line number of the offending node.
-        * 'tag' The lxml tag for the offending node.
+        * ``'id'``: The id of a node associated with the warning.
+        * ``'idref'``: The idref of a node associated with the warning.
+        * ``'line'``: The line number of the offending node.
+        * ``'tag'``: The lxml tag for the offending node.
+
+        These keys can be retrieved via the :meth:`core_keys` property.
+
+        Instances of this class may attach additional keys. These `other keys`
+        can be obtained via the :meth:`other_keys` property.
 
     Args:
         node: The ``lxml._Element`` node associated with this warning.
@@ -67,6 +71,7 @@ class BestPracticeWarning(collections.MutableMapping):
     """
     def __init__(self, node, message=None):
         super(BestPracticeWarning, self).__init__()
+        
         self._inner = {}
         self._node = node
 
@@ -79,10 +84,10 @@ class BestPracticeWarning(collections.MutableMapping):
         self['tag'] = node.tag
 
     def __unicode__(self):
-        return unicode(self._inner)
+        return unicode(self.message)
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
+        return unicode(self).encode("utf-8")
 
     def __getitem__(self, key):
         return self._inner.__getitem__(key)
@@ -102,15 +107,52 @@ class BestPracticeWarning(collections.MutableMapping):
         return self._inner.__iter__()
 
     @property
+    def line(self):
+        """Returns the line number of the warning node in the input document.
+
+        """
+        return self['line']
+
+    @property
+    def message(self):
+        """Returns a message associated with the warning. This may return
+        ``None`` if there is no warning message.
+
+        """
+        return self.get('message')
+
+    @property
     def core_keys(self):
-        core =  ('id', 'idref', 'line', 'tag')
-        return [x for x in self.iterkeys() if x in core]
+        """Returns a ``tuple`` of  the keys that can always be found on
+        instance of this class.
+
+        Returns:
+            A tuple including the following keys.
+
+            * ``'id'``: The id of the warning node. The associated value
+              may be ``None``.
+            * ``'idref'``: The idref of the warning node. The associated value
+              may be ``None``.
+            * ``'line'``: The line number of the warning node in the input
+              document. The associated value may be ``None``.
+            * ``'tag'``: The ``{namespace}localname`` value of the warning
+              node.
+        """
+        return  ('id', 'idref', 'line', 'tag')
 
     @property
     def other_keys(self):
-        return [x for x in self.iterkeys() if x not in self.core_keys]
+        """Returns a ``tuple`` of keys attached to instances of this class that
+        are not found in the :meth:`core_keys`
+
+        """
+        return tuple(x for x in self.iterkeys() if x not in self.core_keys)
 
     def as_dict(self):
+        """Returns a dictionary representation of this class instance. This
+        is implemented for consistency across other validation error types.
+
+        """
         return dict(self.items())
 
 
@@ -128,6 +170,10 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         name: The name of the STIX best practice for this collection (e.g.,
             'Missing Titles').
 
+    Attributes:
+        name: The name of the STIX best practice for this collection (e.g.,
+            'Missing Titles').
+
     """
     def __init__(self, name):
         super(BestPracticeWarningCollection, self).__init__()
@@ -135,6 +181,13 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         self._warnings = []
 
     def insert(self, idx, value):
+        """Inserts `value` at `idx` into this
+        :class:`BestPracticeWarningCollection` instance.
+
+        Note:
+            Values that evaluate to ``False`` will not be inserted.
+
+        """
         if not value:
             return
         self._warnings.insert(idx, value)
@@ -155,17 +208,22 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         return bool(self._warnings)
 
     def as_dict(self):
+        """Returns a dictionary representation.
+
+        The key of the dictionary is the ``name`` of this collection. The
+        associated value is a ``list`` of :class:`BestPracticeWarning`
+        dictionaries.
+
+        """
         if not self:
             return {}
 
-        d = {self.name: [x.as_dict() for x in self]}
+        return {self.name: [x.as_dict() for x in self]}
 
-        return d
 
 class BestPracticeValidationResults(ValidationResults, collections.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
-    like a ``list`` and accepts instances of
-    :`class:BestPracticeWarningCollection`.
+    like a ``list`` and accepts instances of :`class:BestPracticeWarningCollection`.
 
     """
     def __init__(self):
@@ -174,8 +232,8 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
 
     @ValidationResults.is_valid.getter
     def is_valid(self):
-        """Returns ``True`` if ``self`` contains no warning collections or
-        contains only empty warning collections.
+        """Returns ``True`` if an instance of this class contains no warning
+        collections or only contains only warning collections.
 
         """
         return not(any(x for x in self))
@@ -183,8 +241,8 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
 
     @property
     def errors(self):
-        """This exists because all other validation results classes have an
-        ``errors`` property.
+        """Returns a ``list`` of :class:`BestPracticeWarningCollection`
+        instances.
 
         """
         return self._warnings
@@ -227,6 +285,15 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         return bool(self._warnings)
 
     def as_dict(self):
+        """Returns a dictionary representation.
+
+        Keys:
+            * ``'result'``: The result of the validation. Values can be ``True``
+              or ``False`` .
+            * ``'warnings'``: A dictionary of
+              :class:`BestPracticeWarningCollection` dictionaries.
+
+        """
         d = ValidationResults.as_dict(self)
 
         if any(x for x in self):
@@ -631,8 +698,10 @@ class STIXBestPracticeValidator(object):
             )
 
     def validate(self, doc, version=None):
-        """Checks that a SITX document aligns with suggested authoring
-        practices.
+        """Checks that a SITX document aligns with `suggested authoring
+        practices`_.
+
+        .. _suggested authoring practices: http://stixproject.github.io/documentation/suggested-practices/
 
         Args:
             doc: The STIX document. Can be a filename, file-like object,
@@ -642,14 +711,15 @@ class STIXBestPracticeValidator(object):
                 will be made to extract the version from `doc`.
 
         Returns:
-            An instance of ``BestPracticeValidationResults``.
+            An instance of
+            :class:`.BestPracticeValidationResults`.
 
         Raises:
-            errors.UnknownSTIXVersionError: If `version` was ``None`` and `doc`
+            .UnknownSTIXVersionError: If `version` was ``None`` and `doc`
                 did not contain any version information.
-            errors.InvalidSTIXVersionError: If discovered version or `version`
+            .InvalidSTIXVersionError: If discovered version or `version`
                 argument contains an invalid STIX version number.
-            errors.ValidationError: If there are any issues parsing `doc`.
+            .ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)

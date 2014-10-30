@@ -3,6 +3,20 @@
 
 import json
 
+
+class ValidationError(object):
+    """Base class for validation error types."""
+    def __init__(self):
+      pass
+
+    def as_dict(self):
+        raise NotImplementedError()
+
+    def as_json(self):
+        """Returns a JSON representation of this class instance."""
+        return json.dumps(self.as_dict())
+
+
 class ValidationResults(object):
     """Base class for all validation result types."""
 
@@ -11,8 +25,8 @@ class ValidationResults(object):
 
     @property
     def is_valid(self):
-        """``True`` if the validation attempt was successful and ``False
-        otherwise.
+        """Returns ``True`` if the validation attempt was successful and
+        ``False`` otherwise.
 
         """
         return self._is_valid
@@ -21,22 +35,19 @@ class ValidationResults(object):
     def is_valid(self, value):
         self._is_valid = bool(value)
 
+
     def as_dict(self):
-        """Returns a dictionary representation of the ``ValidationResults``
-        instance.
+        """Returns a dictionary representation of this class.
 
         Keys:
-            'result': The validation result. Values will be ``True`` or
-                ``False``.
+            ``'result'``: The validation result. Values will be ``True`` or
+            ``False``.
 
         """
         return {'result': self.is_valid}
 
     def as_json(self):
-        """Returns a JSON representation of the ``ValidationResults`` class
-        instance.
-
-        """
+        """Returns a JSON representation of this class instance."""
         return json.dumps(self.as_dict())
 
 

@@ -270,6 +270,9 @@ def _print_best_practice_results(results, level=0):
     """
     def _print_warning(warning, level):
         for key in sorted(warning.core_keys):
+            if key not in warning:
+                continue
+
             _print_level("[-] %s : %s", level, key, warning[key])
 
         for key in sorted(warning.other_keys):

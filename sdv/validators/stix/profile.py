@@ -530,7 +530,17 @@ class AllowedImplsRule(_BaseProfileRule):
 
 
 class ProfileError(schematron.SchematronError):
-    """Represents STIX profile validation error."""
+    """Represents STIX profile validation error.
+
+    Args:
+        doc: The instance document which was validated and produced this error.
+        error: The ``svrl:failed-assert`` or ``svrl:successful-report``
+            ``etree._Element`` instance.
+
+    Attributes:
+        message: The STIX Profile validation error message.
+
+    """
 
     def __init__(self, doc, error):
         super(ProfileError, self).__init__(doc, error)
@@ -558,6 +568,12 @@ class ProfileError(schematron.SchematronError):
 
         return line
 
+    def __unicode__(self):
+        return super(ProfileError, self).__unicode__()
+
+    def __str__(self):
+        return super(ProfileError, self).__str__()
+
 
     def _parse_message(self, error):
         """Parses the message component from the SVRL report error message.
@@ -578,7 +594,7 @@ class ProfileError(schematron.SchematronError):
 
 class ProfileValidationResults(schematron.SchematronValidationResults):
     """Represents STIX profile validation results. This is returned from
-    the :meth:`STIXProfileValidator.valdate` method.
+    the :meth:`STIXProfileValidator.validate` method.
 
     Args:
         is_vaild: ``True`` if the document was valid and ``False`` otherwise.
@@ -614,7 +630,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
     """Performs STIX Profile validation.
 
     Args:
-        profile_fn: The filename of a .XLSX STIX Profile document.
+        profile_fn: The filename of a ``.xlsx`` STIX Profile document.
 
     """
     def __init__(self, profile_fn):
@@ -708,7 +724,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             defined in the `worksheet`.
 
         Raises:
-            errors.ProfileParseError: If a rule context label has no associated
+            .ProfileParseError: If a rule context label has no associated
                 entry in `instance_map`.
 
         """
@@ -872,7 +888,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             A Schematron ``etree._Element`` instance.
 
         Raises:
-            ProfileParseError: If `profile_fn` does not point to a valid
+            .ProfileParseError: If `profile_fn` does not point to a valid
                 STIX profile or an error occurs while parsing the STIX profile.
 
         """
@@ -957,7 +973,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
 
         Returns:
-            An etree._ElementTree XSLT document.
+            An ``etree._ElementTree`` XSLT document.
 
         """
         if not self._schematron:
@@ -994,7 +1010,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         support Saxon extension functions at all.
 
         Returns:
-            An etree._ElementTree Schematron document.
+            An ``etree._ElementTree`` Schematron document.
 
         """
         to_replace = ' %s' % SAXON_LINENO
@@ -1010,13 +1026,15 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """Validates an XML instance document against a STIX profile.
 
         Args:
-            doc: A STIX XML instance document.
+            doc: The STIX document. This can be a filename, file-like object,
+                ``etree._Element``, or ``etree._ElementTree`` instance.
 
         Returns:
-            An instance of :class:`ProfileValidationResults`.
+            An instance of
+            :class:`.ProfileValidationResults`.
 
         Raises:
-            errors.ValidationError: If there are any issues parsing `doc`.
+            .ValidationError: If there are any issues parsing `doc`.
 
         """
         root = utils.get_etree_root(doc)
