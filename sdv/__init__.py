@@ -32,7 +32,7 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
         IOError: If `doc` is not a valid XML document or there is an issue
             processing `schemas`.
         .UnknownSTIXVersionError: If `version` is ``None`` and
-            `doc` does not contain versin information.
+            `doc` does not contain a ``@version`` attribute value.
         .InvalidSTIXVersionError: If `version` or the ``version``
             attribute in `doc` contains an invalid STIX version number.
         .ValidationError: If the class was not initialized with a schema
@@ -74,7 +74,7 @@ def validate_best_practices(doc, version=None):
         IOError: If `doc` is not a valid XML document.
         .UnknownSTIXVersionError: If `version` is ``None`` and
             `doc` does not contain version information.
-        .InvalidSTIXVersionError: If `version` or the ``version`` attribute
+        .InvalidSTIXVersionError: If `version` or the ``@version`` attribute
             in `doc` contains an invalid STIX version number.
 
     """

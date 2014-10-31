@@ -9,7 +9,7 @@
     :show-inheritance:
 
 .. autoclass:: BestPracticeWarning
-    :members: line, as_dict, as_json
+    :members: line, as_dict, as_json, core_keys, other_keys
 
 .. autoclass:: BestPracticeWarningCollection
     :members:

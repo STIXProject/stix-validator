@@ -3,8 +3,8 @@
 Installation
 ============
 
-The installation of stix-validator can be accomplished through a few different
-workflows.
+The installation of **stix-validator** can be accomplished through a few
+different work flows.
 
 Recommended Installation
 ------------------------
@@ -29,15 +29,16 @@ installation of pip.
 Dependencies
 ------------
 
-The stix-validator package relies on some non-standard Python libraries for the
-processing of XML content. Revisions of stix-validator may depend on particular
-versions of dependencies to function correctly. These versions are detailed
-within the distutils setup.py installation script.
+The **stix-validator** package relies on some non-standard Python libraries for
+the processing of XML content. Revisions of stix-validator may depend on
+particular versions of dependencies to function correctly. These versions are
+detailed within the distutils ``setup.py`` installation script.
 
 The following libraries are required to use stix-validator:
 
 * lxml_ - A Pythonic binding for the C libraries **libxml2** and
   **libxslt**.
+* xlrd_ - A library for parsing Microsoft Excel documents
 
 Each of these can be installed with ``pip`` or by manually downloading packages
 from PyPI. On Windows, you will probably have the most luck using `pre-compiled
@@ -51,13 +52,14 @@ source:
 
 .. warning::
 
-   Users have encountered errors with versions of libxml2 (a dependency of
-   lxml) prior to version 2.9.1.  The default version of libxml2 provided on
-   Ubuntu 12.04 is currently 2.7.8.  Users are encouraged to upgrade libxml2
-   manually if they have any issues.  Ubuntu 14.04 provides libxml2 version
-   2.9.1.
+   Users have encountered errors with versions of ``libxml2`` (a dependency of
+   ``lxml``) prior to version 2.9.1.  The default version of ``libxml2``
+   provided on Ubuntu 12.04 is currently 2.7.8.  Users are encouraged to u
+   pgrade ``libxml2`` manually if they have any issues.  Ubuntu 14.04 provides
+   ``libxml2`` version 2.9.1.
 
 .. _lxml: http://lxml.de/
+.. _xlrd: https://pypi.python.org/pypi/xlrd
 .. _pre-compiled binaries: http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
 
 
@@ -108,7 +110,7 @@ OR
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import sdv
     >>> print sdv.__version__
-    1.0a1
+    |release|
 
 If you don't see an ``ImportError``, the installation was successful.
 

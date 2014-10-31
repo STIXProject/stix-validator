@@ -164,7 +164,7 @@ class BestPracticeWarningCollection(collections.MutableSequence):
     go within an instance of this class.
 
     Note:
-        This class behaves like a mutable sequence (e.g., a ``list``).
+        This class behaves like a mutable sequence, such as a ``list``.
 
     Args:
         name: The name of the STIX best practice for this collection (e.g.,

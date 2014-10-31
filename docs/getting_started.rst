@@ -13,8 +13,8 @@ statement.
 Installation
 ------------
 
-To install **stix-validator** just run :code:`pip install stix-validator`. If you have
-any issues, please refer to the instructions found on the
+To install **stix-validator** just run :code:`pip install stix-validator`. If
+you have any issues, please refer to the instructions found on the
 :doc:`/installation` page.
 
 Scripts

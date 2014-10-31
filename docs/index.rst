@@ -21,16 +21,15 @@ Contents
 
     installation
     getting_started
-    scripts
 
-API Reference
-=============
+API Documentation
+=================
 
 .. toctree::
    :maxdepth: 2
 
    api/index
-   api/examples
+   api/examples/index
 
 Contributing
 ============
