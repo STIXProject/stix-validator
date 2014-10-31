@@ -604,8 +604,6 @@ class ProfileValidationResults(schematron.SchematronValidationResults):
             ``lxml.isoschematron.Schematron.validation_report``
 
     Attributes:
-        is_valid: ``True`` if the validation attempt was successful. ``False``
-            if the associated instance document was invalid.
         errors: A list of :class:`ProfileError` instances representing
             errors found in the `svrl_report`.
 
