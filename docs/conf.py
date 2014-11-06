@@ -30,7 +30,7 @@ import sdv
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.viewcode',
+    # 'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
     'sphinxcontrib.napoleon',
 ]
@@ -253,7 +253,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'stix-validator', u'stix-validator Documentation',
-   u'The MITRE Corporation', 'stix-validator', 'One line description of project.',
+   u'The MITRE Corporation', 'stix-validator', 'Validates STIX documents.',
    'Miscellaneous'),
 ]
 

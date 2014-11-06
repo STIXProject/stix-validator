@@ -610,7 +610,9 @@ class ProfileValidationResults(schematron.SchematronValidationResults):
     """
     def __init__(self, is_valid, doc=None, svrl_report=None):
         super(ProfileValidationResults, self).__init__(
-            is_valid=is_valid, doc=doc, svrl_report=svrl_report
+            is_valid=is_valid,
+            doc=doc,
+            svrl_report=svrl_report
         )
 
     def _parse_errors(self, svrl_report):

@@ -307,8 +307,11 @@ def _print_profile_results(results, level):
 
     if not results.is_valid:
         errors = results.as_dict()['errors']
-        for msg, line_numbers in errors.iteritems():
-            _print_level("[!] %s [%s]", level+1, msg, ', '.join(line_numbers))
+
+        for err in errors:
+            msg = err['message']
+            lines = err['lines']
+            _print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
 
 
 def _print_json_results(results):
@@ -322,11 +325,11 @@ def _print_json_results(results):
     for fn, result in results.iteritems():
         d = {}
         if result.schema_results is not None:
-            d['schema_validation'] = result.schema_results.as_dict()
+            d['schema validation'] = result.schema_results.as_dict()
         if result.profile_results is not None:
-            d['profile_results'] = result.profile_results.as_dict()
+            d['profile results'] = result.profile_results.as_dict()
         if result.best_practice_results is not None:
-            d['best_practice_results'] = result.best_practice_results.as_dict()
+            d['best practice results'] = result.best_practice_results.as_dict()
         if result.fatal is not None:
             d['fatal'] = result.fatal.as_dict()
 

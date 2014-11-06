@@ -125,9 +125,8 @@ class SchematronValidationResults(ValidationResults):
         Keys:
             * ``'result'``: The validation results. Values can be
               ``True`` or ``False``.
-            * ``'errors'``: A dictionary of validation errors. The key is the error
-              message and the value is a list of line numbers associated
-              with the error.
+            * ``'errors'``: A list of validation error dictionaries. The keys
+              are ``'message'`` and ``'lines'``.
 
         Returns:
             A dictionary representation of an instance of this class.
@@ -137,14 +136,13 @@ class SchematronValidationResults(ValidationResults):
 
         if self.errors:
             errors = defaultdict(list)
-            for error in self.errors:
-                message = error.message
-                lines = errors[message]
-                lines.append(error.line)
-                lines.sort()
-                errors[error.message] = lines
 
-            d['errors'] = dict(errors.items())
+            for e in self.errors:
+                errors[e.message].append(e.line)
+
+            d['errors'] = [
+                dict(message=k, lines=sorted(v)) for k,v in errors.iteritems()
+            ]
 
         return d
 

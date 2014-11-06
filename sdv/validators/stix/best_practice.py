@@ -190,6 +190,7 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         """
         if not value:
             return
+
         self._warnings.insert(idx, value)
 
     def __getitem__(self, key):
@@ -223,7 +224,7 @@ class BestPracticeWarningCollection(collections.MutableSequence):
 
 class BestPracticeValidationResults(ValidationResults, collections.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
-    like a ``list`` and accepts instances of :`class:BestPracticeWarningCollection`.
+    like a ``list`` and accepts instances of : :class:`BestPracticeWarningCollection`.
 
     """
     def __init__(self):
@@ -236,7 +237,7 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         collections or only contains only warning collections.
 
         """
-        return not(any(x for x in self))
+        return not(any(self))
 
 
     @property
@@ -290,16 +291,14 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         Keys:
             * ``'result'``: The result of the validation. Values can be ``True``
               or ``False`` .
-            * ``'warnings'``: A dictionary of
-              :class:`BestPracticeWarningCollection` dictionaries.
+            * ``'errors'``: A list of :class:`BestPracticeWarningCollection`
+              dictionaries.
 
         """
         d = ValidationResults.as_dict(self)
 
-        if any(x for x in self):
-            d['warnings'] = dict(
-                itertools.chain(*(x.as_dict().items() for x in self if x))
-            )
+        if any(self):
+            d['errors'] = [x.as_dict() for x in self if x]
 
         return d
 
@@ -690,6 +689,16 @@ class STIXBestPracticeValidator(object):
         return results
 
     def _get_version(self, doc):
+        """Attempts to return the version of the STIX `doc`.
+
+        Args:
+            doc: A STIX document. This can be a filename, file-like object,
+                ``etree._Element`` or ``etree._ElementTree`` instance.
+
+        Returns:
+            The version for the STIX `doc`.
+
+        """
         try:
             return stix.get_version(doc)
         except KeyError:
