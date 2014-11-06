@@ -591,8 +591,75 @@ class STIXBestPracticeValidator(object):
         pass
 
     @rule(version='1.1')
-    def _check_timestamp_usage(self, root, namespaces, *args, **kwargs):
-        pass
+    def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
+        """Checks that all major STIX constructs have appropriate
+        timestamp usage.
+
+        Note:
+            This does not check core CybOX constructs because they lack
+            timestamp attributes.
+
+        """
+        to_check = (
+             '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
+             '%s:Campaign' % stix.PREFIX_STIX_CORE,
+             '%s:Campaign' % stix.PREFIX_STIX_COMMON,
+             '%s:Course_Of_Action' % stix.PREFIX_STIX_CORE,
+             '%s:Course_Of_Action' % stix.PREFIX_STIX_COMMON,
+             '%s:Exploit_Target' % stix.PREFIX_STIX_CORE,
+             '%s:Exploit_Target' % stix.PREFIX_STIX_COMMON,
+             '%s:Incident' % stix.PREFIX_STIX_CORE,
+             '%s:Incident' % stix.PREFIX_STIX_COMMON,
+             '%s:Indicator' % stix.PREFIX_STIX_CORE,
+             '%s:Indicator' % stix.PREFIX_STIX_COMMON,
+             '%s:Threat_Actor' % stix.PREFIX_STIX_COMMON,
+             '%s:TTP' % stix.PREFIX_STIX_CORE,
+             '%s:TTP' % stix.PREFIX_STIX_COMMON,
+        )
+
+        def _idref_resolves(idref, timestamp):
+            xpath = "//*[@id='%s' and @timestamp='%s']" % (idref, timestamp)
+            nodes = root.xpath(xpath, namespaces=namespaces)
+            return all((nodes != None, len(nodes) > 0))
+
+        results = BestPracticeWarningCollection("Timestamp Use")
+        xpath = " | ".join("//%s" % x for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        for node in nodes:
+            attrib      = node.attrib.get
+            id_         = attrib('id')
+            idref       = attrib('idref')
+            timestamp   = attrib('timestamp')
+            warning     = None
+
+            if id_ and not timestamp:
+                warning = BestPracticeWarning(
+                    message="ID present but missing timestamp",
+                    node=node
+                )
+            elif idref and not timestamp:
+                warning = BestPracticeWarning(
+                    message="IDREF present but missing timestamp",
+                    node=node
+                )
+            elif idref and timestamp:
+                if _idref_resolves(idref, timestamp):
+                    continue
+
+                warning = BestPracticeWarning(
+                    message="IDREF and timestamp combination do not resolve to "
+                            "a node in the input document.",
+                    node=node
+                )
+
+                warning['timestamp'] = timestamp
+            else:
+                continue
+
+            results.append(warning)
+
+        return results
 
     @rule(version='1.1')
     def _check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
