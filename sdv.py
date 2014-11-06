@@ -42,6 +42,8 @@ class ValidationOptions(object):
         json_results: True if results should be printed in JSON format.
         quiet_output: True if only results and fatal errors should be printed
             to stdout/stderr.
+        recursive: True if the list of in_files should be recursively scanned
+            for STIX files.
         in_files: A list of input files and directories of files to be
             validated.
         in_profile: A filename/path for a STIX Profile to validate against or
@@ -66,6 +68,7 @@ class ValidationOptions(object):
         self.quiet_output = False
 
         # input options
+        self.recursive = False
         self.in_files = None
         self.in_profile = None
 
@@ -176,7 +179,7 @@ def _print_level(fmt, level, *args):
     print "%s%s" % (spaces, msg)
 
 
-def _get_dir_files(dir_):
+def _get_dir_files(dir_, recursive=False):
     """Finds all the XML files under a directory.
 
     Returns:
@@ -187,6 +190,8 @@ def _get_dir_files(dir_):
         if fn.endswith('.xml'):
             fp = os.path.join(dir_, fn)
             files.append(fp)
+        elif recursive and os.path.isdir(fn):
+            files.extend(_get_dir_files(os.path.join(dir_, fn), recursive))
 
     return files
 
@@ -206,7 +211,7 @@ def _get_files_to_validate(options):
     to_validate = []
     for fn in files:
         if os.path.isdir(fn):
-            children = _get_dir_files(fn)
+            children = _get_dir_files(fn, options.recursive)
             to_validate.extend(children)
         else:
             to_validate.append(fn)
@@ -338,6 +343,7 @@ def _print_best_practice_results(fn, results):
                             node['should_be'],
                             node['is_instead'])
 
+
         vocab_suggestions = warnings.get('vocab_suggestions')
         if vocab_suggestions:
             _print_level("[#] Vocab suggestions", 1)
@@ -346,6 +352,23 @@ def _print_best_practice_results(fn, results):
                             node['out_of_date'], node['line_number'],
                             node['given_version'],
                             node.get('newest_version', "???"))
+
+        invalid_idref_timestamp = warnings.get('invalid_idref_timestamp')
+        if invalid_idref_timestamp:
+            _print_level("[#] Element references a non-existent idref/timestamp combination", 1)
+            for node in invalid_idref_timestamp:
+                _print_level("[~] Element: [%s] line: [%s] idref: [%s] timestamp: [%s]", 2,
+                            node['tag'], node['line_number'],
+                            node['idref'],
+                            node['timestamp'])
+
+        id_timestamp_suggested = warnings.get('id_timestamp_suggested')
+        if id_timestamp_suggested:
+            _print_level("[#] Elements with IDs should also be timestamped", 1)
+            for node in id_timestamp_suggested:
+                _print_level("[~] Element: [%s] line: [%s] with ID: [%s]", 2,
+                            node['tag'], node['line_number'],
+                            node['id'])
 
 def _print_profile_results(fn, results):
     """Prints STIX Profile validation results to stdout.
@@ -625,6 +648,7 @@ def _set_validation_options(args):
     options.best_practice_validate = args.best_practices
 
     # input options
+    options.recursive = args.recursive
     options.stix_version = args.stix_version
     options.in_files = args.files
     options.in_profile = args.profile
@@ -719,6 +743,9 @@ def _get_arg_parser():
     parser.add_argument("--json-results", dest="json", action="store_true",
                         default=False, help="Print results as raw JSON. This "
                         "also sets --quiet.")
+    parser.add_argument("--recursive", dest="recursive", action="store_true",
+                        default=False, help="Recursively traverse directories "
+                        "provided for STIX files to validate.")
     parser.add_argument("files", metavar="FILES", nargs="*",
                         help="A whitespace separated list of STIX files or "
                              "directories of STIX files to validate.")

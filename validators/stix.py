@@ -305,6 +305,9 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    def check_data_types(self, root, namespaces, *args, **kwargs):
+        return {}
+
     def check_root_element(self, root, namespaces, *args, **kwargs):
         '''
         Checks that the root element is a STIX_Package
@@ -324,6 +327,9 @@ class STIXBestPracticeValidator(object):
             results['root_element'] = result
 
         return results
+
+    def check_indicator_patterns(self, root, namespaces, *args, **kwargs):
+        return {}
 
     def check_latest_vocabs(self, root, namespaces, *args, **kwargs):
         '''
@@ -409,6 +415,67 @@ class STIXBestPracticeValidator(object):
         if list_vocabs: # only add list to results if there are entries
             results['vocab_suggestions'] = list_vocabs
         return results
+
+    def check_content_versions(self, root, namespaces, *args, **kwargs):
+        return {}
+
+    def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
+        '''
+        Checks that all major STIX constructs have appropriate
+        timestamp usage.
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
+        elements_to_check = (
+             '%s:STIX_Package' % PREFIX_STIX_CORE,
+             '%s:Campaign' % PREFIX_STIX_CORE,
+             '%s:Campaign' % PREFIX_STIX_COMMON,
+             '%s:Course_Of_Action' % PREFIX_STIX_CORE,
+             '%s:Course_Of_Action' % PREFIX_STIX_COMMON,
+             '%s:Exploit_Target' % PREFIX_STIX_CORE,
+             '%s:Exploit_Target' % PREFIX_STIX_COMMON,
+             '%s:Incident' % PREFIX_STIX_CORE,
+             '%s:Incident' % PREFIX_STIX_COMMON,
+             '%s:Indicator' % PREFIX_STIX_CORE,
+             '%s:Indicator' % PREFIX_STIX_COMMON,
+             '%s:Threat_Actor' % PREFIX_STIX_COMMON,
+             '%s:TTP' % PREFIX_STIX_CORE,
+             '%s:TTP' % PREFIX_STIX_COMMON,
+             '%s:Observable' % PREFIX_CYBOX_CORE,
+             '%s:Object' % PREFIX_CYBOX_CORE,
+             '%s:Event' % PREFIX_CYBOX_CORE,
+             '%s:Action' % PREFIX_CYBOX_CORE
+        )
+
+        results = defaultdict(list)
+        id_ts_xpath = "//%s[@id and not(@timestamp)]"
+        ref_ts_xpath = "//%s[@idref and @timestamp]"
+        ref_xpath = "//*[@id='%s' and @timestamp='%s']"
+        for tag in elements_to_check:
+            for element in root.xpath(ref_ts_xpath % tag, namespaces=namespaces):
+                idref = element.attrib['idref']
+                timestamp = element.attrib['timestamp']
+                ref_item_xp = ref_xpath % (idref, timestamp)
+                referenced = root.xpath(ref_item_xp, namespaces=namespaces)
+                if not referenced or len(referenced) != 1:
+                    result = {'line_number': element.sourceline,
+                              'tag': element.tag,
+                              'idref': idref,
+                              'timestamp': timestamp}
+                    results['invalid_idref_timestamp'].append(result)
+            for element in root.xpath(id_ts_xpath % tag, namespaces=namespaces):
+                result = {'line_number': element.sourceline,
+                          'tag': element.tag,
+                          'id': element.attrib['id']}
+                results['id_timestamp_suggested'].append(result)
+
+        return results
+
+    def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
+        return {}
 
     def check_titles(self, root, namespaces, *args, **kwargs):
         '''
