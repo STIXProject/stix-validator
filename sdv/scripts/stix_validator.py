@@ -737,14 +737,14 @@ def _get_arg_parser():
         dest="best_practices",
         action='store_true',
         default=False,
-        help="Check that the document follows authoring best practices"
+        help="Check that the document follows authoring best practices."
     )
 
     parser.add_argument(
         "--profile",
         dest="profile",
         default=None,
-        help="Path to STIX profile in excel"
+        help="Path to STIX Profile .xlsx file."
     )
 
     parser.add_argument(
@@ -782,7 +782,7 @@ def _get_arg_parser():
         dest="recursive",
         action="store_true",
         default=False,
-        help="Recursively descend into input directories"
+        help="Recursively descend into input directories."
     )
 
     parser.add_argument(
