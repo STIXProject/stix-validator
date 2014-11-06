@@ -542,8 +542,6 @@ class STIXBestPracticeValidator(object):
                 results['marking_control_xpath_issues'].append(result)
         return results
 
-    def check_content_versions(self, root, namespaces, *args, **kwargs):
-        return {}
 
     def check_latest_versions(self, root, namespaces, *args, **kwargs):
         '''
@@ -584,18 +582,6 @@ class STIXBestPracticeValidator(object):
                 results['not_latest_version'].append(result)
 
         return results
-
-    def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
-        return {}
-
-    def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
-        return {}
-
-    def check_indicator_patterns(self, root, namespaces, *args, **kwargs):
-        return {}
-
-    def check_data_types(self, root, namespaces, *args, **kwargs):
-        return {}
 
     def _get_stix_construct_versions(self, version):
         pass
