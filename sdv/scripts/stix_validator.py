@@ -255,9 +255,11 @@ def _print_schema_results(results, level=0):
     marker = "+" if results.is_valid else "!"
     _print_level("[%s] XML Schema: %s", level, marker, results.is_valid)
 
-    if not results.is_valid:
-        for error in results.errors:
-            _print_level("[!] %s", level+1, error)
+    if results.is_valid:
+        return
+
+    for error in results.errors:
+        _print_level("[!] %s", level+1, error)
 
 
 def _print_best_practice_results(results, level=0):
@@ -288,10 +290,12 @@ def _print_best_practice_results(results, level=0):
     marker = "+" if results.is_valid else "!"
     _print_level("[%s] Best Practices: %s", level, marker, results.is_valid)
 
-    if not results.is_valid:
-        for collection in sorted(results, key=lambda x: x.name):
-            _print_level("[!] %s", level+1, collection.name)
-            _print_warnings(collection, level+2)
+    if results.is_valid:
+        return
+
+    for collection in sorted(results, key=lambda x: x.name):
+        _print_level("[!] %s", level+1, collection.name)
+        _print_warnings(collection, level+2)
 
 
 def _print_profile_results(results, level):
@@ -305,14 +309,14 @@ def _print_profile_results(results, level):
     marker = "+" if results.is_valid else "!"
     _print_level("[%s] Profile: %s", level, marker, results.is_valid)
 
-    if not results.is_valid:
-        errors = results.as_dict()['errors']
+    if results.is_valid:
+        return
 
-        for err in errors:
-            msg = err['message']
-            lines = err['lines']
-            _print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
-
+    errors = results.as_dict()['errors']
+    for err in errors:
+        msg = err['message']
+        lines = err['lines']
+        _print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
 
 def _print_json_results(results):
     """Prints `results` to stdout in JSON format.
