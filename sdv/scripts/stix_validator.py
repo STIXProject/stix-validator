@@ -93,6 +93,7 @@ class ValidationOptions(object):
             validated.
         in_profile: A filename/path for a STIX Profile to validate against or
             convert.
+        recursive: Recursively descend into input directories.
 
     """
     def __init__(self):
@@ -116,6 +117,7 @@ class ValidationOptions(object):
         # input options
         self.in_files = None
         self.in_profile = None
+        self.recursive = False
 
 
 class ValidationResults(object):
@@ -583,7 +585,7 @@ def _validate(options):
             this validation run.
 
     """
-    files = utils.get_xml_files(options.in_files)
+    files = utils.get_xml_files(options.in_files, options.recursive)
     schema_validator = _get_schema_validator(options)
     profile_validator = _get_profile_validator(options)
     best_practice_validator = _get_best_practice_validator(options)
@@ -638,6 +640,7 @@ def _set_validation_options(args):
     options.schema_dir = args.schema_dir
     options.in_files = args.files
     options.in_profile = args.profile
+    options.recursive = args.recursive
 
     # output options
     options.xslt_out = args.xslt
@@ -772,6 +775,14 @@ def _get_arg_parser():
         action="store_true",
         default=False,
         help="Print results as raw JSON. This also sets --quiet."
+    )
+
+    parser.add_argument(
+        "--recursive",
+        dest="recursive",
+        action="store_true",
+        default=False,
+        help="Recursively descend into input directories"
     )
 
     parser.add_argument(
