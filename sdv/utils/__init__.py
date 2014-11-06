@@ -10,6 +10,7 @@ def get_xml_parser():
     """Returns an ``etree.ETCompatXMLParser`` instance."""
     parser = etree.ETCompatXMLParser(
         huge_tree=True,
+        resolve_entities=False,
         remove_comments=False,
         strip_cdata=False,
         remove_blank_text=True
