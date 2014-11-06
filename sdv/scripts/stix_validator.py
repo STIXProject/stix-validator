@@ -845,7 +845,8 @@ def main():
         _print_results(results, options)
 
         # Determine exit status code and exit.
-        sys.exit(_status_code(results))
+        code = _status_code(results)
+        sys.exit(code)
 
     except ArgumentError as ex:
         if ex.show_help:

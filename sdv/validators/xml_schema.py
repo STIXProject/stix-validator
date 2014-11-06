@@ -13,6 +13,7 @@ NS_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
 TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
 TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
 
+
 class XmlSchemaError(ValidationError):
     """Represents an XML Schema validation error.
 
