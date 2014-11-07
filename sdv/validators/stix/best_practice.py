@@ -335,10 +335,11 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_id_format(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that the core STIX/CybOX constructs in the STIX instance
-        document have ids and that each id is formatted as
-        [ns_prefix]:[object-type]-[GUID].
+        """Checks that the core STIX/CybOX constructs in the STIX instance
+        document have ids and that each id is formatted as follows:
+
+        ``[ns_prefix]:[object-type]-[GUID].``
+
         """
         to_check = itertools.chain(
             stix.STIX_CORE_COMPONENTS,
@@ -362,9 +363,7 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_duplicate_ids(self, root, namespaces, *args, **kwargs):
-        """
-        Checks for duplicate ids in the document.
-        """
+        """Checks for duplicate ids in the document."""
         id_nodes = collections.defaultdict(list)
 
         for node in root.xpath("//*[@id]"):
@@ -379,10 +378,7 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_idref_resolution(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that all idrefs resolve to a construct in the document
-        """
-
+        """Checks that all idrefs resolve to a construct in the document."""
         idrefs  = root.xpath("//*[@idref]")
         ids     = root.xpath("//@id")
 
@@ -395,9 +391,7 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_idref_with_content(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that constructs with idref set do not contain content
-        """
+        """Checks that constructs with idref set do not contain content."""
 
         def _has_content(node):
             return bool(node.text) or len(node) > 0
@@ -587,9 +581,7 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_titles(self, root, namespaces, *args, **kwargs):
-        """Checks that all major STIX constructs have a Title element.
-
-        """
+        """Checks that all major STIX constructs have a Title element."""
         to_check = (
             '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
             '{0}:Campaign'.format(stix.PREFIX_STIX_CORE),
@@ -622,6 +614,10 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
+        """Checks that data marking controlled structure XPaths are valid
+        and resolve to nodes in the `root` document.
+
+        """
         results = BestPracticeWarningCollection("Data Marking Control XPath")
         xpath = "//%s:Controlled_Structure" % stix.PREFIX_DATA_MARKING
 
@@ -662,6 +658,10 @@ class STIXBestPracticeValidator(object):
 
 
     def _get_rules(self, version):
+        """Returns a list of best practice check functions that are applicable
+        to the STIX `version`.
+
+        """
         sv = distutils.version.StrictVersion
         checks = self._rules.iteritems()
         rules = itertools.chain(
@@ -671,6 +671,10 @@ class STIXBestPracticeValidator(object):
         return rules
 
     def _run_rules(self, root, version):
+        """Runs all best practice rules applicable to a `version` of STIX
+        against the `root` document.
+
+        """
         namespaces = stix.get_stix_namespaces(version)
         results = BestPracticeValidationResults()
         rules = self._get_rules(version)
