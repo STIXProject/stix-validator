@@ -273,20 +273,21 @@ def _print_best_practice_results(results, level=0):
 
     """
     def _print_warning(warning, level):
-        for key in sorted(warning.core_keys):
-            if key not in warning:
-                continue
+        core_keys = warning.core_keys
 
+        # Print "core" values (e.g., id, idref, tag, etc.)
+        for key in (x for x in warning if x in core_keys):
             _print_level("[-] %s : %s", level, key, warning[key])
 
-        for key in sorted(warning.other_keys):
+        # Print "other" values (e.g., 'found version')
+        for key in (x for x in warning if x not in core_keys):
             _print_level("[-] %s : %s", level, key, warning[key])
 
     def _print_warnings(collection, level):
          for warning in collection:
             _print_warning(warning, level)
 
-            if warning is not collection[-1]:
+            if warning is not collection[-1]: # Print a divider if not the last
                 _print_level("-"*80, level)
 
     marker = "+" if results.is_valid else "!"

@@ -1,3 +1,7 @@
+import re
+import itertools
+from distutils.version import StrictVersion
+
 import sdv.errors as errors
 import sdv.utils as utils
 
@@ -14,12 +18,290 @@ PREFIX_STIX_INDICATOR = 'stix-indicator'
 PREFIX_STIX_INCIDENT = 'stix-incident'
 PREFIX_STIX_THREAT_ACTOR = 'stix-ta'
 PREFIX_STIX_VOCABS = 'stix-vocabs'
-PREFIX_DATA_MARKING = 'data-marking'
+PREFIX_DATA_MARKING = 'stix-marking'
 PREFIX_CYBOX_CORE = 'cybox-core'
 PREFIX_CYBOX_COMMON = 'cybox-common'
 PREFIX_CYBOX_VOCABS = 'cybox-vocabs'
 
 STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1')
+
+STIX_TO_CYBOX_VERSIONS = {
+    '1.0': '2.0',
+    '1.0.1': '2.0.1',
+    '1.1': '2.1',
+    '1.1.1': '2.1'
+}
+
+STIX_COMPONENT_VERSIONS = {
+    '1.0': {
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.0',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.0',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.0',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.0',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.0',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.0',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.0',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.0',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.0',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.0',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.0',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.0',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.0',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.0'
+    },
+    '1.0.1': {
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.0.1',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.0.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.0.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.0.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.0.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.0.1',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.0.1',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.0.1',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.0.1',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.0.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.0.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.0.1',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.0.1',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.0.1'
+    },
+    '1.1': {
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.1',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.1',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.1',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.1',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1'
+    },
+    '1.1.1': {
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.1.1',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.1.1',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1.1'
+    },
+}
+
+STIX_CORE_COMPONENTS = (
+    '{0}:STIX_Package'.format(PREFIX_STIX_CORE),
+    '{0}:Campaign'.format(PREFIX_STIX_CORE),
+    '{0}:Campaign'.format(PREFIX_STIX_COMMON),
+    '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE),
+    '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON),
+    '{0}:Exploit_Target'.format(PREFIX_STIX_CORE),
+    '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON),
+    '{0}:Incident'.format(PREFIX_STIX_CORE),
+    '{0}:Incident'.format(PREFIX_STIX_COMMON),
+    '{0}:Indicator'.format(PREFIX_STIX_CORE),
+    '{0}:Indicator'.format(PREFIX_STIX_COMMON),
+    '{0}:Threat_Actor'.format(PREFIX_STIX_CORE),
+    '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON),
+    '{0}:TTP'.format(PREFIX_STIX_CORE),
+    '{0}:TTP'.format(PREFIX_STIX_COMMON)
+)
+
+CYBOX_CORE_COMPONENTS = (
+    '{0}:Observables'.format(PREFIX_CYBOX_CORE),
+    '{0}:Observable'.format(PREFIX_CYBOX_CORE),
+    '{0}:Object'.format(PREFIX_CYBOX_CORE),
+    '{0}:Event'.format(PREFIX_CYBOX_CORE),
+    '{0}:Action'.format(PREFIX_CYBOX_CORE)
+)
+
+STIX_VOCAB_VERSIONS = {
+    '1.0': {
+        'PackageIntentVocab': '1.0',
+        'HighMediumLowVocab': '1.0',
+        'MalwareTypeVocab': '1.0',
+        'IndicatorTypeVocab': '1.0',
+        'COAStageVocab': '1.0',
+        'CampaignStatusVocab': '1.0',
+        'IncidentStatusVocab': '1.0',
+        'SecurityCompromiseVocab': '1.0',
+        'DiscoveryMethodVocab': '1.0',
+        'AvailabilityLossTypeVocab': '1.0',
+        'LossDurationVocab': '1.0',
+        'OwnershipClassVocab': '1.0',
+        'ManagementClassVocab': '1.0',
+        'LocationClassVocab': '1.0',
+        'ImpactQualificationVocab': '1.0',
+        'ImpactRatingVocab': '1.0',
+        'AssetTypeVocab': '1.0',
+        'AttackerInfrastructureTypeVocab': '1.0',
+        'SystemTypeVocab': '1.0',
+        'InformationTypeVocab': '1.0',
+        'ThreatActorTypeVocab': '1.0',
+        'MotivationVocab': '1.0',
+        'IntendedEffectVocab': '1.0',
+        'PlanningAndOperationalSupportVocab': '1.0',
+        'IncidentEffectVocab': '1.0',
+        'AttackerToolTypeVocab': '1.0',
+        'IncidentCategoryVocab': '1.0',
+        'LossPropertyVocab': '1.0',
+    },
+    '1.0.1': {
+        'MotivationVocab': '1.0.1',
+        'PlanningAndOperationalSupportVocab': '1.0.1',
+    },
+    '1.1': {
+        'IndicatorTypeVocab': '1.1',
+        'MotivationVocab': '1.1',
+        'CourseOfActionTypeVocab': '1.0',
+        'ThreatActorSophisticationVocab': '1.0',
+        'InformationSourceRoleVocab': '1.0',
+    },
+    '1.1.1': {
+        'AvailabilityLossTypeVocab': '1.1.1',
+    }
+}
+
+CYBOX_VOCAB_VERSIONS = {
+    '2.0': {
+        'ActionArgumentNameVocab': '1.0',
+        'ActionObjectAssociationTypeVocab': '1.0',
+        'ActionNameVocab': '1.0',
+        'ActionRelationshipTypeVocab': '1.0',
+        'ActionTypeVocab': '1.0',
+        'CharacterEncodingVocab': '1.0',
+        'EventTypeVocab': '1.0',
+        'HashNameVocab': '1.0',
+        'InformationSourceTypeVocab': '1.0',
+        'ObjectRelationshipVocab': '1.0',
+        'ObjectStateVocab': '1.0',
+        'ToolTypeVocab': '1.0'
+    },
+    '2.0.1': {
+        'EventTypeVocab': '1.0.1'
+    },
+    '2.1': {
+        'ActionNameVocab': '1.1',
+        'ObjectRelationshipVocab': '1.1',
+        'ToolTypeVocab': '1.1',
+    }
+}
+
+
+def _get_cybox_vocab_version(name, version):
+    descending = reversed(
+        sorted(CYBOX_VOCAB_VERSIONS.keys(), key=lambda x: StrictVersion(x))
+    )
+    keys = tuple(descending)
+    idx = keys.index
+
+    for key in keys[idx(version):]:
+        vocabs = CYBOX_VOCAB_VERSIONS[key]
+
+        if name in vocabs:
+            return vocabs[name]
+
+    raise errors.UnknownVocabularyError(
+        "Unknown controlled vocabulary name: '%s'" % name
+    )
+
+
+def _get_stix_vocab_version(name, version):
+    descending = reversed(
+        sorted(STIX_VOCAB_VERSIONS.keys(), key=lambda x: StrictVersion(x))
+    )
+    keys = tuple(descending)
+    idx = keys.index
+
+    for key in keys[idx(version):]:
+        vocabs = STIX_VOCAB_VERSIONS[key]
+
+        if name in vocabs:
+            return vocabs[name]
+
+    raise errors.UnknownVocabularyError(
+        "Unknown controlled vocabulary name: '%s'" % name
+    )
+
+
+def get_vocab_version(doc, version, typename):
+    """Returns the version of a controlled vocabulary ``xsi:type`` expected for
+    a given `version` of STIX or CybOX content.
+
+    Note:
+        This will need to be refactored in the future to support multiple
+        STIX and CybOX default vocabulary namespaces.
+
+    Args:
+        doc: The XML document which contains the controlled vocabulary instance.
+        version: A version of STIX.
+        typename: The ``xsi:type`` for the controlled vocabulary instance.
+
+    """
+    namespace = utils.get_type_ns(doc, typename)
+    name = parse_vocab_name(typename)
+
+    if namespace == 'http://cybox.mitre.org/default_vocabularies-2':
+        cybox_version = STIX_TO_CYBOX_VERSIONS[version]
+        return _get_cybox_vocab_version(name, cybox_version)
+
+    if namespace == 'http://stix.mitre.org/default_vocabularies-1':
+        return _get_stix_vocab_version(name, version)
+
+    raise errors.UnknownNamespaceError(
+        "Unknown vocabulary namespace: '%s'" % namespace
+    )
+
+
+def parse_vocab_name(typename):
+    """Parses a controlled vocabulary name from an instance ``xsi:type``
+    value.
+
+    Args:
+        typename: The ``xsi:type`` value found on a controlled vocabulary
+            instance.
+
+    Returns:
+        The name portion of a controlled vocabulary type instance. For example,
+        given ``vocabs:IndicatorTypeVocab-1.0``, this would return
+        ``'IndicatorTypeVocab'``.
+
+    """
+    type_ = re.split(":|-", typename)
+    prefix, name, version = type_[0], type_[1], type_[2]
+    return name
+
+
+
+def parse_vocab_version(typename):
+    """Parses a controlled vocabulary version from an instance ``xsi:type``
+    value.
+
+    Args:
+        typename: The ``xsi:type`` value found on a controlled vocabulary
+            instance.
+
+    Returns:
+        The version portion of a controlled vocabulary type instance. For
+        example, given ``vocabs:IndicatorTypeVocab-1.0``, this would return
+        ``'1.0'``.
+
+    """
+    type_ = re.split(":|-", typename)
+    prefix, name, version = type_[0], type_[1], type_[2]
+    return version
+
+
 
 def get_version(doc):
     """Returns the version of a STIX instnace document.

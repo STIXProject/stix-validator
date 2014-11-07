@@ -121,6 +121,8 @@ def get_xml_files(files, recursive=False):
 
     Args:
         files: A list of file paths and/or directory paths.
+        recursive: If ``true``, this will descend into any subdirectories
+            of input directories.
 
     Returns:
         A list of file paths to validate.
@@ -138,3 +140,24 @@ def get_xml_files(files, recursive=False):
             xml_files.append(fn)
 
     return xml_files
+
+
+def get_type_ns(doc, typename):
+    """Returns the namespace associated with the ``xsi:type`` `typename`
+    found in the XML document `doc`.
+
+    Args:
+        doc: An XML document. This can be a filename, file-like object,
+            ``etree._Element``, or ``etree._ElementTree`` instance.
+        typename: The ``xsi:type`` value for a given vocabulary instance.
+
+    """
+    root = get_etree_root(doc)
+    prefix, name = typename.split(':')
+
+    try:
+        return root.nsmap[prefix]
+    except KeyError:
+        raise errors.ValidationError(
+            "xsi:type '%s' contains unresolvable namespace prefix."
+        )

@@ -57,6 +57,7 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
         * ``'id'``: The id of a node associated with the warning.
         * ``'idref'``: The idref of a node associated with the warning.
         * ``'line'``: The line number of the offending node.
+        * ``'message'``: A message associated with the warning.
         * ``'tag'``: The lxml tag for the offending node.
 
         These keys can be retrieved via the :meth:`core_keys` property.
@@ -71,17 +72,15 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
     """
     def __init__(self, node, message=None):
         super(BestPracticeWarning, self).__init__()
-
-        self._inner = {}
+        self._inner = collections.OrderedDict()
         self._node = node
 
-        if message:
-            self['message'] = message
-
+        self['line'] = node.sourceline
+        self['message'] = message
         self['id'] = node.attrib.get('id')
         self['idref'] = node.attrib.get('idref')
-        self['line'] = node.sourceline
         self['tag'] = node.tag
+
 
     def __unicode__(self):
         return unicode(self.message)
@@ -137,8 +136,10 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
               document. The associated value may be ``None``.
             * ``'tag'``: The ``{namespace}localname`` value of the warning
               node.
+            * ``'message'``: An optional message that can be attached to the
+              warning. The associated value may be ``None``.
         """
-        return  ('id', 'idref', 'line', 'tag')
+        return  ('id', 'idref', 'line', 'tag', 'message')
 
     @property
     def other_keys(self):
@@ -317,27 +318,10 @@ class STIXBestPracticeValidator(object):
         Constructs with idref attributes set should not have an id attribute
         and are thus omitted from the results.
         """
-        to_check = (
-             '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
-             '%s:Campaign' % stix.PREFIX_STIX_CORE,
-             '%s:Campaign' % stix.PREFIX_STIX_COMMON,
-             '%s:Course_Of_Action' % stix.PREFIX_STIX_CORE,
-             '%s:Course_Of_Action' % stix.PREFIX_STIX_COMMON,
-             '%s:Exploit_Target' % stix.PREFIX_STIX_CORE,
-             '%s:Exploit_Target' % stix.PREFIX_STIX_COMMON,
-             '%s:Incident' % stix.PREFIX_STIX_CORE,
-             '%s:Incident' % stix.PREFIX_STIX_COMMON,
-             '%s:Indicator' % stix.PREFIX_STIX_CORE,
-             '%s:Indicator' % stix.PREFIX_STIX_COMMON,
-             '%s:Threat_Actor' % stix.PREFIX_STIX_COMMON,
-             '%s:TTP' % stix.PREFIX_STIX_CORE,
-             '%s:TTP' % stix.PREFIX_STIX_COMMON,
-             '%s:Observable' % stix.PREFIX_CYBOX_CORE,
-             '%s:Object' % stix.PREFIX_CYBOX_CORE,
-             '%s:Event' % stix.PREFIX_CYBOX_CORE,
-             '%s:Action' % stix.PREFIX_CYBOX_CORE
+        to_check = itertools.chain(
+            stix.STIX_CORE_COMPONENTS,
+            stix.CYBOX_CORE_COMPONENTS
         )
-
         results = BestPracticeWarningCollection('Missing IDs')
         xpath = " | ".join("//%s" % x for x in to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
@@ -356,29 +340,11 @@ class STIXBestPracticeValidator(object):
         document have ids and that each id is formatted as
         [ns_prefix]:[object-type]-[GUID].
         """
-        regex = re.compile(r'\w+:\w+-')
-
-        to_check = (
-             '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
-             '%s:Campaign' % stix.PREFIX_STIX_CORE,
-             '%s:Campaign' % stix.PREFIX_STIX_COMMON,
-             '%s:Course_Of_Action' % stix.PREFIX_STIX_CORE,
-             '%s:Course_Of_Action' % stix.PREFIX_STIX_COMMON,
-             '%s:Exploit_Target' % stix.PREFIX_STIX_CORE,
-             '%s:Exploit_Target' % stix.PREFIX_STIX_COMMON,
-             '%s:Incident' % stix.PREFIX_STIX_CORE,
-             '%s:Incident' % stix.PREFIX_STIX_COMMON,
-             '%s:Indicator' % stix.PREFIX_STIX_CORE,
-             '%s:Indicator' % stix.PREFIX_STIX_COMMON,
-             '%s:Threat_Actor' % stix.PREFIX_STIX_COMMON,
-             '%s:TTP' % stix.PREFIX_STIX_CORE,
-             '%s:TTP' % stix.PREFIX_STIX_COMMON,
-             '%s:Observable' % stix.PREFIX_CYBOX_CORE,
-             '%s:Object' % stix.PREFIX_CYBOX_CORE,
-             '%s:Event' % stix.PREFIX_CYBOX_CORE,
-             '%s:Action' % stix.PREFIX_CYBOX_CORE
+        to_check = itertools.chain(
+            stix.STIX_CORE_COMPONENTS,
+            stix.CYBOX_CORE_COMPONENTS
         )
-
+        regex = re.compile(r'\w+:\w+-')
         results = BestPracticeWarningCollection('ID Format')
         xpath = " | ".join("//%s" % x for x in to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
@@ -446,19 +412,19 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_indicator_practices(self, root, namespaces, *args, **kwargs):
-        """
-        Looks for STIX Indicators that are missing a Description, Type,
-        Valid_Time_Position, Indicated_TTP, and/or Confidence
-        """
-        xpath = (
-            "//%s:Indicator | //%s:Indicator" %
-            (stix.PREFIX_STIX_CORE, stix.PREFIX_STIX_COMMON)
-        )
-        ns = namespaces[stix.PREFIX_STIX_INDICATOR]
-        results = BestPracticeWarningCollection("Indicator Suggestions")
-        indicators = root.xpath(xpath, namespaces=namespaces)
+        """Looks for STIX Indicators that are missing a Description, Type,
+        Valid_Time_Position, Indicated_TTP, and/or Confidence.
 
-        for indicator in indicators:
+        """
+        to_check = (
+            "{0}:Indicator".format(stix.PREFIX_STIX_CORE),
+            "{0}:Indicator".format(stix.PREFIX_STIX_COMMON)
+        )
+        results = BestPracticeWarningCollection("Indicator Suggestions")
+        xpath = " | ".join("//%s" % x for x in to_check)
+        ns = namespaces[stix.PREFIX_STIX_INDICATOR]
+
+        for indicator in root.xpath(xpath, namespaces=namespaces):
             missing = []
             if 'idref' not in indicator.attrib:
                 if indicator.find('{%s}Description' % ns) is None:
@@ -485,13 +451,11 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_root_element(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that the root element is a STIX_Package
-        """
-        ns_stix_core = namespaces[stix.PREFIX_STIX_CORE]
+        """Checks that the root element is a STIX_Package."""
+        ns = namespaces[stix.PREFIX_STIX_CORE]
         results = BestPracticeWarningCollection("Root Element")
 
-        if root.tag != "{%s}STIX_Package" % (ns_stix_core):
+        if root.tag != "{%s}STIX_Package" % (ns):
             warning = BestPracticeWarning(node=root)
             results.append(warning)
 
@@ -503,86 +467,57 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_latest_vocabs(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that all STIX vocabs are using latest published versions.
+        """Checks that all STIX vocabs are using latest published versions.
         Triggers a warning if an out of date vocabulary is used.
+
         """
-        latest_map = {
-            '1.0': (
-                "AssetTypeVocab",
-                "AttackerInfrastructureTypeVocab",
-                "AttackerToolTypeVocab",
-                "COAStageVocab",
-                "CampaignStatusVocab",
-                "CourseOfActionTypeVocab",
-                "DiscoveryMethodVocab",
-                "HighMediumLowVocab",
-                "ImpactQualificationVocab",
-                "ImpactRatingVocab",
-                "IncidentCategoryVocab",
-                "IncidentEffectVocab",
-                "IncidentStatusVocab",
-                "InformationSourceRoleVocab",
-                "InformationTypeVocab",
-                "IntendedEffectVocab",
-                "LocationClassVocab",
-                "LossDurationVocab",
-                "LossPropertyVocab",
-                "MalwareTypeVocab",
-                "ManagementClassVocab",
-                "OwnershipClassVocab",
-                "PackageIntentVocab",
-                "SecurityCompromiseVocab",
-                "SystemTypeVocab",
-                "ThreatActorSophisticationVocab",
-                "ThreatActorTypeVocab",
-                "ActionArgumentNameVocab", # cybox
-                "ActionObjectAssociationTypeVocab", #cybox
-                "ActionRelationshipTypeVocab", # cybox
-                "ActionTypeVocab", # cybox
-                "CharacterEncodingVocab", # cybox
-                "EventTypeVocab", # cybox
-                "HashNameVocab", # cybox
-                "InformationSourceTypeVocab", # cybox
-                "ObjectStateVocab" # cybox
-            ),
-            '1.0.1': (
-                  "PlanningAndOperationalSupportVocab",
-                  "EventTypeVocab" # cybox
-            ),
-            '1.1': (
-                "IndicatorTypeVocab",
-                "MotivationVocab",
-                "ActionNameVocab", # cybox
-                "ObjectRelationshipVocab", # cybox
-                "ToolTypeVocab" # cybox
-            ),
-            '1.1.1': (
-                "AvailabilityLossTypeVocab",
-            )
-        }
-
-        def _latest_version(name):
-            for version, vocabs in latest_map.iteritems():
-                if name in vocabs:
-                    return version
-
-
+        version = kwargs['version']
         results = BestPracticeWarningCollection("Vocab Suggestions")
         xpath = "//*[contains(@xsi:type, 'Vocab-')]" # assumption: STIX/CybOX convention: end Vocab names with "Vocab-<version#>"
 
         for vocab in root.xpath(xpath, namespaces=namespaces):
-            type_ = re.split(":|-", vocab.attrib[stix.TAG_XSI_TYPE])
-            name, version = type_[1], type_[2]
+            xsi_type = vocab.attrib[stix.TAG_XSI_TYPE]
+            name = stix.parse_vocab_name(xsi_type)
+            found = stix.parse_vocab_version(xsi_type)
+            expected = stix.get_vocab_version(root, version, xsi_type)
 
-            if name in latest_map.get(version):
+            if found == expected:
                 continue
 
             warning = BestPracticeWarning(node=vocab)
             warning['vocab name'] = name
-            warning['found version'] = version
-            warning['latest version'] = _latest_version(name)
+            warning['version found'] = found
+            warning['version expected'] = expected
             results.append(warning)
+
+        return results
+
+    @rule()
+    def _check_latest_versions(self, root, namespaces, *args, **kwargs):
+        """Checks that all major STIX constructs versions are equal to
+        the latest version.
+
+        """
+        version = kwargs['version']
+        to_check = stix.STIX_COMPONENT_VERSIONS[version]
+        results = BestPracticeWarningCollection('Latest Component Versions')
+
+        def _is_expected(node, expected):
+            if 'version' not in node.attrib:
+                return True
+            return node.attrib['version'] == expected
+
+        for selector, expected in to_check.iteritems():
+            xpath = "//%s" % selector
+
+            for node in root.xpath(xpath, namespaces=namespaces):
+                if _is_expected(node, expected):
+                    continue
+
+                warning = BestPracticeWarning(node)
+                warning['version found'] = node.attrib['version']
+                warning['version expected'] = expected
+                results.append(warning)
 
         return results
 
@@ -591,7 +526,7 @@ class STIXBestPracticeValidator(object):
         pass
 
     @rule(version='1.1')
-    def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
+    def _check_timestamp_usage(self, root, namespaces, *args, **kwargs):
         """Checks that all major STIX constructs have appropriate
         timestamp usage.
 
@@ -600,31 +535,15 @@ class STIXBestPracticeValidator(object):
             timestamp attributes.
 
         """
-        to_check = (
-             '%s:STIX_Package' % stix.PREFIX_STIX_CORE,
-             '%s:Campaign' % stix.PREFIX_STIX_CORE,
-             '%s:Campaign' % stix.PREFIX_STIX_COMMON,
-             '%s:Course_Of_Action' % stix.PREFIX_STIX_CORE,
-             '%s:Course_Of_Action' % stix.PREFIX_STIX_COMMON,
-             '%s:Exploit_Target' % stix.PREFIX_STIX_CORE,
-             '%s:Exploit_Target' % stix.PREFIX_STIX_COMMON,
-             '%s:Incident' % stix.PREFIX_STIX_CORE,
-             '%s:Incident' % stix.PREFIX_STIX_COMMON,
-             '%s:Indicator' % stix.PREFIX_STIX_CORE,
-             '%s:Indicator' % stix.PREFIX_STIX_COMMON,
-             '%s:Threat_Actor' % stix.PREFIX_STIX_COMMON,
-             '%s:TTP' % stix.PREFIX_STIX_CORE,
-             '%s:TTP' % stix.PREFIX_STIX_COMMON,
-        )
+        results = BestPracticeWarningCollection("Timestamp Use")
+        to_check = stix.STIX_CORE_COMPONENTS
+        xpath = " | ".join("//%s" % x for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
 
         def _idref_resolves(idref, timestamp):
             xpath = "//*[@id='%s' and @timestamp='%s']" % (idref, timestamp)
             nodes = root.xpath(xpath, namespaces=namespaces)
             return all((nodes != None, len(nodes) > 0))
-
-        results = BestPracticeWarningCollection("Timestamp Use")
-        xpath = " | ".join("//%s" % x for x in to_check)
-        nodes = root.xpath(xpath, namespaces=namespaces)
 
         for node in nodes:
             attrib      = node.attrib.get
@@ -665,10 +584,11 @@ class STIXBestPracticeValidator(object):
     def _check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
         pass
 
+
     @rule()
     def _check_titles(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that all major STIX constructs have a Title element
+        """Checks that all major STIX constructs have a Title element.
+
         """
         to_check = (
             '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
@@ -686,7 +606,6 @@ class STIXBestPracticeValidator(object):
             '{0}:TTP'.format(stix.PREFIX_STIX_CORE),
             '{0}:TTP'.format( stix.PREFIX_STIX_COMMON)
         )
-
         results = BestPracticeWarningCollection("Missing Titles")
         xpath = " | ".join("//%s" % x for x in to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
@@ -707,6 +626,13 @@ class STIXBestPracticeValidator(object):
         xpath = "//%s:Controlled_Structure" % stix.PREFIX_DATA_MARKING
 
         def _test_xpath(node):
+            """Checks that the xpath found on `node` meets the following
+            requirements:
+
+            * It compiles (is a valid XPath)
+            * It selects at least one node in the document
+
+            """
             try:
                 xpath = node.text
                 nodes = node.xpath(xpath, namespaces=root.nsmap)
