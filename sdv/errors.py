@@ -9,6 +9,17 @@ class ValidationError(Exception):
     pass
 
 
+class UnknownNamespaceError(ValidationError):
+    """Raised when an unknown namespace is encountered in a function."""
+    pass
+
+
+class UnknownVocabularyError(ValidationError):
+    """Raised when an unknown controlled vocabulary name is discovered
+    during best practice validation."""
+    pass
+
+
 class XMLSchemaIncludeError(ValidationError):
     """Raised when errors occur during the processing of ``xs:include``
     directives found within schema documents.
