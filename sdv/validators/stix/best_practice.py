@@ -625,8 +625,8 @@ class STIXBestPracticeValidator(object):
             """Checks that the xpath found on `node` meets the following
             requirements:
 
-            * It compiles (is a valid XPath)
-            * It selects at least one node in the document
+            * The xpath compiles (is a valid XPath)
+            * The xpath selects at least one node in the document
 
             """
             try:
