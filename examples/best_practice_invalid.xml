@@ -8,8 +8,8 @@
 	xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
 	xmlns:cybox="http://cybox.mitre.org/cybox-2"
 	xmlns:DomainNameObj="http://cybox.mitre.org/objects#DomainNameObject-1"
-	xmlns:example="http://example.com/"
 	xmlns:marking="http://data-marking.mitre.org/Marking-1"
+	xmlns:example="http://example.com/"
 	xsi:schemaLocation="
 	http://stix.mitre.org/stix-1 http://stix.mitre.org/XMLSchema/core/1.1.1/stix_core.xsd
 	http://stix.mitre.org/common-1 http://stix.mitre.org/XMLSchema/common/1.1.1/stix_common.xsd
@@ -43,7 +43,7 @@
 			<indicator:Observable id="example:Observable-87c9a5bb-d005-4b3e-8081-99f720fad62b">
 				<cybox:Object id="example:Object-12c760ba-cd2c-4f5d-a37d-18212eac7928">
 					<cybox:Properties xsi:type="DomainNameObj:DomainNameObjectType" type="FQDN">
-						<DomainNameObj:Value condition="Equals" apply_condition="ANY">malicious1.example.com##comma##malicious2.example.com##comma##malicious3.example.com</DomainNameObj:Value>
+						<DomainNameObj:Value apply_condition="ANY">malicious1.example.com##comma##malicious2.example.com##comma##malicious3.example.com</DomainNameObj:Value>
 					</cybox:Properties>
 				</cybox:Object>
 			</indicator:Observable>
