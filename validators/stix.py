@@ -87,6 +87,7 @@ class STIXBestPracticeValidator(object):
                    self.check_idref_with_content, self.check_indicator_practices,
                    self.check_indicator_patterns,
                    self.check_root_element, self.check_cybox_object_conditions,
+                   self.check_latest_versions,
                    self.check_titles, self.check_marking_control_xpath,
                    self.check_latest_vocabs),
             '1.1': (self.check_timestamp_usage, self.check_timestamp_timezone),
@@ -447,7 +448,59 @@ class STIXBestPracticeValidator(object):
         return {}
 
     def check_timestamp_usage(self, root, namespaces, *args, **kwargs):
-        return {}
+        '''
+        Checks that all major STIX constructs have appropriate
+        timestamp usage.
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
+        elements_to_check = (
+             '%s:STIX_Package' % PREFIX_STIX_CORE,
+             '%s:Campaign' % PREFIX_STIX_CORE,
+             '%s:Campaign' % PREFIX_STIX_COMMON,
+             '%s:Course_Of_Action' % PREFIX_STIX_CORE,
+             '%s:Course_Of_Action' % PREFIX_STIX_COMMON,
+             '%s:Exploit_Target' % PREFIX_STIX_CORE,
+             '%s:Exploit_Target' % PREFIX_STIX_COMMON,
+             '%s:Incident' % PREFIX_STIX_CORE,
+             '%s:Incident' % PREFIX_STIX_COMMON,
+             '%s:Indicator' % PREFIX_STIX_CORE,
+             '%s:Indicator' % PREFIX_STIX_COMMON,
+             '%s:Threat_Actor' % PREFIX_STIX_COMMON,
+             '%s:TTP' % PREFIX_STIX_CORE,
+             '%s:TTP' % PREFIX_STIX_COMMON,
+             '%s:Observable' % PREFIX_CYBOX_CORE,
+             '%s:Object' % PREFIX_CYBOX_CORE,
+             '%s:Event' % PREFIX_CYBOX_CORE,
+             '%s:Action' % PREFIX_CYBOX_CORE
+        )
+
+        results = defaultdict(list)
+        id_ts_xpath = "//%s[@id and not(@timestamp)]"
+        ref_ts_xpath = "//%s[@idref and @timestamp]"
+        ref_xpath = "//*[@id='%s' and @timestamp='%s']"
+        for tag in elements_to_check:
+            for element in root.xpath(ref_ts_xpath % tag, namespaces=namespaces):
+                idref = element.attrib['idref']
+                timestamp = element.attrib['timestamp']
+                ref_item_xp = ref_xpath % (idref, timestamp)
+                referenced = root.xpath(ref_item_xp, namespaces=namespaces)
+                if not referenced or len(referenced) != 1:
+                    result = {'line_number': element.sourceline,
+                              'tag': element.tag,
+                              'idref': idref,
+                              'timestamp': timestamp}
+                    results['invalid_idref_timestamp'].append(result)
+            for element in root.xpath(id_ts_xpath % tag, namespaces=namespaces):
+                result = {'line_number': element.sourceline,
+                          'tag': element.tag,
+                          'id': element.attrib['id']}
+                results['id_timestamp_suggested'].append(result)
+
+        return results
 
     def check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
         return {}
@@ -499,7 +552,64 @@ class STIXBestPracticeValidator(object):
         return results
 
     def check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
-        return {}
+        results = defaultdict(list)
+        xpath = "//%s:Controlled_Structure" % PREFIX_DATA_MARKING
+        for elem in root.xpath(xpath, namespaces=namespaces):
+            cs_xpath = elem.text
+            result = {'problem': None, 'line_number': elem.sourceline }
+            if not cs_xpath:
+                result['problem'] = "No XPath supplied"
+            else:
+                try:
+                    res_set = elem.xpath(cs_xpath, namespaces=root.nsmap)
+                    if not res_set:
+                        result['problem'] = "XPath does not return any results"
+                except etree.XPathEvalError as e:
+                    result['problem'] = "Invalid XPath supplied"
+            if result['problem']:
+                results['marking_control_xpath_issues'].append(result)
+        return results
+
+
+    def check_latest_versions(self, root, namespaces, *args, **kwargs):
+        '''
+        Checks that all major STIX constructs have match package version
+        :param root:
+        :param namespaces:
+        :param args:
+        :param kwargs:
+        :return:
+        '''
+        elements_to_check = (
+            '%s:Campaign' % PREFIX_STIX_CORE,
+            '%s:Campaign' % PREFIX_STIX_COMMON,
+            '%s:Course_Of_Action' % PREFIX_STIX_CORE,
+            '%s:Course_Of_Action' % PREFIX_STIX_COMMON,
+            '%s:Exploit_Target' % PREFIX_STIX_CORE,
+            '%s:Exploit_Target' % PREFIX_STIX_COMMON,
+            '%s:Incident' % PREFIX_STIX_CORE,
+            '%s:Incident' % PREFIX_STIX_COMMON,
+            '%s:Indicator' % PREFIX_STIX_CORE,
+            '%s:Indicator' % PREFIX_STIX_COMMON,
+            '%s:Threat_Actor' % PREFIX_STIX_COMMON,
+            '%s:TTP' % PREFIX_STIX_CORE,
+            '%s:TTP' % PREFIX_STIX_COMMON,
+        )
+
+        results = defaultdict(list)
+        p_version = root.xpath("@version", namespaces=namespaces)[0]
+        for tag in elements_to_check:
+            if tag.endswith("Indicator"): # indicator versions start with '2'
+                p_version = "2%s" % p_version[1:]
+            xpath = "//%s[not(@version) or @version != '%s']" % (tag, p_version)
+            for element in root.xpath(xpath, namespaces=namespaces):
+                result = {'line_number': element.sourceline,
+                          'should_be': p_version,
+                          'is_instead': element.attrib.get('version', "MISSING")
+                          }
+                results['not_latest_version'].append(result)
+
+        return results
 
     def _get_stix_construct_versions(self, version):
         pass
