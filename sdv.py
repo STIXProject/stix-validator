@@ -353,6 +353,13 @@ def _print_best_practice_results(fn, results):
                             node['given_version'],
                             node.get('newest_version', "???"))
 
+        cybox_pc_missing = warnings.get('cybox_property_condition_missing')
+        if cybox_pc_missing:
+            _print_level("[#] STIX Indicator > CybOX Object Properties:", 1)
+            for node in cybox_pc_missing:
+                _print_level("[~] missing @condition at line: [%s] with id: [%s]",
+                            2, node['line_number'], node['id'])
+
         invalid_idref_timestamp = warnings.get('invalid_idref_timestamp')
         if invalid_idref_timestamp:
             _print_level("[#] Element references a non-existent idref/timestamp combination", 1)
@@ -369,6 +376,7 @@ def _print_best_practice_results(fn, results):
                 _print_level("[~] Element: [%s] line: [%s] with ID: [%s]", 2,
                             node['tag'], node['line_number'],
                             node['id'])
+
 
 def _print_profile_results(fn, results):
     """Prints STIX Profile validation results to stdout.
