@@ -387,3 +387,59 @@ def get_stix_namespaces(version):
     }
 
     return nsmap
+
+
+def _get_observable(root, obs, namespaces):
+    """Attempts to return the Observable definition for `obs`. If `obs` is a
+    fully defined (not idref'd) Observable, this funtion will immediately
+    return `obs`.
+
+    If `obs` contains an ``idref`` attribute, an attempt will be made to
+    resolve the Observable definition. If the attempt fails, `obs` will be
+    returned.
+
+    Raises:
+        .IdrefLookupError: if the attempt to resolve an idref fails.
+
+    """
+    idref = obs.attrib.get('idref')
+
+    if not idref:
+        return obs
+
+    xpath = "//{0}:Observable[@id='{1}']".format(PREFIX_CYBOX_CORE, idref)
+    nodes = root.xpath(xpath, namespaces=namespaces)
+
+    if len(nodes) != 0:
+        return nodes[0]
+
+    raise errors.IdrefLookupError(
+        idref=idref,
+        message="Failed to resolve idref '{0}'".format(idref)
+    )
+
+
+def get_indicator_observables(root, indicator, namespaces):
+    """Returns all Observable instances embedded or referenced within the
+    `indicator`.
+
+    Args:
+        root: The etree STIX document.
+        indicator: A STIX Indicator etree instance.
+        namespaces: A mapping of namespace aliases to namespaces to be used
+            by the XPath engine.
+
+    Returns:
+        A list of Observable instances.
+
+    """
+    xpath = ".//{0}:Observable".format(PREFIX_STIX_INDICATOR)
+
+    observables = []
+    for node in indicator.xpath(xpath, namespaces=namespaces):
+        with utils.ignored(errors.IdrefLookupError):
+            obs = _get_observable(root, node, namespaces)
+            observables.append(obs)
+
+    return observables
+

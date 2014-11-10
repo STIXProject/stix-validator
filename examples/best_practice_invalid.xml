@@ -37,6 +37,18 @@
 			</marking:Marking>
 		</stix:Handling>
 	</stix:STIX_Header>
+	<stix:Observables cybox_major_version="2" cybox_minor_version="1">
+		<cybox:Observable id="example:Observable-12c760ba-cd2c-4f5d-a37d-18212eac7929">
+			<cybox:Object>
+				<cybox:Properties xsi:type="DomainNameObj:DomainNameObjectType" type="FQDN">
+					<cyboxCommon:Custom_Properties>
+						<cyboxCommon:Property name="test">No condition attribute!</cyboxCommon:Property>
+					</cyboxCommon:Custom_Properties>
+					<DomainNameObj:Value apply_condition="ANY">malicious1.example.com##comma##malicious2.example.com##comma##malicious3.example.com</DomainNameObj:Value>
+				</cybox:Properties>
+			</cybox:Object>
+		</cybox:Observable>
+	</stix:Observables>
 	<stix:Indicators>
 		<stix:Indicator xsi:type="indicator:IndicatorType" id="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" timestamp="2014-02-20T09:00:00.000000Z" version="2.1">
 			<indicator:Title>Sample Domain Watchlist Indicator</indicator:Title>
@@ -64,6 +76,10 @@
 					</cybox:Properties>
 				</cybox:Object>
 			</indicator:Observable>
+		</stix:Indicator>
+		<stix:Indicator xsi:type="indicator:IndicatorType" id="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2d1" version="2.1.1">
+			<indicator:Description>Testing idref Observable lookup</indicator:Description>
+			<indicator:Observable idref="example:Observable-12c760ba-cd2c-4f5d-a37d-18212eac7929"/>
 		</stix:Indicator>
 		<stix:Indicator xsi:type="indicator:IndicatorType" idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" timestamp="2014-02-20T10:00:00.000000Z" version="2.1.1" />
 	</stix:Indicators>

@@ -653,37 +653,66 @@ class STIXBestPracticeValidator(object):
     def _check_condition_attribute(self, root, namespaces, *args, **kwargs):
         """Checks that Observable properties contain a ``@condition`` attribute.
 
+        This will also attempt to resolve Observables which are referenced
+        (not embedded) within Indicators.
+
         Note:
-            This does not dereference ``idref`` values for Observables within
-            Indicators.
+            This could produce inaccurate results if a CybOX ObjectProperties
+            instance contains fields that do not contain a ``condition``
+            attribute (e.g., a field that is not patternable).
 
         """
-        indicators = (
-            "//{0}:Indicator".format(stix.PREFIX_STIX_CORE),
-            "//{0}:Indicator".format(stix.PREFIX_STIX_COMMON)
-        )
-
-        properties = (
-            "//{0}:Properties".format(stix.PREFIX_CYBOX_CORE),
-            "//{0}:Custom_Properties".format(stix.PREFIX_CYBOX_COMMON)
-        )
-
-        paths = itertools.product(indicators, properties)
-        xpath = " | ".join("%s%s" % (x,y) for (x,y) in paths)
         results = BestPracticeWarningCollection(
             "Indicator Pattern Properties Missing Condition Attributes"
         )
 
-        def _get_leaves(node):
-            return (x for x in node.findall(".//*") if x.text)
+        selectors = (
+            "//{0}:Indicator".format(stix.PREFIX_STIX_CORE),
+            "//{0}:Indicator".format(stix.PREFIX_STIX_COMMON)
+        )
 
-        for node in root.xpath(xpath, namespaces=namespaces):
-            for leaf in _get_leaves(node):
-                if leaf.attrib.get('condition'):
-                    continue
+        xpath = " | ".join(selectors)
+        indicators = root.xpath(xpath, namespaces=namespaces)
 
-                result = BestPracticeWarning(leaf)
-                results.append(result)
+        if len(indicators) == 0:
+            return results
+
+        def _get_leaves(nodes):
+            """Finds and returns all leaf nodes contained within `nodes`."""
+            leaves = []
+            for node in nodes:
+                leaves.extend(x for x in node.findall(".//*") if x.text)
+            return leaves
+
+        def _get_observables(indicators):
+            """Iterates over `indicators` and yields an (indicator instance,
+            observable list) tuple with each pass.
+
+            The observable list contains all observable instances embedded or
+            referenced within the Indicator.
+
+            """
+            for indicator in indicators:
+                observables = stix.get_indicator_observables(
+                    root, indicator, namespaces
+                )
+                yield (indicator, observables)
+
+        xpath = ".//{0}:Properties".format(stix.PREFIX_CYBOX_CORE)
+        for indicator, observables in _get_observables(indicators):
+            id_ = indicator.attrib.get('id', 'No ID Found')
+
+            for obs in observables:
+                props = obs.xpath(xpath, namespaces=namespaces)
+
+                for leaf in _get_leaves(props):
+                    if leaf.attrib.get('condition'):
+                        continue
+
+                    result = BestPracticeWarning(leaf)
+                    result['parent indicator id'] = id_
+                    result['parent indicator line'] = indicator.sourceline
+                    results.append(result)
 
         return results
 
