@@ -1,10 +1,23 @@
 import os
-import sdv.errors as errors
+import contextlib
 from lxml import etree
+import sdv.errors as errors
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
 TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
+
+@contextlib.contextmanager
+def ignored(*exceptions):
+    """Allows you to ignore exceptions cleanly using context managers. This
+    exists in Python 3.
+
+    """
+    try:
+        yield
+    except exceptions:
+        pass
+
 
 def get_xml_parser():
     """Returns an ``etree.ETCompatXMLParser`` instance."""
