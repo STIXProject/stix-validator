@@ -10,14 +10,29 @@ class ValidationError(Exception):
 
 
 class UnknownNamespaceError(ValidationError):
-    """Raised when an unknown namespace is encountered in a function."""
+    """Raised when an unknown namespace is encountered in a function.
+
+    """
     pass
 
 
 class UnknownVocabularyError(ValidationError):
     """Raised when an unknown controlled vocabulary name is discovered
-    during best practice validation."""
+    during best practice validation.
+
+    """
     pass
+
+
+class IdrefLookupError(ValidationError):
+    """Raised when an attempt to resolve an ID reference fails. This can
+    occur when the full STIX component definition resides outside of the
+    input document.
+
+    """
+    def __init__(self, idref, message=None):
+        super(IdrefLookupError, self).__init__(message)
+        self.idref = idref
 
 
 class XMLSchemaIncludeError(ValidationError):
