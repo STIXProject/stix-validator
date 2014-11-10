@@ -649,8 +649,43 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    def _get_stix_construct_versions(self, version):
-        pass
+    @rule()
+    def _check_condition_attribute(self, root, namespaces, *args, **kwargs):
+        """Checks that Observable properties contain a ``@condition`` attribute.
+
+        Note:
+            This does not dereference ``idref`` values for Observables within
+            Indicators.
+
+        """
+        indicators = (
+            "//{0}:Indicator".format(stix.PREFIX_STIX_CORE),
+            "//{0}:Indicator".format(stix.PREFIX_STIX_COMMON)
+        )
+
+        properties = (
+            "//{0}:Properties".format(stix.PREFIX_CYBOX_CORE),
+            "//{0}:Custom_Properties".format(stix.PREFIX_CYBOX_COMMON)
+        )
+
+        paths = itertools.product(indicators, properties)
+        xpath = " | ".join("%s%s" % (x,y) for (x,y) in paths)
+        results = BestPracticeWarningCollection(
+            "Indicator Pattern Properties Missing Condition Attributes"
+        )
+
+        def _get_leaves(node):
+            return (x for x in node.findall(".//*") if x.text)
+
+        for node in root.xpath(xpath, namespaces=namespaces):
+            for leaf in _get_leaves(node):
+                if leaf.attrib.get('condition'):
+                    continue
+
+                result = BestPracticeWarning(leaf)
+                results.append(result)
+
+        return results
 
 
     def _get_vocabs(self, version):
