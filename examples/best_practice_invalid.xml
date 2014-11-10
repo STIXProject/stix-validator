@@ -7,6 +7,7 @@
 	xmlns:ttp="http://stix.mitre.org/TTP-1"
 	xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
 	xmlns:cybox="http://cybox.mitre.org/cybox-2"
+	xmlns:cyboxCommon="http://cybox.mitre.org/common-2"
 	xmlns:DomainNameObj="http://cybox.mitre.org/objects#DomainNameObject-1"
 	xmlns:marking="http://data-marking.mitre.org/Marking-1"
 	xmlns:example="http://example.com/"
@@ -17,6 +18,7 @@
 	http://stix.mitre.org/TTP-1 http://stix.mitre.org/XMLSchema/ttp/1.1.1/ttp.xsd
 	http://stix.mitre.org/default_vocabularies-1 http://stix.mitre.org/XMLSchema/default_vocabularies/1.1.1/stix_default_vocabularies.xsd
 	http://cybox.mitre.org/cybox-2 http://cybox.mitre.org/XMLSchema/core/2.1/cybox_core.xsd
+	http://cybox.mitre.org/common-2 http://cybox.mitre.org/XMLSchema/common/2.1/cybox_common.xsd
 	http://cybox.mitre.org/objects#DomainNameObject-1 http://cybox.mitre.org/XMLSchema/objects/Domain_Name/1.0/Domain_Name_Object.xsd
 	http://data-marking.mitre.org/Marking-1  http://stix.mitre.org/XMLSchema/data_marking/1.1.1/data_marking.xsd"
 	id="example:Indicator-ba1d406e-937c-414f-9231-6e1dbe64fe8b" version="1.1.1" timestamp="2014-05-08T09:00:00.000000Z">
@@ -43,6 +45,9 @@
 			<indicator:Observable id="example:Observable-87c9a5bb-d005-4b3e-8081-99f720fad62b">
 				<cybox:Object id="example:Object-12c760ba-cd2c-4f5d-a37d-18212eac7928">
 					<cybox:Properties xsi:type="DomainNameObj:DomainNameObjectType" type="FQDN">
+						<cyboxCommon:Custom_Properties>
+							<cyboxCommon:Property name="test">No condition attribute!</cyboxCommon:Property>
+						</cyboxCommon:Custom_Properties>
 						<DomainNameObj:Value apply_condition="ANY">malicious1.example.com##comma##malicious2.example.com##comma##malicious3.example.com</DomainNameObj:Value>
 					</cybox:Properties>
 				</cybox:Object>
