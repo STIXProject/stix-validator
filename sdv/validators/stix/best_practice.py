@@ -348,9 +348,8 @@ class STIXBestPracticeValidator(object):
         regex = re.compile(r'\w+:\w+-')
         results = BestPracticeWarningCollection('ID Format')
         xpath = " | ".join("//%s" % x for x in to_check)
-        nodes = root.xpath(xpath, namespaces=namespaces)
 
-        for node in nodes:
+        for node in root.xpath(xpath, namespaces=namespaces):
             if 'id' not in node.attrib:
                 continue
 
