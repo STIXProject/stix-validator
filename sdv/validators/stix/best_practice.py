@@ -144,7 +144,7 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
     @property
     def other_keys(self):
         """Returns a ``tuple`` of keys attached to instances of this class that
-        are not found in the :meth:`core_keys`
+        are not found in the :attr:`core_keys`.
 
         """
         return tuple(x for x in self.iterkeys() if x not in self.core_keys)
