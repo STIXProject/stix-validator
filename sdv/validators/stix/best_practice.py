@@ -247,7 +247,7 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         instances.
 
         """
-        return self._warnings
+        return [x for x in self if x]
 
     def insert(self, idx, value):
         """Inserts an instance of :class:`BestPracticeWarningCollection`.
