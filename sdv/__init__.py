@@ -11,6 +11,7 @@ XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 from sdv.validators import STIXSchemaValidator
 DEFAULT_STIX_VALIDATOR = STIXSchemaValidator()  # Makes validate_xml() faster
 
+
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
     """Performs XML Schema validation against a STIX document.
 
@@ -110,4 +111,3 @@ def validate_profile(doc, profile):
 
     validator = STIXProfileValidator(profile)
     return validator.validate(doc)
-

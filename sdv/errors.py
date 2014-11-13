@@ -1,6 +1,7 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+
 class ValidationError(Exception):
     """Base Exception for all validator-specific exceptions. This is used
     directly by some modules as a generic Exception.

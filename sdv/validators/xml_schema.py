@@ -18,7 +18,8 @@ class XmlSchemaError(ValidationError):
     """Represents an XML Schema validation error.
 
     Args:
-        error: An error returned from ``etree`` XML Schema validation error log.
+        error: An error returned from ``etree`` XML Schema validation error
+            log.
 
     Attributes:
         message: The XML validation error message.
@@ -60,7 +61,6 @@ class XmlSchemaError(ValidationError):
 
     def __str__(self):
         return unicode(self).encode("utf-8")
-
 
 
 class XmlValidationResults(ValidationResults):
@@ -160,7 +160,7 @@ class XmlSchemaValidator(object):
         xs_includes = root.findall(TAG_XS_INCLUDE)
         dir_ = os.path.dirname(fp)
 
-        includes= []
+        includes = []
         for include in xs_includes:
             loc = include.attrib['schemaLocation']
 
@@ -172,7 +172,6 @@ class XmlSchemaValidator(object):
             includes.append(locpath)
 
         return includes
-
 
     def _build_include_graph(self, schema_paths):
         """Builds a graph of ``xs:include`` directive sources and targets for
@@ -195,7 +194,6 @@ class XmlSchemaValidator(object):
 
         return graph
 
-
     def _is_included(self, graph, fp):
         """Returns ``True`` if the schema at `fp` was included by any other
          schemas in `graph`.
@@ -206,7 +204,6 @@ class XmlSchemaValidator(object):
                 return True
 
         return False
-
 
     def _get_include_root(self, ns, list_schemas):
         """Attempts to determine the "root" schema for a targetNamespace.
@@ -243,7 +240,6 @@ class XmlSchemaValidator(object):
         raise errors.XMLSchemaIncludeError(
             "Unable to determine base schema for %s" % ns
         )
-
 
     def _process_includes(self, imports):
         """Attempts to resolve cases where multiple schemas declare the same
@@ -282,7 +278,6 @@ class XmlSchemaValidator(object):
                 processed[ns] = schemas[0]
 
         return processed
-
 
     def _walk_schemas(self, schema_dir):
         """Walks the `schema_dir` directory and builds a dictionary of
@@ -323,7 +318,6 @@ class XmlSchemaValidator(object):
 
         return schemalocs
 
-
     def _map_schemalocs(self, schema_dir):
         """Walks the `schema_dir` directory and builds a dictionary which maps
         schema targetNamespace values to schema file paths.
@@ -347,7 +341,6 @@ class XmlSchemaValidator(object):
 
         return schemalocs
 
-
     def _parse_schemaloc(self, root):
         """Parses the ``xsi:schemaLocation`` attribute found on `root`.
 
@@ -368,7 +361,6 @@ class XmlSchemaValidator(object):
                 "xsi:schemaLocation attribute was not found on the input "
                 "document"
             )
-
 
     def _get_required_schemas(self, root):
         """Retrieve all the namespaces and schemalocations needed to validate
@@ -392,7 +384,6 @@ class XmlSchemaValidator(object):
 
         return imports
 
-
     def _build_required_imports(self, doc, schemaloc=False):
         root = utils.get_etree_root(doc)
 
@@ -402,7 +393,6 @@ class XmlSchemaValidator(object):
             imports = self._get_required_schemas(root)
 
         return imports
-
 
     def _build_uber_schema(self, doc, schemaloc=False):
         """Builds a schema which is made up of ``xs:import`` directives for
@@ -451,7 +441,6 @@ class XmlSchemaValidator(object):
 
         return etree.XMLSchema(xsd)
 
-
     def validate(self, doc, schemaloc=False):
         """Validates an XML instance document.
 
@@ -488,5 +477,3 @@ class XmlSchemaValidator(object):
         is_valid = xsd.validate(root)
 
         return XmlValidationResults(is_valid, xsd.error_log)
-
-

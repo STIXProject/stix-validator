@@ -34,7 +34,7 @@ OCCURRENCE_REQUIRED   = 'required'
 ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
 
 # Used by profile schematron for reporting error line numbers.
-SAXON_LINENO= '[<value-of select="saxon:line-number()"/>]'
+SAXON_LINENO = '[<value-of select="saxon:line-number()"/>]'
 
 
 class InstanceMapping(object):
@@ -105,7 +105,6 @@ class InstanceMapping(object):
     def ns_alias(self):
         return self._ns_alias
 
-
     def validate(self):
         """Checks that this is a valid InstanceMapping instance.
 
@@ -125,6 +124,7 @@ class InstanceMapping(object):
                 "Empty selector for '%s' in Instance Mapping "
                 "worksheet. Look for extra commas in field." % self.label
             )
+
 
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
@@ -153,7 +153,6 @@ class Profile(collections.MutableSequence):
     def __nonzero__(self):
         return bool(self._rules)
 
-
     def _collect_rules(self):
         """Builds and returns a dictionary of ``BaseProfileRule``
         implementations from the internal storage. The key is the Rule context
@@ -166,12 +165,12 @@ class Profile(collections.MutableSequence):
             context is pulled directly from the _BaseProfileRule instance's
             ``context`` property. This value is derived from the context
             label associated with the rule entry in the profile worksheet.
-        * If the rule checks for allowed values or implementations of an element
-            the context will be a selector pointing directly to the element.
-            This is done to cut down on validation noise (otherwise a missing
-            element would raise errors for a required element being missing AND
-            the element not containing an allowed value because it wasn't found
-            at all).
+        * If the rule checks for allowed values or implementations of an
+            element the context will be a selector pointing directly to the
+            element. This is done to cut down on validation noise (otherwise a
+            missing element would raise errors for a required element being
+            missing AND the element not containing an allowed value because it
+            wasn't found at all).
         * If the rule checks for allowed values of an attribute, the rule
             context will pulled directly from the _BaseProfileRule instance's
             ``context`` property. This should probably follow the rules
@@ -245,10 +244,10 @@ class Profile(collections.MutableSequence):
             nsmap={None: schematron.NS_SCHEMATRON}
         )
 
-
     def _get_pattern_node(self):
+        ns = schematron.NS_SCHEMATRON
         return etree.XML(
-            "<pattern xmlns='%s' id='%s'/>" % (schematron.NS_SCHEMATRON, self.id_)
+            "<pattern xmlns='%s' id='%s'/>" % (ns, self.id_)
         )
 
     def _get_namespaces(self):
@@ -332,12 +331,10 @@ class _BaseProfileRule(object):
         """
         raise NotImplementedError()
 
-
     @property
     def test(self):
         """The xpath test to evaluate against a node."""
         raise NotImplementedError()
-
 
     def as_etree(self):
         """Returns a Schematron ``<assert>`` or ``<report>`` for this
@@ -353,9 +350,8 @@ class _BaseProfileRule(object):
             SAXON_LINENO                 # line number function
         )
 
-        rule = etree.XML(
-            '<{0} xmlns="{1}" test="{2}" role="{3}">{4} {5}</{0}>'.format(*args)
-        )
+        xml = '<{0} xmlns="{1}" test="{2}" role="{3}">{4} {5}</{0}>'
+        rule = etree.XML(xml.format(*args))
 
         return rule
 
@@ -380,7 +376,8 @@ class RequiredRule(_BaseProfileRule):
     @_BaseProfileRule.test.getter
     def message(self):
         return "{0}/{1} is required by this profile.".format(
-            self.context, self.field
+            self.context,
+            self.field
         )
 
 
@@ -445,9 +442,9 @@ class AllowedValuesRule(_BaseProfileRule):
 
     @_BaseProfileRule.message.getter
     def message(self):
-       return "The allowed values for {0}/{1} are {2}".format(
-           self.context, self.field, self.values
-       )
+        return "The allowed values for {0}/{1} are {2}".format(
+            self.context, self.field, self.values
+        )
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -546,7 +543,6 @@ class ProfileError(schematron.SchematronError):
         super(ProfileError, self).__init__(doc, error)
         self._line = self._parse_line(error)
 
-
     def _parse_line(self, error):
         """Errors are reported as ``<error msg> [line number]``.
 
@@ -573,7 +569,6 @@ class ProfileError(schematron.SchematronError):
 
     def __str__(self):
         return super(ProfileError, self).__str__()
-
 
     def _parse_message(self, error):
         """Parses the message component from the SVRL report error message.
@@ -637,7 +632,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
         with self._parse_profile(profile_fn) as profile:
             super(STIXProfileValidator, self).__init__(schematron=profile)
 
-
     def _build_rules(self, label, info, field, occurrence, types, values):
         """Builds a ``_BaseProfileRule`` implementation list for the rule
         parameters.
@@ -658,8 +652,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
             'prohibited' occurrence entries.
         * Implementation Type(s): These are allowed implementations of a
             ``Field Name``. This is often used to define controlled vocabulary
-            or CybOX Object requirements. Example: ``stixVocabs:IndicatorType``.
-            Multiple entries are comma delimited.
+            or CybOX Object requirements. Example:
+            ``stixVocabs:IndicatorType``. Multiple entries are comma delimited.
         * Allowed Value(s): Allowable values for a ``Field Name``. Examples
             are allowable `@version` values, or controlled vocabulary terms.
 
@@ -667,8 +661,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
         ``Implementation Types`` tests applied to the field as well.
 
         Entries marked as ``Prohibited`` are only checked for presence. Any
-        values found in the ``Implementation Types` or ``Allowed Values`` fields
-        will be ignored.
+        values found in the ``Implementation Types` or ``Allowed Values``
+        fields will be ignored.
 
         Returns:
             A list of ``_BaseProfileRule`` implementations for the given
@@ -733,10 +727,14 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         def check_label(label):
             if label not in instance_map:
-                raise errors.ProfileParseError(
-                    "Worksheet '%s' context label '%s' has no Instance Mapping "
-                    "entry." % (worksheet.name, label)
+                err = (
+                    "Worksheet '{0}' context label '{1}' has no Instance "
+                    "Mapping entry."
                 )
+                raise errors.ProfileParseError(
+                    err.format(worksheet.name, label)
+                )
+
         all_rules = []
         for i in xrange(1, worksheet.nrows):
             if is_empty_row(i):
@@ -767,7 +765,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
             all_rules.extend(rules)
 
         return all_rules
-
 
     def _parse_namespace_worksheet(self, worksheet):
         """Parses the Namespaces worksheet of a STIX profile. Returns a
@@ -801,7 +798,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return nsmap
 
-
     def _parse_instance_mapping_worksheet(self, worksheet, nsmap):
         """Parses the supplied Instance Mapping worksheet and returns a
         dictionary representation.
@@ -827,10 +823,11 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 )
 
             if label in instance_map:
-                raise errors.ProfileParseError(
-                    "Found duplicate type label in Instance Mapping worksheet: "
-                    "'%s'" % label
-            )
+                err = (
+                    "Found duplicate type label in Instance Mapping "
+                    "worksheet: '{0}'"
+                )
+                raise errors.ProfileParseError(err.format(label))
 
         for i in xrange(1, worksheet.nrows):
             if is_empty_row(i):
@@ -847,7 +844,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
             instance_map[label] = mapping
 
         return instance_map
-
 
     def _parse_workbook_rules(self, workbook, instance_map):
         """Parses all worksheets contained in `workbook` which contain
@@ -898,7 +894,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         try:
             namespaces = self._parse_namespace_worksheet(ws("Namespaces"))
             instance_mapping = self._parse_instance_mapping_worksheet(
-                    ws("Instance Mapping"),  namespaces
+                ws("Instance Mapping"), namespaces
             )
             rules = self._parse_workbook_rules(workbook, instance_mapping)
 
@@ -909,12 +905,10 @@ class STIXProfileValidator(schematron.SchematronValidator):
         finally:
             self._unload_workbook(workbook)
 
-
     def _unload_workbook(self, workbook):
         """Unloads the xlrd workbook."""
         for worksheet in workbook.sheets():
             workbook.unload_sheet(worksheet.name)
-
 
     def _is_empty_row(self, worksheet, row):
         """Returns true if the `row` in `worksheet` does not contain any values
@@ -924,7 +918,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
         return not any(
             self._get_value(worksheet, row, x) for x in xrange(worksheet.ncols)
         )
-
 
     def _get_value(self, worksheet, row, col):
         """Returns the worksheet cell value found at (row,col)."""
@@ -962,15 +955,14 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """Returns an lxml.etree._ElementTree representation of the ISO
         Schematron skeleton generated XSLT translation of a STIX profile.
 
-        The STIXProfileValidator uses the extension function saxon:line-number()
-        for reporting line numbers. This function is stripped along with any
-        references to the Saxon namespace from the exported XSLT. This is due
-        to compatibility issues between Schematron/XSLT processing libraries.
-        For example, SaxonPE/EE expects the Saxon namespace to be
-        "http://saxon.sf.net/" while libxslt expects it to be
-        "http://icl.com/saxon". The freely distributed SaxonHE library does not
-        support Saxon extension functions at all.
-
+        The STIXProfileValidator uses the extension function
+        saxon:line-number() for reporting line numbers. This function is
+        stripped along with any references to the Saxon namespace from the
+        exported XSLT. This is due to compatibility issues between
+        Schematron/XSLT processing libraries. For example, SaxonPE/EE expects
+        the Saxon namespace to be "http://saxon.sf.net/" while libxslt expects
+        it to be "http://icl.com/saxon". The freely distributed SaxonHE
+        library does not support Saxon extension functions at all.
 
         Returns:
             An ``etree._ElementTree`` XSLT document.
@@ -1000,14 +992,14 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """Returns an lxml.etree._ElementTree representation of the
         ISO Schematron translation of a STIX profile.
 
-        The STIXProfileValidator uses the extension function saxon:line-number()
-        for reporting line numbers. This function is stripped along with any
-        references to the Saxon namespace from the exported XSLT. This is due
-        to compatibility issues between Schematron/XSLT processing libraries.
-        For example, SaxonPE/EE expects the Saxon namespace to be
-        "http://saxon.sf.net/" while libxslt expects it to be
-        "http://icl.com/saxon". The freely distributed SaxonHE library does not
-        support Saxon extension functions at all.
+        The STIXProfileValidator uses the extension function
+        saxon:line-number() for reporting line numbers. This function is
+        stripped along with any references to the Saxon namespace from the
+        exported XSLT. This is due to compatibility issues between
+        Schematron/XSLT processing libraries. For example, SaxonPE/EE expects
+        the Saxon namespace to be "http://saxon.sf.net/" while libxslt expects
+        it to be "http://icl.com/saxon". The freely distributed SaxonHE
+        library does not support Saxon extension functions at all.
 
         Returns:
             An ``etree._ElementTree`` Schematron document.
@@ -1020,7 +1012,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
         s = s.replace('<ns prefix="saxon" uri="http://icl.com/saxon"/>', '')
 
         return etree.parse(StringIO(s))
-
 
     def validate(self, doc):
         """Validates an XML instance document against a STIX profile.

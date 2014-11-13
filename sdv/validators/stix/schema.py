@@ -39,7 +39,6 @@ class STIXSchemaValidator(object):
         self._xml_validators = self._get_validators(schema_dir)
         self._is_user_defined = bool(schema_dir)
 
-
     def _get_validators(self, schema_dir=None):
         validators = {self._KEY_SCHEMALOC: _XmlSchemaValidator()}
 

@@ -47,9 +47,9 @@ The :meth:`sdv.validate_xml` method acts as a proxy to the
 
 The examples above pass the ``'stix-content.xml'`` filename into
 :meth:`sdv.validate_xml` and :meth:`.STIXSchemaValidator.validate`, but these
-methods can also accept file-like objects (such as files on disk or ``StringIO``
-instances), ``etree._Element`` instances, or ``etree._ElementTree``
-instances. Neato!
+methods can also accept file-like objects (such as files on disk or
+``StringIO`` instances), ``etree._Element`` instances, or
+``etree._ElementTree`` instances. Neato!
 
 
 Using Non-bundled Schemas
@@ -75,9 +75,9 @@ directory containing all the schemas required for validation.
 
 .. note::
 
-    Validating against external schema directories requires that **all** schemas
-    necessary for validation be found under the directory. This includes STIX
-    schemas.
+    Validating against external schema directories requires that **all**
+    schemas necessary for validation be found under the directory. This
+    includes STIX schemas.
 
 Using ``xsi:schemaLocation``
 ----------------------------
@@ -119,8 +119,8 @@ a version for the STIX document via the ``version`` parameter:
 
 If a version is not passed in or found on the document, an
 :class:`.UnknownSTIXVersionError` exception is raised. If an invalid version
-is found or declared for the STIX document, an :class:`.InvalidSTIXVersionError`
-exception is raised.
+is found or declared for the STIX document, an
+:class:`.InvalidSTIXVersionError` exception is raised.
 
 .. note::
 
@@ -139,8 +139,8 @@ The XmlValidationResults Class
 XML Schema validation results are communicated via the
 :class:`.XmlValidationResults` and :class:`.XmlSchemaError` classes.
 
-The :meth:`sdv.validate_xml` and :meth:`.STIXSchemaValidator.validate` methods both
-return an instance of :class:`.XmlValidationResults`.
+The :meth:`sdv.validate_xml` and :meth:`.STIXSchemaValidator.validate` methods
+both return an instance of :class:`.XmlValidationResults`.
 
 To determine if a document was valid, users only need to inspect the
 ``is_valid`` property:

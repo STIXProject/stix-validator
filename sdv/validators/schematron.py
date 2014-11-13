@@ -12,6 +12,7 @@ NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
 NS_SAXON = "http://icl.com/saxon"   # libxml2 requires this namespace
 NS_SAXON_SF_NET = "http://saxon.sf.net/"
 
+
 class SchematronError(ValidationError):
     """Represents an error found in a SVRL report.
 
@@ -39,7 +40,6 @@ class SchematronError(ValidationError):
 
     def __str__(self):
         return unicode(self).encode("utf-8")
-
 
     def _get_line(self):
         """Returns the line number in the input document associated with this
@@ -103,8 +103,8 @@ class SchematronValidationResults(ValidationResults):
     Attributes:
         errors: A list of :class:`SchematronError` instances representing
             errors found in the `svrl_report`.
-        is_valid: Returns ``True`` if the validation was successful and ``False``
-            otherwise.
+        is_valid: Returns ``True`` if the validation was successful and
+            ``False`` otherwise.
 
     """
     def __init__(self, is_valid, doc=None, svrl_report=None):
@@ -112,7 +112,6 @@ class SchematronValidationResults(ValidationResults):
         self._svrl_report = svrl_report
         self._doc = doc
         self.errors = self._parse_errors(svrl_report)
-
 
     def _parse_errors(self, svrl_report):
         if not svrl_report:
@@ -123,7 +122,6 @@ class SchematronValidationResults(ValidationResults):
         errors = svrl_report.xpath(xpath, namespaces=nsmap)
 
         return [SchematronError(self._doc, x) for x in errors]
-
 
     def as_dict(self):
         """A dictionary representation of the
@@ -191,7 +189,6 @@ class SchematronValidator(object):
         """
         return self._schematron.validator_xslt
 
-
     @property
     def schematron(self):
         """Returns an etree._ElementTree representation of the Schematron
@@ -199,7 +196,6 @@ class SchematronValidator(object):
 
         """
         return self._schematron.schematron
-
 
     def validate(self, doc):
         """Validates an XML instance document `doc` using Schematron rules.
@@ -221,4 +217,3 @@ class SchematronValidator(object):
         svrl_report = self.schematron.validation_report
 
         return SchematronValidationResults(is_valid, root, svrl_report)
-            

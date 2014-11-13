@@ -12,6 +12,7 @@ import sdv.errors as errors
 import sdv.utils as utils
 import common as stix
 
+
 def rule(version=None):
     """Decorator that identifies methods as being a STIX best practice checking
     rule.
@@ -37,7 +38,7 @@ class BestPracticeMeta(type):
         result = type.__new__(metacls, name, bases, dict_)
 
         result._rules = collections.defaultdict(list)
-        rules =  (x for x in dict_.itervalues() if hasattr(x, '_is_rule'))
+        rules = (x for x in dict_.itervalues() if hasattr(x, '_is_rule'))
 
         for rule in rules:
             result._rules[rule._version].append(rule)
@@ -80,7 +81,6 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
         self['id'] = node.attrib.get('id')
         self['idref'] = node.attrib.get('idref')
         self['tag'] = node.tag
-
 
     def __unicode__(self):
         return unicode(self.message)
@@ -139,7 +139,7 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
             * ``'message'``: An optional message that can be attached to the
               warning. The associated value may be ``None``.
         """
-        return  ('id', 'idref', 'line', 'tag', 'message')
+        return ('id', 'idref', 'line', 'tag', 'message')
 
     @property
     def other_keys(self):
@@ -225,7 +225,8 @@ class BestPracticeWarningCollection(collections.MutableSequence):
 
 class BestPracticeValidationResults(ValidationResults, collections.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
-    like a ``list`` and accepts instances of : :class:`BestPracticeWarningCollection`.
+    like a ``list`` and accepts instances of
+    :class:`BestPracticeWarningCollection`.
 
     """
     def __init__(self):
@@ -240,7 +241,6 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         """
         return not(any(self))
 
-
     @property
     def errors(self):
         """Returns a ``list`` of :class:`BestPracticeWarningCollection`
@@ -248,7 +248,6 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
 
         """
         return self._warnings
-
 
     def insert(self, idx, value):
         """Inserts an instance of :class:`BestPracticeWarningCollection`.
@@ -290,8 +289,8 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
         """Returns a dictionary representation.
 
         Keys:
-            * ``'result'``: The result of the validation. Values can be ``True``
-              or ``False`` .
+            * ``'result'``: The result of the validation. Values can be
+              ``True`` or ``False`` .
             * ``'errors'``: A list of :class:`BestPracticeWarningCollection`
               dictionaries.
 
@@ -303,20 +302,21 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
 
         return d
 
+
 class STIXBestPracticeValidator(object):
     """Performs STIX Best Practice validation."""
 
     __metaclass__ = BestPracticeMeta
 
     def __init__(self):
-       pass
+        pass
 
     @rule()
     def _check_id_presence(self, root, namespaces, *args, **kwargs):
-        """
-        Checks that all major STIX/CybOX constructs have id attributes set.
+        """Checks that all major STIX/CybOX constructs have id attributes set.
         Constructs with idref attributes set should not have an id attribute
         and are thus omitted from the results.
+
         """
         to_check = itertools.chain(
             stix.STIX_CORE_COMPONENTS,
@@ -379,15 +379,19 @@ class STIXBestPracticeValidator(object):
     @rule()
     def _check_idref_resolution(self, root, namespaces, *args, **kwargs):
         """Checks that all idrefs resolve to a construct in the document."""
-        idrefs  = root.xpath("//*[@idref]")
-        ids     = root.xpath("//@id")
+        idrefs = root.xpath("//*[@idref]")
+        ids = root.xpath("//@id")
 
-        warnings = [BestPracticeWarning(x) for x in idrefs if x.attrib['idref'] not in ids]
+        def idref(x):
+            return x.attrib['idref']
+
         results = BestPracticeWarningCollection("Unresolved IDREFs")
+        warnings = [
+            BestPracticeWarning(x) for x in idrefs if idref(x) not in ids
+        ]
         results.extend(warnings)
 
         return results
-
 
     @rule()
     def _check_idref_with_content(self, root, namespaces, *args, **kwargs):
@@ -464,10 +468,15 @@ class STIXBestPracticeValidator(object):
         """Checks that all STIX vocabs are using latest published versions.
         Triggers a warning if an out of date vocabulary is used.
 
+        Note:
+            The xpath used to discover instances of controlled vocabularies
+            assumes that the type name ends with 'Vocab-'. An example
+            instance would be 'IndicatorTypeVocab-1.0'.
+
         """
         version = kwargs['version']
         results = BestPracticeWarningCollection("Vocab Suggestions")
-        xpath = "//*[contains(@xsi:type, 'Vocab-')]" # assumption: STIX/CybOX convention: end Vocab names with "Vocab-<version#>"
+        xpath = "//*[contains(@xsi:type, 'Vocab-')]"
 
         for vocab in root.xpath(xpath, namespaces=namespaces):
             xsi_type = vocab.attrib[stix.TAG_XSI_TYPE]
@@ -537,7 +546,7 @@ class STIXBestPracticeValidator(object):
         def _idref_resolves(idref, timestamp):
             xpath = "//*[@id='%s' and @timestamp='%s']" % (idref, timestamp)
             nodes = root.xpath(xpath, namespaces=namespaces)
-            return all((nodes != None, len(nodes) > 0))
+            return all((nodes is not None, len(nodes) > 0))
 
         for node in nodes:
             attrib      = node.attrib.get
@@ -548,22 +557,22 @@ class STIXBestPracticeValidator(object):
 
             if id_ and not timestamp:
                 warning = BestPracticeWarning(
-                    message="ID present but missing timestamp",
-                    node=node
+                    node=node,
+                    message="ID present but missing timestamp"
                 )
             elif idref and not timestamp:
                 warning = BestPracticeWarning(
-                    message="IDREF present but missing timestamp",
-                    node=node
+                    node=node,
+                    message="IDREF present but missing timestamp"
                 )
             elif idref and timestamp:
                 if _idref_resolves(idref, timestamp):
                     continue
 
                 warning = BestPracticeWarning(
-                    message="IDREF and timestamp combination do not resolve to "
-                            "a node in the input document.",
-                    node=node
+                    node=node,
+                    message="IDREF and timestamp combination do not resolve "
+                            "to a node in the input document."
                 )
 
                 warning['timestamp'] = timestamp
@@ -577,7 +586,6 @@ class STIXBestPracticeValidator(object):
     @rule(version='1.1')
     def _check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
         pass
-
 
     @rule()
     def _check_titles(self, root, namespaces, *args, **kwargs):
@@ -596,7 +604,7 @@ class STIXBestPracticeValidator(object):
             '{0}:Indicator'.format(stix.PREFIX_STIX_COMMON),
             '{0}:Threat_Actor'.format(stix.PREFIX_STIX_COMMON),
             '{0}:TTP'.format(stix.PREFIX_STIX_CORE),
-            '{0}:TTP'.format( stix.PREFIX_STIX_COMMON)
+            '{0}:TTP'.format(stix.PREFIX_STIX_COMMON)
         )
         results = BestPracticeWarningCollection("Missing Titles")
         xpath = " | ".join("//%s" % x for x in to_check)
@@ -651,7 +659,8 @@ class STIXBestPracticeValidator(object):
 
     @rule()
     def _check_condition_attribute(self, root, namespaces, *args, **kwargs):
-        """Checks that Observable properties contain a ``@condition`` attribute.
+        """Checks that Observable properties contain a ``@condition``
+        attribute.
 
         This will also attempt to resolve Observables which are referenced
         (not embedded) within Indicators.
@@ -716,10 +725,8 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-
     def _get_vocabs(self, version):
         pass
-
 
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
@@ -799,4 +806,3 @@ class STIXBestPracticeValidator(object):
         results = self._run_rules(root, version)
 
         return results
-

@@ -7,7 +7,7 @@ import json
 class ValidationError(object):
     """Base class for validation error types."""
     def __init__(self):
-      pass
+        pass
 
     def as_dict(self):
         raise NotImplementedError()
@@ -34,7 +34,6 @@ class ValidationResults(object):
     @is_valid.setter
     def is_valid(self, value):
         self._is_valid = bool(value)
-
 
     def as_dict(self):
         """Returns a dictionary representation of this class.
@@ -80,13 +79,17 @@ class ValidationErrorResults(ValidationResults):
 
 
 import schematron
-from .schematron import (SchematronValidator, SchematronValidationResults)
+from .schematron import (
+    SchematronValidator, SchematronValidationResults
+)
 
 import xml_schema
-from .xml_schema import (XmlSchemaValidator, XmlValidationResults)
+from .xml_schema import (
+    XmlSchemaValidator, XmlValidationResults
+)
 
 import stix
-from .stix import (STIXSchemaValidator, STIXBestPracticeValidator,
-    STIXProfileValidator, BestPracticeValidationResults, ProfileValidationResults)
-
-
+from .stix import (
+    STIXSchemaValidator, STIXBestPracticeValidator, STIXProfileValidator,
+    BestPracticeValidationResults, ProfileValidationResults
+)

@@ -45,7 +45,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.0',
         '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.0',
         '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.0',
-        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.0',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.0',
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.0',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.0'
     },
@@ -61,7 +61,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.0.1',
         '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.0.1',
         '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.0.1',
-        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.0.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.0.1',
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.0.1',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.0.1'
     },
@@ -77,7 +77,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.1',
         '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.1',
         '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.1',
-        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1'
     },
@@ -93,7 +93,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.1.1',
         '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.1.1',
         '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.1.1',
-        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE):'1.1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1.1'
     },
@@ -243,7 +243,8 @@ def get_vocab_version(doc, version, typename):
         STIX and CybOX default vocabulary namespaces.
 
     Args:
-        doc: The XML document which contains the controlled vocabulary instance.
+        doc: The XML document which contains the controlled vocabulary
+            instance.
         version: A version of STIX.
         typename: The ``xsi:type`` for the controlled vocabulary instance.
 
@@ -282,7 +283,6 @@ def parse_vocab_name(typename):
     return name
 
 
-
 def parse_vocab_version(typename):
     """Parses a controlled vocabulary version from an instance ``xsi:type``
     value.
@@ -300,7 +300,6 @@ def parse_vocab_version(typename):
     type_ = re.split(":|-", typename)
     prefix, name, version = type_[0], type_[1], type_[2]
     return version
-
 
 
 def get_version(doc):
@@ -360,7 +359,7 @@ def get_stix_namespaces(version):
         raise errors.UnknownSTIXVersionError("Version cannot be None")
 
     if version not in STIX_VERSIONS:
-         raise errors.InvalidSTIXVersionError(
+        raise errors.InvalidSTIXVersionError(
             "Unable to determine namespaces for version '%s'" % version,
             expected=STIX_VERSIONS,
             found=version
@@ -442,4 +441,3 @@ def get_indicator_observables(root, indicator, namespaces):
             observables.append(obs)
 
     return observables
-

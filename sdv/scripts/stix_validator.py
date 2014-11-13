@@ -22,12 +22,13 @@ occurred at a glance:
 * ``0x2``. At least one schema-invalid document was processed.
 * ``0x4``. At least one profile-invalid document was processed.
 * ``0x8``. At least on best-practice-invalid document was processed.
-* ``0x10``. A non-fatal error occurred during validation. This usually indicates
-    scenarios where malformed XML documents are validated or missing files are
-    attempted to be validated.
+* ``0x10``. A non-fatal error occurred during validation. This usually
+  indicates scenarios where malformed XML documents are validated or missing
+  files are attempted to be validated.
 
 Attributes:
-    quiet: If ``True`` only validation results and fatal errors will be printed.
+    quiet: If ``True`` only validation results and fatal errors will be
+        printed.
 
 """
 import sys
@@ -38,8 +39,10 @@ import json
 import sdv
 import sdv.errors as errors
 import sdv.utils as utils
-from sdv.validators import (STIXSchemaValidator, STIXProfileValidator,
-    STIXBestPracticeValidator, ValidationErrorResults)
+from sdv.validators import (
+    STIXSchemaValidator, STIXProfileValidator, STIXBestPracticeValidator,
+    ValidationErrorResults
+)
 
 # Exit status codes. Status codes can be combined and discovered via bitmasks.
 
@@ -64,11 +67,13 @@ EXIT_PROFILE_INVALID        = 0x4
 EXIT_BEST_PRACTICE_INVALID  = 0x8
 
 # An error occurred while validating an instance document. This can be caused
-# by malformed input documents or file names that do not resolve to actual files.
+# by malformed input documents or file names that do not resolve to actual
+# files.
 EXIT_VALIDATION_ERROR       = 0x10
 
 # Only print results and/or system errors.
 quiet = False
+
 
 class ValidationOptions(object):
     """Collection of validation options which can be set via command line.
@@ -202,7 +207,7 @@ def _info(msg):
     if quiet:
         return
 
-    print  "[-] %s" % msg
+    print "[-] %s" % msg
 
 
 def _print_level(fmt, level, *args):
@@ -285,10 +290,11 @@ def _print_best_practice_results(results, level=0):
             _print_level("[-] %s : %s", level, key, warning[key])
 
     def _print_warnings(collection, level):
-         for warning in collection:
+        for warning in collection:
             _print_warning(warning, level)
 
-            if warning is not collection[-1]: # Print a divider if not the last
+            # Print a divider if not the last warning
+            if warning is not collection[-1]:
                 _print_level("-"*80, level)
 
     marker = "+" if results.is_valid else "!"
@@ -322,6 +328,7 @@ def _print_profile_results(results, level):
 
     for msg, lines in errors.iteritems():
         _print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
+
 
 def _print_json_results(results):
     """Prints `results` to stdout in JSON format.
@@ -375,6 +382,7 @@ def _print_results(results, options):
             _print_profile_results(result.profile_results, level)
         if result.fatal is not None:
             _print_fatal_results(result.fatal, level)
+
 
 def _convert_profile(validator, options):
     """Converts a STIX Profile to XSLT and/or Schematron formats.
@@ -527,7 +535,7 @@ def _get_best_practice_validator(options):
 
 
 def _validate_file(fn, options, schema_validator=None, profile_validator=None,
-        best_practice_validator=None):
+                   best_practice_validator=None):
     """Validates the input document `fn` with the validators that are passed
     in.
 
@@ -696,9 +704,10 @@ def _validate_args(args):
 
     if (args.profile and not any((profile_validate, profile_convert))):
         raise ArgumentError(
-            "Profile specified but no conversion options or validation options "
-            "specified"
+            "Profile specified but no conversion options or validation "
+            "options specified."
         )
+
 
 def _get_arg_parser():
     """Initializes and returns an argparse.ArgumentParser instance for this
@@ -723,8 +732,8 @@ def _get_arg_parser():
         "--schema-dir",
         dest="schema_dir",
         default=None,
-        help="Schema directory. If not provided, the STIX schemas bundled with "
-             "the stix-validator library will be used."
+        help="Schema directory. If not provided, the STIX schemas bundled "
+             "with the stix-validator library will be used."
     )
 
     parser.add_argument(
@@ -792,8 +801,8 @@ def _get_arg_parser():
         "files",
         metavar="FILES",
         nargs="*",
-        help="A whitespace separated list of STIX files or directories of STIX "
-             "files to validate."
+        help="A whitespace separated list of STIX files or directories of "
+             "STIX files to validate."
     )
 
     return parser

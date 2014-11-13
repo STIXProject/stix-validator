@@ -7,6 +7,7 @@ NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
 TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
 
+
 @contextlib.contextmanager
 def ignored(*exceptions):
     """Allows you to ignore exceptions cleanly using context managers. This
