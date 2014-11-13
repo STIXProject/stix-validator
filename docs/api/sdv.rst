@@ -2,6 +2,4 @@
 =================
 
 .. automodule:: sdv
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    :members: validate_xml, validate_best_practices, validate_profile
