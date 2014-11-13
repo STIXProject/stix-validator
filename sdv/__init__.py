@@ -13,7 +13,9 @@ DEFAULT_STIX_VALIDATOR = STIXSchemaValidator()  # Makes validate_xml() faster
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
-    """Performs XML Schema validation against a STIX document.
+    """Performs `XML Schema`_ validation against a STIX document.
+
+    .. _XML Schema: http://stix.mitre.org/language/
 
     Args:
         doc: A STIX document to validate. This can be a filename, file-like
@@ -21,7 +23,7 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
         version: The version of the STIX document being validated. If ``None``
             an attempt will be made to extract the version from `doc`.
         schemas: A string path to a directory of STIX schemas. If ``None``,
-            the validation code will leverage its bundled schemas.
+            the validation code will leverage its bundled STIX schemas.
         schemaloc: Use ``xsi:schemaLocation`` attribute on `doc` to perform
             validation.
 
@@ -86,7 +88,9 @@ def validate_best_practices(doc, version=None):
 
 
 def validate_profile(doc, profile):
-    """Performs STIX Profile validation against a STIX document.
+    """Performs `STIX Profile`_ validation against a STIX document.
+
+    .. _STIX Profile: http://stixproject.github.io/documentation/profiles/
 
     Note:
         This should be used together with :meth:`validate_xml` since this only
