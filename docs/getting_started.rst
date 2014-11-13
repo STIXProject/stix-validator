@@ -69,3 +69,29 @@ Running :code:`stix_validator.py -h` displays the following:
       --xslt-out XSLT       Path to converted STIX profile schematron xslt output.
       --quiet               Only print results and errors if they occur.
       --json-results        Print results as raw JSON. This also sets --quiet.
+
+Example STIX Schema Validation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To perform xml schema validation, just pass in a path to the STIX filename,
+filenames, and/or directories containing STIX content.
+
+.. code-block:: bash
+
+    $ stix_validator.py stix-content.xml another-stix-doc.xml
+
+If these documents were valid, the ``stix_validator.py`` script would print
+something like the following:
+
+.. code-block:: bash
+
+    [-] Initializing STIX XML Schema validator
+    [-] Performing xml schema validation on stix-content.xml
+    [-] Performing xml schema validation on another-stix-doc.xml
+    ============================================================
+    [-] Results: stix-content.xml
+    [+] XML Schema: True
+    ============================================================
+    [-] Results: another-stix-doc.xml
+    [+] XML Schema: True
+

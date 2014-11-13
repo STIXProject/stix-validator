@@ -30,8 +30,8 @@ def rule(version=None):
 
 
 class BestPracticeMeta(type):
-    """Metaclass that collects all :meth:`rule` decorated methods and builds
-    an internal mapping of STIX version numbers to rules.
+    """Metaclass that collects all :decorator:`rule` decorated methods and
+    builds an internal mapping of STIX version numbers to rules.
 
     """
     def __new__(metacls, name, bases, dict_):
@@ -61,10 +61,10 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
         * ``'message'``: A message associated with the warning.
         * ``'tag'``: The lxml tag for the offending node.
 
-        These keys can be retrieved via the :meth:`core_keys` property.
+        These keys can be retrieved via the :attr:`core_keys` property.
 
         Instances of this class may attach additional keys. These `other keys`
-        can be obtained via the :meth:`other_keys` property.
+        can be obtained via the :attr:`other_keys` property.
 
     Args:
         node: The ``lxml._Element`` node associated with this warning.

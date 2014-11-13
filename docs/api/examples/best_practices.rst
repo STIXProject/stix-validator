@@ -18,8 +18,8 @@ STIX Best Practices validation capabilities in **stix-validator**.
 Validating STIX Documents
 -------------------------
 
-The **stix-validator** :meth:`sdv.validate_best_practices` method can be used to
-validate STIX XML files or file-like objects against `STIX Best Practices`_.
+The **stix-validator** :meth:`sdv.validate_best_practices` method can be used
+to validate STIX XML files or file-like objects against `STIX Best Practices`_.
 
 .. code-block:: python
 
@@ -51,8 +51,8 @@ The :meth:`sdv.validate_best_practices` method acts as a proxy to the
 The examples above pass the ``'stix-content.xml'`` filename into
 :meth:`sdv.validate_profile` and :meth:`.STIXProfileValidator.validate`, but
 these methods can also accept file-like objects (such as files on disk or
-``StringIO`` instances), ``etree._Element`` instances, or ``etree._ElementTree``
-instances. Neato!
+``StringIO`` instances), ``etree._Element`` instances, or
+``etree._ElementTree`` instances. Neato!
 
 
 Retrieving STIX Best Practice Validation Errors
@@ -65,8 +65,9 @@ The BestPracticeValidationResults Class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 STIX Best Practices validation results are communicated via the
-:class:`.BestPracticeValidationResults`, :class:`BestPracticeWarningCollection`,
-and :class:`.BestPracticeWarning` classes.
+:class:`.BestPracticeValidationResults`,
+:class:`BestPracticeWarningCollection`, and :class:`.BestPracticeWarning`
+classes.
 
 The :meth:`sdv.validate_best_practices` and
 :meth:`.STIXBestPracticeValidator.validate` methods both return an instance of
@@ -96,10 +97,11 @@ about the validation errors and methods for accessing those details.
 BestPracticeWarnings and Collections
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Every violation of STIX Best Practices within an instance document is
+Every deviation from STIX Best Practices within an instance document is
 represented as an instance of :class:`.BestPracticeWarning`. These violations
-are categorized under :class:`.BestPracticeWarningCollection` instances, which
-are each assigned names, such as ``"Missing Titles"``, or ``"Duplicate IDs"``.
+are categorized and collected within instances of
+:class:`.BestPracticeWarningCollection` instances, which are each assigned
+names, such as ``"Missing Titles"``, or ``"Duplicate IDs"``.
 
 The ``errors`` property on :class:`.BestPracticeValidationResults` contains a
 list of :class:`.BestPracticeWarningCollection` instances, which hold details
@@ -115,17 +117,20 @@ about the validation errors and methods for accessing those details.
     # If 'stix-content.xml' is invalid, print each error
     if not results.is_valid:
         for coll in results.errors:
-            print_best_practice_collection(coll)
+            print_best_practice_collection(coll)  # User-defined print method
 
 
 The example above iterates over the ``result.errors`` property, and calls
-a yet-to-be-defined function, ``print_best_practice_collection()``.
+a user-defined, ``print_best_practice_collection()``.
 
 This function `could` be defined as the following:
 
 .. code-block:: python
 
     def print_best_practice_collection(coll):
+        """
+        Prints BestPracticeWarningCollection info to stdout.
+        """
 
         # Print the Best Practice Warning collection name
         print coll.name
