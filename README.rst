@@ -123,7 +123,7 @@ All STIX Documents?
 The **STIX Document Validator** bundles a schema directory with it, which 
 includes all STIX schema files (v1.0 through v1.1.1). If an instance document 
 uses constructs or languages defined by other schemas a user must point the 
-STIX Document Validator at those schemas in order to validate.
+**STIX Document Validator** at those schemas in order to validate.
 
 To use schemas other than those bundled with the **STIX Document Validator**
 use the ``--schemas-dir`` flag to pass in a path to a STIX schema directory.
