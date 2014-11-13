@@ -601,9 +601,6 @@ def _validate(options):
     profile_validator = _get_profile_validator(options)
     best_practice_validator = _get_best_practice_validator(options)
 
-    if options.schema_validate:
-        _info("Collecting validation results")
-
     results = {}
     for fn in files:
         result = _validate_file(
