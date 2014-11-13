@@ -55,7 +55,14 @@ class SchematronError(ValidationError):
 
     @property
     def line(self):
-        """Returns the line number for non-conformant element or attribute."""
+        """Returns the line number in the input document associated with this
+        error.
+
+        This property is lazily evaluated, meaning the line number isn't known
+        until the first time this property is accessed. Each subsequent call
+        will return the cached line number.
+
+        """
         if not self._line:
             self._line = self._get_line()
 
