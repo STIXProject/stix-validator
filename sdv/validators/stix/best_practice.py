@@ -30,7 +30,7 @@ def rule(version=None):
 
 
 class BestPracticeMeta(type):
-    """Metaclass that collects all :decorator:`rule` decorated methods and
+    """Metaclass that collects all :meth:`rule` decorated methods and
     builds an internal mapping of STIX version numbers to rules.
 
     """
