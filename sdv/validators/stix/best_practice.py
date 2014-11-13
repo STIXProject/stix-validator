@@ -444,10 +444,6 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule()
-    def _check_data_types(self, root, namespaces, *args, **kwargs):
-        pass
-
-    @rule()
     def _check_root_element(self, root, namespaces, *args, **kwargs):
         """Checks that the root element is a STIX_Package."""
         ns = namespaces[stix.PREFIX_STIX_CORE]
@@ -458,10 +454,6 @@ class STIXBestPracticeValidator(object):
             results.append(warning)
 
         return results
-
-    @rule()
-    def _check_indicator_patterns(self, root, namespaces, *args, **kwargs):
-        pass
 
     @rule()
     def _check_latest_vocabs(self, root, namespaces, *args, **kwargs):
@@ -578,10 +570,6 @@ class STIXBestPracticeValidator(object):
             results.append(warning)
 
         return results
-
-    @rule(version='1.1')
-    def _check_timestamp_timezone(self, root, namespaces, *args, **kwargs):
-        pass
 
     @rule()
     def _check_titles(self, root, namespaces, *args, **kwargs):
@@ -720,9 +708,6 @@ class STIXBestPracticeValidator(object):
                     results.append(result)
 
         return results
-
-    def _get_vocabs(self, version):
-        pass
 
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
