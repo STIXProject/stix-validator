@@ -524,10 +524,6 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule()
-    def _check_content_versions(self, root, namespaces, *args, **kwargs):
-        pass
-
     @rule(version='1.1')
     def _check_timestamp_usage(self, root, namespaces, *args, **kwargs):
         """Checks that all major STIX constructs have appropriate

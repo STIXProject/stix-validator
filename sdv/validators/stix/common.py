@@ -34,6 +34,7 @@ STIX_TO_CYBOX_VERSIONS = {
 
 STIX_COMPONENT_VERSIONS = {
     '1.0': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.0',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.0',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.0',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.0',
@@ -50,6 +51,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.0'
     },
     '1.0.1': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.0.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.0.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.0.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.0.1',
@@ -66,6 +68,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.0.1'
     },
     '1.1': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1',
@@ -82,6 +85,7 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1'
     },
     '1.1.1': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1.1',
