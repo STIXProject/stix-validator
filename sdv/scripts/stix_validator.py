@@ -32,6 +32,7 @@ Attributes:
 """
 import sys
 import logging
+import collections
 import argparse
 import json
 import sdv
@@ -315,10 +316,11 @@ def _print_profile_results(results, level):
     if results.is_valid:
         return
 
-    errors = results.as_dict()['errors']
-    for err in errors:
-        msg = err['message']
-        lines = err['lines']
+    errors = collections.defaultdict(list)
+    for e in results.errors:
+        errors[e.message].append(e.line)
+
+    for msg, lines in errors.iteritems():
         _print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
 
 def _print_json_results(results):

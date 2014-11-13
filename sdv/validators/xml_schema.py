@@ -39,7 +39,7 @@ class XmlSchemaError(ValidationError):
             tokenized = error.split(":")
             return tokenized[1]
         except:
-            return "ERROR"
+            return "UNKNOWN"
 
     def as_dict(self):
         """Returns a dictionary representation.

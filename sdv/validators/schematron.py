@@ -21,7 +21,7 @@ class SchematronError(ValidationError):
             ``etree._Element`` instance.
 
     Attributes:
-        message: The Schematron validation error message.
+        message: The validation error message.
 
     """
     def __init__(self, doc, error):
@@ -126,7 +126,7 @@ class SchematronValidationResults(ValidationResults):
             * ``'result'``: The validation results. Values can be
               ``True`` or ``False``.
             * ``'errors'``: A list of validation error dictionaries. The keys
-              are ``'message'`` and ``'lines'``.
+              are ``'message'`` and ``'line'``.
 
         Returns:
             A dictionary representation of an instance of this class.
@@ -135,14 +135,7 @@ class SchematronValidationResults(ValidationResults):
         d = super(SchematronValidationResults, self).as_dict()
 
         if self.errors:
-            errors = defaultdict(list)
-
-            for e in self.errors:
-                errors[e.message].append(e.line)
-
-            d['errors'] = [
-                dict(message=k, lines=sorted(v)) for k,v in errors.iteritems()
-            ]
+            d['errors'] = [x.as_dict() for x in self.errors]
 
         return d
 
@@ -175,7 +168,10 @@ class SchematronValidator(object):
 
         root = utils.get_etree_root(sch)
         schematron = isoschematron.Schematron(
-            root, store_report=True, store_xslt=True, store_schematron=True
+            root,
+            store_report=True,
+            store_xslt=True,
+            store_schematron=True
         )
 
         return schematron
