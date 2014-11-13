@@ -731,6 +731,9 @@ class STIXBestPracticeValidator(object):
         """
         sv = distutils.version.StrictVersion
         checks = self._rules.iteritems()
+
+        # Get a generator which yields all best practice methods that are
+        # assigned a version number <= the input STIX document version number.
         rules = itertools.chain(
             *(funcs for (x, funcs) in checks if not x or sv(x) <= sv(version))
         )
