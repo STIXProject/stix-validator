@@ -139,8 +139,8 @@ Users often report an error which looks something like the following:
     simple ur-type definition as base type, not '{http://cybox.mitre.org/common-2}(NULL)'., line 350
 
 This error is caused by an insufficient version of libxml2 being installed
-on the system. The stix-validator requires ``libxml2`` v2.9.1 at a minimum and
-is not guaranteed to work properly with earlier versions.
+on the system. The **STIX Document Validator** requires ``libxml2`` v2.9.1 at
+a minimum and is not guaranteed to work properly with earlier versions.
 
 To see what version of libxml2 you have installed, execute the
 ``xml2-config --version`` command and make sure you are running at least v2.9.1.
