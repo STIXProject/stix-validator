@@ -9,7 +9,19 @@ _PKG_DIR = os.path.dirname(__file__)
 XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 
 from sdv.validators import STIXSchemaValidator
-DEFAULT_STIX_VALIDATOR = STIXSchemaValidator()  # Makes validate_xml() faster
+
+# Default STIXSchemaValidator instance
+DEFAULT_STIX_VALIDATOR = STIXSchemaValidator()
+
+# A cache of STIX XML validators that speeds up consecutive calls to
+# validate_xml() against non-bundled schema directories.
+__xml_validators = {
+    None: DEFAULT_STIX_VALIDATOR
+}
+
+# A cache of STIX Profile validators to speed up consecutive calls to
+# validate_profile()
+__profile_validators = {}
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
@@ -46,10 +58,11 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
             processing ``xs:include`` directives.
 
     """
-    if schemas:
+    try:
+        validator = __xml_validators[schemas]
+    except KeyError:
         validator = STIXSchemaValidator(schema_dir=schemas)
-    else:
-        validator = DEFAULT_STIX_VALIDATOR
+        __xml_validators[schemas] = validator
 
     return validator.validate(doc, version=version, schemaloc=schemaloc)
 
@@ -113,5 +126,10 @@ def validate_profile(doc, profile):
     """
     from sdv.validators import STIXProfileValidator
 
-    validator = STIXProfileValidator(profile)
+    try:
+        validator = __profile_validators[profile]
+    except KeyError:
+        validator = STIXProfileValidator(profile)
+        __profile_validators[profile] = validator
+
     return validator.validate(doc)
