@@ -37,6 +37,7 @@ import collections
 import argparse
 import json
 import sdv
+import sdv.codes as codes
 import sdv.errors as errors
 import sdv.utils as utils
 from sdv.validators import (
@@ -44,36 +45,8 @@ from sdv.validators import (
     ValidationErrorResults
 )
 
-# Exit status codes. Status codes can be combined and discovered via bitmasks.
-
-# Execution finished successfully. All STIX documents were valid for all user-
-# specified validation scenarios.
-EXIT_SUCCESS                = 0x0
-
-# Execution finished with fatal system error. Some unhandled system exception
-# was raised during execution.
-EXIT_FAILURE                = 0x1
-
-# Execution finished with at least one input document found to be schema-
-# invalid.
-EXIT_SCHEMA_INVALID         = 0x2
-
-# Execution finished with at least one input document found to be profile
-# invalid.
-EXIT_PROFILE_INVALID        = 0x4
-
-# Execution finished with at least one input document found to be best practice
-# invalid.
-EXIT_BEST_PRACTICE_INVALID  = 0x8
-
-# An error occurred while validating an instance document. This can be caused
-# by malformed input documents or file names that do not resolve to actual
-# files.
-EXIT_VALIDATION_ERROR       = 0x10
-
 # Only print results and/or system errors.
 quiet = False
-
 
 class ValidationOptions(object):
     """Collection of validation options which can be set via command line.
@@ -179,7 +152,7 @@ class SchemaInvalidError(Exception):
         self.results = results
 
 
-def _error(msg, status=EXIT_FAILURE):
+def _error(msg, status=codes.EXIT_FAILURE):
     """Prints a message to the stderr prepended by '[!]' and calls
     ```sys.exit(status)``.
 
@@ -813,7 +786,7 @@ def _status_code(results):
     multiple error conditions.
 
     """
-    status = EXIT_SUCCESS
+    status = codes.EXIT_SUCCESS
 
     for result in results.itervalues():
         schema = result.schema_results
@@ -822,13 +795,13 @@ def _status_code(results):
         fatal = result.fatal
 
         if schema and not schema.is_valid:
-            status |= EXIT_SCHEMA_INVALID
+            status |= codes.EXIT_SCHEMA_INVALID
         if best_practice and not best_practice.is_valid:
-            status |= EXIT_BEST_PRACTICE_INVALID
+            status |= codes.EXIT_BEST_PRACTICE_INVALID
         if profile and not profile.is_valid:
-            status |= EXIT_PROFILE_INVALID
+            status |= codes.EXIT_PROFILE_INVALID
         if fatal:
-            status |= EXIT_VALIDATION_ERROR
+            status |= codes.EXIT_VALIDATION_ERROR
 
     sys.exit(status)
 
@@ -874,11 +847,12 @@ def main():
         _error(ex)
     except (errors.ValidationError, IOError) as ex:
         _error(
-            "Validation error occurred: '%s'" % str(ex), EXIT_VALIDATION_ERROR
+            "Validation error occurred: '%s'" % str(ex),
+            codes.EXIT_VALIDATION_ERROR
         )
     except Exception:
         logging.exception("Fatal error occurred")
-        sys.exit(EXIT_FAILURE)
+        sys.exit(codes.EXIT_FAILURE)
 
 if __name__ == '__main__':
     main()
