@@ -98,7 +98,7 @@ something like the following:
 Exit Codes
 ^^^^^^^^^^
 
-Exit status codes for the **STIX Document Validator** bundled scripts are
+Exit status codes for the **stix-validator** bundled scripts are
 defined within :mod:`sdv.codes` module.
 
 When invoking the ``stix_validator.py`` script from another process, developers
