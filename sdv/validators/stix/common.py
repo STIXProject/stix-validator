@@ -394,7 +394,7 @@ def get_stix_namespaces(version):
 
 def _get_observable(root, obs, namespaces):
     """Attempts to return the Observable definition for `obs`. If `obs` is a
-    fully defined (not idref'd) Observable, this funtion will immediately
+    fully defined (not idref'd) Observable, this function will immediately
     return `obs`.
 
     If `obs` contains an ``idref`` attribute, an attempt will be made to
@@ -420,7 +420,6 @@ def _get_observable(root, obs, namespaces):
         idref=idref,
         message="Failed to resolve idref '{0}'".format(idref)
     )
-
 
 def get_indicator_observables(root, indicator, namespaces):
     """Returns all Observable instances embedded or referenced within the
