@@ -70,4 +70,3 @@ class UtilsTests(unittest.TestCase):
             root
         )
 
-    

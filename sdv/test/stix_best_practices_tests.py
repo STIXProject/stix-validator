@@ -2,9 +2,11 @@
 # See LICENSE.txt for complete terms.
 import unittest
 from StringIO import StringIO
+from lxml import etree
 
 import sdv
 import sdv.errors as errors
+import sdv.validators.stix.best_practice as bp
 
 STIX_NO_VERSION_XML = \
 """
@@ -21,21 +23,39 @@ STIX_NO_VERSION_XML = \
 class STIXBestPracticesTests(unittest.TestCase):
     def test_invalid_version(self):
         xml = StringIO(STIX_NO_VERSION_XML)
-        func = sdv.validate_xml
+        func = sdv.validate_best_practices
         self.assertRaises(
             errors.InvalidSTIXVersionError, func, xml, version="INVALID"
         )
 
     def test_unknown_version(self):
-        func = sdv.validate_xml
+        func = sdv.validate_best_practices
         xml = StringIO(STIX_NO_VERSION_XML)
         self.assertRaises(
             errors.UnknownSTIXVersionError, func, xml
         )
 
     def test_invalid_doc(self):
-        func = sdv.validate_xml
+        func = sdv.validate_best_practices
         self.assertRaises(errors.ValidationError, func, "INVALID XML DOC")
+
+
+class BestPracticeWarningTests(unittest.TestCase):
+    def test_core_keys(self):
+        node = etree.Element("test")
+        warning = bp.BestPracticeWarning(node)
+
+        for key in warning.core_keys:
+            self.assertTrue(key in warning, key)
+
+    def test_other_keys(self):
+        node = etree.Element("test")
+        warning = bp.BestPracticeWarning(node)
+        warning['foo'] = 'bar'
+        self.assertTrue('foo' in warning.other_keys)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

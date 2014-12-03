@@ -23,7 +23,6 @@ class STIXProfileTests(unittest.TestCase):
     def test_invalid_profile(self):
         xml = StringIO(STIX_NO_VERSION_XML)
         func = sdv.validate_profile
-
         self.assertRaises(errors.ProfileParseError, func, xml, "INVALID Profile DOC")
 
 if __name__ == '__main__':

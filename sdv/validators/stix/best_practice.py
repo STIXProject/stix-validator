@@ -12,6 +12,12 @@ import sdv.errors as errors
 import sdv.utils as utils
 import common as stix
 
+# Python 2.6 doesn't have collections.OrderedDict :(
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 
 def rule(version):
     """Decorator that identifies methods as being a STIX best practice checking
@@ -71,8 +77,10 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
 
     """
     def __init__(self, node, message=None):
-        super(BestPracticeWarning, self).__init__()
-        self._inner = collections.OrderedDict()
+        collections.MutableMapping.__init__(self)
+        ValidationError.__init__(self)
+
+        self._inner = OrderedDict()
         self._node = node
 
         self['line'] = node.sourceline
@@ -94,8 +102,6 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
         self._inner.__delitem__(key)
 
     def __setitem__(self, key, value):
-        if value is None:
-            return
         self._inner.__setitem__(key, value)
 
     def __len__(self):
@@ -117,7 +123,7 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
         ``None`` if there is no warning message.
 
         """
-        return self.get('message')
+        return self['message']
 
     @property
     def core_keys(self):
@@ -152,8 +158,12 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
         """Returns a dictionary representation of this class instance. This
         is implemented for consistency across other validation error types.
 
+        The :class:`.BestPracticeWarning` class extends
+        :class:`collections.MutableMapping`, so this method isn't really
+        necessary.
+
         """
-        return dict(self.items())
+        return dict(self.iteritems())
 
 
 class BestPracticeWarningCollection(collections.MutableSequence):
