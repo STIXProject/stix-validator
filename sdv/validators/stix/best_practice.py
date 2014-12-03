@@ -239,7 +239,9 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
 
     """
     def __init__(self):
-        super(BestPracticeValidationResults, self).__init__(False)
+        collections.MutableSequence.__init__(self)
+        ValidationResults.__init__(self, False)
+
         self._warnings = []
 
     @ValidationResults.is_valid.getter
