@@ -39,6 +39,8 @@ The following libraries are required to use stix-validator:
 * lxml_ - A Pythonic binding for the C libraries **libxml2** and
   **libxslt**.
 * xlrd_ - A library for parsing Microsoft Excel documents
+* ordereddict_ - A drop-in replacement for ``collections.OrderedDict``, which
+  is not available in Python 2.6.
 
 Each of these can be installed with ``pip`` or by manually downloading packages
 from PyPI. On Windows, you will probably have the most luck using `pre-compiled
@@ -60,6 +62,7 @@ source:
 
 .. _lxml: http://lxml.de/
 .. _xlrd: https://pypi.python.org/pypi/xlrd
+.. _ordereddict: https://pypi.python.org/pypi/ordereddict
 .. _pre-compiled binaries: http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
 
 
