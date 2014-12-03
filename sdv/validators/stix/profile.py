@@ -128,7 +128,7 @@ class InstanceMapping(object):
 
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
-        self.id_ = "STIX_Schematron_Profile"
+        self.id = "STIX_Schematron_Profile"
         self._rules = []
         self._namespaces = namespaces
 
@@ -236,7 +236,7 @@ class Profile(collections.MutableSequence):
     def _get_pattern_node(self):
         ns = schematron.NS_SCHEMATRON
         return etree.XML(
-            "<pattern xmlns='%s' id='%s'/>" % (ns, self.id_)
+            "<pattern xmlns='%s' id='%s'/>" % (ns, self.id)
         )
 
     def _get_namespaces(self):
@@ -303,7 +303,7 @@ class _BaseProfileRule(object):
         return self._role
 
     @property
-    def type_(self):
+    def type(self):
         """The type of Schematron test: ``report`` or ``assert``."""
         return self._type
 
@@ -347,7 +347,7 @@ class _BaseProfileRule(object):
 
         """
         args = (
-            self.type_,                  # 'assert' or 'report'
+            self.type,                   # 'assert' or 'report'
             schematron.NS_SCHEMATRON,    # schematron namespace
             self.test,                   # test selector
             self.role,                   # "error"
