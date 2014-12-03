@@ -1,8 +1,7 @@
 STIX Document Validator
 =======================
 
-A Python tool and API that can be used to validate STIX XML instance 
-documents.
+A Python tool and API that validates STIX XML instance documents.
 
 .. _XML Schema: http://stix.mitre.org/language/
 .. _STIX Profiles: http://stixproject.github.io/documentation/profiles/
