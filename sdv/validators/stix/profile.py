@@ -182,19 +182,8 @@ class Profile(collections.MutableSequence):
         """
         collected = collections.defaultdict(list)
 
-        def _build_ctx_path(test):
-            if test.is_attr:
-                return test.context
-            else:
-                return "{0}/{1}".format(test.context, test.field)
-
         for test in self:
-            if isinstance(test, (AllowedImplsRule, AllowedValuesRule)):
-                rule_ctx = _build_ctx_path(test)
-            else:
-                rule_ctx = test.context
-
-            collected[rule_ctx].append(test)
+            collected[test.context_selector].append(test)
 
         return collected
 
@@ -300,7 +289,7 @@ class _BaseProfileRule(object):
     def __init__(self, context, field):
         self._type = None
         self._role = "error"
-        self.context = context
+        self._context = context
         self.field = field
         self._validate()
 
@@ -335,6 +324,22 @@ class _BaseProfileRule(object):
     def test(self):
         """The xpath test to evaluate against a node."""
         raise NotImplementedError()
+
+    @property
+    def context_selector(self):
+        """Returns the schematron rule context selector to be used for this
+        schematron assert/report 'rule'.
+
+        """
+        raise NotImplementedError()
+
+    @property
+    def path(self):
+        """Returns the fully qualified ``context/field`` path to the XML node
+        for which this assert/report applies.
+
+        """
+        return "{0}/{1}".format(self._context, self.field)
 
     def as_etree(self):
         """Returns a Schematron ``<assert>`` or ``<report>`` for this
@@ -373,12 +378,13 @@ class RequiredRule(_BaseProfileRule):
     def test(self):
         return self.field
 
+    @_BaseProfileRule.context_selector.getter
+    def context_selector(self):
+        return self._context
+
     @_BaseProfileRule.test.getter
     def message(self):
-        return "{0}/{1} is required by this profile.".format(
-            self.context,
-            self.field
-        )
+        return "{0} is required by this profile.".format(self.path)
 
 
 class ProhibitedRule(_BaseProfileRule):
@@ -398,11 +404,13 @@ class ProhibitedRule(_BaseProfileRule):
     def test(self):
         return self.field
 
+    @_BaseProfileRule.context_selector.getter
+    def context_selector(self):
+        return self._context
+
     @_BaseProfileRule.message.getter
     def message(self):
-        return "{0}/{1} is prohibited by this profile.".format(
-            self.context, self.field
-        )
+        return "{0} is prohibited by this profile.".format(self.path)
 
 
 class AllowedValuesRule(_BaseProfileRule):
@@ -440,10 +448,17 @@ class AllowedValuesRule(_BaseProfileRule):
         else:
             self._values = [value]
 
+    @_BaseProfileRule.context_selector.getter
+    def context_selector(self):
+        if self.is_attr:
+            return self._context
+        else:
+            return self.path
+
     @_BaseProfileRule.message.getter
     def message(self):
-        return "The allowed values for {0}/{1} are {2}".format(
-            self.context, self.field, self.values
+        return "The allowed values for {0} are {1}".format(
+            self.path, self.values
         )
 
     @_BaseProfileRule.test.getter
@@ -477,11 +492,13 @@ class AllowedImplsRule(_BaseProfileRule):
         self.impls = impls
 
     def _validate(self):
-        if self.is_attr:
-            raise errors.ProfileParseError(
-                "Implementation rules cannot be applied to attribute fields: "
-                "%s/%s" % (self.context, self.field)
-            )
+        if not self.is_attr:
+            return
+
+        raise errors.ProfileParseError(
+            "Implementation rules cannot be applied to attribute fields: "
+            "{0}".format(self.path)
+        )
 
     @property
     def impls(self):
@@ -507,10 +524,14 @@ class AllowedImplsRule(_BaseProfileRule):
         else:
             self._impls = [value]
 
+    @_BaseProfileRule.context_selector.getter
+    def context_selector(self):
+        return self.path
+
     @_BaseProfileRule.message.getter
     def message(self):
-        return "The allowed implementations for {0}/{1} are {2}".format(
-            self.context, self.field, self.impls
+        return "The allowed implementations for {0} are {1}".format(
+            self.path, self.impls
         )
 
     @_BaseProfileRule.test.getter
