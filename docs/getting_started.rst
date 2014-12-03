@@ -131,16 +131,22 @@ from another Python script.
     # Check exit status code(s)
 
     if codes.EXIT_SUCCESS & results:
-        print "Input document(s) were valid"
+        print "Input document(s) were valid."
 
     if codes.EXIT_SCHEMA_INVALID & results:
-        print "One or more input files were schema-invalid"
+        print "One or more input files were schema-invalid."
 
     if codes.EXIT_BEST_PRACTICE_INVALID & results:
-        print "One or more input files were STIX Best Practices invalid"
+        print "One or more input files were STIX Best Practices invalid."
 
     if codes.EXIT_PROFILE_INVALID & results:
-        print "One or more input files were STIX Profile invalid"
+        print "One or more input files were STIX Profile invalid."
+
+    if codes.EXIT_VALIDATION_ERROR & results:
+        print "A validation error occurred."
+
+    if codes.EXIT_FAILURE & results:
+        print "An unknown, fatal error occurred."
 
 .. note::
 
