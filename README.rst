@@ -1,17 +1,8 @@
 STIX Document Validator
 =======================
 
-A Python tool and API that can be used to validate STIX instance 
-documents. For more information about the Structured Threat 
-Information eXpression, see http://stix.mitre.org.
-
-The **STIX Document Validator** can perform the following forms of 
-STIX document validation:
-
-* `XML Schema`_: Validate STIX documents against bundled or external 
-  STIX schemas.
-* `STIX Profiles`_: Verify STIX Profile conformance (**experimental**)
-* `Best Practices`_: Verify alignment with STIX Best Practices.
+A Python tool and API that can be used to validate STIX XML instance 
+documents.
 
 .. _XML Schema: http://stix.mitre.org/language/
 .. _STIX Profiles: http://stixproject.github.io/documentation/profiles/
@@ -30,6 +21,17 @@ STIX document validation:
    :target: https://pypi.python.org/pypi/stix-validator/
 .. |downloads badge| image:: https://pypip.in/d/stix-validator/badge.png
    :target: https://pypi.python.org/pypi/stix-validator/
+
+Validation
+----------
+
+The **STIX Document Validator** can perform the following forms of 
+STIX document validation:
+
+* `XML Schema`_: Validate STIX documents against bundled or external 
+  STIX schemas.
+* `STIX Profiles`_: Verify STIX Profile conformance (**experimental**)
+* `Best Practices`_: Verify alignment with STIX Best Practices.
 
 Dependencies
 ------------
