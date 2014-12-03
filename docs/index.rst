@@ -36,7 +36,15 @@ API Documentation
    :maxdepth: 2
 
    api/index
-   api/examples/index
+
+Code Examples
+=============
+
+.. toctree::
+    :maxdepth: 2
+
+    examples/index
+
 
 Contributing
 ============

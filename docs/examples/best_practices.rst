@@ -66,7 +66,7 @@ The BestPracticeValidationResults Class
 
 STIX Best Practices validation results are communicated via the
 :class:`.BestPracticeValidationResults`,
-:class:`BestPracticeWarningCollection`, and :class:`.BestPracticeWarning`
+:class:`.BestPracticeWarningCollection`, and :class:`.BestPracticeWarning`
 classes.
 
 The :meth:`sdv.validate_best_practices` and
