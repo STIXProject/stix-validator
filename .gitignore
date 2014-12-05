@@ -37,3 +37,10 @@ nosetests.xml
 
 # OSX
 .DS_Store
+
+# pycharm
+.idea/
+.idea
+
+# sphinx
+docs/_build

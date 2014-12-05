@@ -1,4 +1,28 @@
-<?xml version="1.0" encoding="UTF-8"?>
+# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# See LICENSE.txt for complete terms.
+import unittest
+import json
+from StringIO import StringIO
+from lxml import etree
+
+import sdv
+import sdv.errors as errors
+import sdv.validators.stix.best_practice as bp
+
+STIX_NO_VERSION_XML = \
+"""
+<stix:STIX_Package
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:stix="http://stix.mitre.org/stix-1"
+    >
+    <stix:STIX_Header>
+        <stix:Title>Unknown version of STIX</stix:Title>
+    </stix:STIX_Header>
+</stix:STIX_Package>
+"""
+
+BP_INVALID_XML = \
+"""<?xml version="1.0" encoding="UTF-8"?>
 <stix:STIX_Package
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:stix="http://stix.mitre.org/stix-1"
@@ -84,3 +108,76 @@
 		<stix:Indicator xsi:type="indicator:IndicatorType" idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" timestamp="2014-02-20T10:00:00.000000Z" version="2.1.1" />
 	</stix:Indicators>
 </stix:STIX_Package>
+"""
+
+class STIXBestPracticesTests(unittest.TestCase):
+
+    @classmethod
+    def setUp(cls):
+        sio = StringIO(BP_INVALID_XML)
+        cls.results = sdv.validate_best_practices(sio)
+
+    def test_invalid_version(self):
+        xml = StringIO(STIX_NO_VERSION_XML)
+        func = sdv.validate_best_practices
+        self.assertRaises(
+            errors.InvalidSTIXVersionError, func, xml, version="INVALID"
+        )
+
+    def test_invalid_results(self):
+        self.assertEqual(False, self.results.is_valid)
+
+    def test_results_errors(self):
+        num_errors = len(self.results.errors)
+        self.assertTrue(num_errors > 0)
+
+    def test_json(self):
+        json_ = self.results.as_json()
+        d1 = self.results.as_dict()
+        d2 = json.loads(json_)
+        self.assertDictEqual(d1, d2)
+
+    def test_unknown_version(self):
+        func = sdv.validate_best_practices
+        xml = StringIO(STIX_NO_VERSION_XML)
+        self.assertRaises(
+            errors.UnknownSTIXVersionError, func, xml
+        )
+
+    def test_invalid_doc(self):
+        func = sdv.validate_best_practices
+        self.assertRaises(errors.ValidationError, func, "INVALID XML DOC")
+
+
+class BestPracticeWarningTests(unittest.TestCase):
+    def test_core_keys(self):
+        node = etree.Element("test")
+        warning = bp.BestPracticeWarning(node)
+
+        for key in warning.core_keys:
+            self.assertTrue(key in warning, key)
+
+    def test_other_keys(self):
+        node = etree.Element("test")
+        warning = bp.BestPracticeWarning(node)
+        warning['foo'] = 'bar'
+        self.assertTrue('foo' in warning.other_keys)
+
+    def test_as_json(self):
+        node = etree.Element("test")
+        warning = bp.BestPracticeWarning(node)
+        warning['foo'] = 'bar'
+        json_ = warning.as_json()
+        d = json.loads(json_)
+        self.assertTrue('foo' in d)
+
+    def test_as_dict(self):
+        node = etree.Element("test")
+        warning = bp.BestPracticeWarning(node)
+        warning['foo'] = 'bar'
+        d = warning.as_dict()
+        self.assertTrue('foo' in d)
+
+
+if __name__ == '__main__':
+    unittest.main()
