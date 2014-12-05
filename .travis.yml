@@ -1,13 +1,20 @@
 language: python
 env:
- - TOX_ENV=py26
- - TOX_ENV=py27
+  - TOX_ENV=py26
+  - TOX_ENV=py27
+
 before_install:
- - sudo apt-get install -qq libxml2
+  - sudo apt-get install -qq libxml2
+
 install:
- - pip install tox
+  - pip install tox
+
 script: tox -e $TOX_ENV
 
+branches:
+  only:
+    - master
+
 notifications:
-    email:
-        - stix-commits-list@lists.mitre.org
+  email:
+    - stix-commits-list@lists.mitre.org
