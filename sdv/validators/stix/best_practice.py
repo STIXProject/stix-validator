@@ -321,7 +321,7 @@ class STIXBestPracticeValidator(object):
         pass
 
     @rule('1.0')
-    def _check_id_presence(self, root, namespaces, *args, **kwargs):
+    def _check_id_presence(self, root, namespaces, version):
         """Checks that all major STIX/CybOX constructs have id attributes set.
         Constructs with idref attributes set should not have an id attribute
         and are thus omitted from the results.
@@ -343,7 +343,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_id_format(self, root, namespaces, *args, **kwargs):
+    def _check_id_format(self, root, namespaces, version):
         """Checks that the core STIX/CybOX constructs in the STIX instance
         document have ids and that each id is formatted as follows:
 
@@ -370,7 +370,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_duplicate_ids(self, root, namespaces, *args, **kwargs):
+    def _check_duplicate_ids(self, root, namespaces, version):
         """Checks for duplicate ids in the document."""
         id_nodes = collections.defaultdict(list)
 
@@ -385,7 +385,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_idref_resolution(self, root, namespaces, *args, **kwargs):
+    def _check_idref_resolution(self, root, namespaces, version):
         """Checks that all idrefs resolve to a construct in the document."""
         idrefs = root.xpath("//*[@idref]")
         ids = root.xpath("//@id")
@@ -402,7 +402,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_idref_with_content(self, root, namespaces, *args, **kwargs):
+    def _check_idref_with_content(self, root, namespaces, version):
         """Checks that constructs with idref set do not contain content."""
 
         def _has_content(node):
@@ -417,7 +417,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_indicator_practices(self, root, namespaces, *args, **kwargs):
+    def _check_indicator_practices(self, root, namespaces, version):
         """Looks for STIX Indicators that are missing a Description, Type,
         Valid_Time_Position, Indicated_TTP, and/or Confidence.
 
@@ -452,7 +452,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_root_element(self, root, namespaces, *args, **kwargs):
+    def _check_root_element(self, root, namespaces, version):
         """Checks that the root element is a STIX_Package."""
         ns = namespaces[stix.PREFIX_STIX_CORE]
         results = BestPracticeWarningCollection("Root Element")
@@ -464,7 +464,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_latest_vocabs(self, root, namespaces, *args, **kwargs):
+    def _check_latest_vocabs(self, root, namespaces, version):
         """Checks that all STIX vocabs are using latest published versions.
         Triggers a warning if an out of date vocabulary is used.
 
@@ -474,7 +474,6 @@ class STIXBestPracticeValidator(object):
             instance would be 'IndicatorTypeVocab-1.0'.
 
         """
-        version = kwargs['version']
         results = BestPracticeWarningCollection("Vocab Suggestions")
         xpath = "//*[contains(@xsi:type, 'Vocab-')]"
 
@@ -496,12 +495,11 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_latest_versions(self, root, namespaces, *args, **kwargs):
+    def _check_latest_versions(self, root, namespaces, version):
         """Checks that all major STIX constructs versions are equal to
         the latest version.
 
         """
-        version = kwargs['version']
         to_check = stix.STIX_COMPONENT_VERSIONS[version]
         results = BestPracticeWarningCollection('Latest Component Versions')
 
@@ -525,7 +523,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.1')
-    def _check_timestamp_usage(self, root, namespaces, *args, **kwargs):
+    def _check_timestamp_usage(self, root, namespaces, version):
         """Checks that all major STIX constructs have appropriate
         timestamp usage.
 
@@ -580,7 +578,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_titles(self, root, namespaces, *args, **kwargs):
+    def _check_titles(self, root, namespaces, version):
         """Checks that all major STIX constructs have a Title element."""
         to_check = (
             '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
@@ -613,7 +611,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_marking_control_xpath(self, root, namespaces, *args, **kwargs):
+    def _check_marking_control_xpath(self, root, namespaces, version):
         """Checks that data marking controlled structure XPaths are valid
         and resolve to nodes in the `root` document.
 
@@ -650,7 +648,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_condition_attribute(self, root, namespaces, *args, **kwargs):
+    def _check_condition_attribute(self, root, namespaces, version):
         """Checks that Observable properties contain a ``@condition``
         attribute.
 
@@ -743,7 +741,7 @@ class STIXBestPracticeValidator(object):
         rules = self._get_rules(version)
 
         for func in rules:
-            result = func(self, root, namespaces, version=version)
+            result = func(self, root, namespaces, version)
             results.append(result)
 
         return results
