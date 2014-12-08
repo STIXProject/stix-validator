@@ -53,6 +53,7 @@ class InstanceMapping(object):
     def __init__(self, nsmap):
         self._nsmap = nsmap
         self._ns_alias  = None
+        self.label = None
         self.selectors = None
         self.namespace = None
 
@@ -858,6 +859,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             check_label(label)
 
             mapping = InstanceMapping(nsmap)
+            mapping.label = label
             mapping.namespace = value(i, COL_TYPE_NAMESPACE)
             mapping.selectors = value(i, COL_SELECTORS)
             mapping.validate()

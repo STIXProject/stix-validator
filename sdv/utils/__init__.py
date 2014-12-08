@@ -167,11 +167,11 @@ def get_type_ns(doc, typename):
 
     """
     root = get_etree_root(doc)
-    prefix, name = typename.split(':')
+    prefix, _ = typename.split(':')
 
     try:
         return root.nsmap[prefix]
     except KeyError:
         raise errors.ValidationError(
-            "xsi:type '%s' contains unresolvable namespace prefix."
+            "xsi:type '%s' contains unresolvable namespace prefix." % typename
         )

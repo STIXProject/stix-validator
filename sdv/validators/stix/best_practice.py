@@ -380,7 +380,7 @@ class STIXBestPracticeValidator(object):
             id_nodes[node.attrib['id']].append(node)
 
         results = BestPracticeWarningCollection('Duplicate IDs')
-        for id, nodes in id_nodes.iteritems():
+        for nodes in id_nodes.itervalues():
             if len(nodes) > 1:
                 results.extend(BestPracticeWarning(node=x) for x in nodes)
 

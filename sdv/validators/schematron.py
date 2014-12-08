@@ -2,8 +2,6 @@
 # See LICENSE.txt for complete terms.
 
 from lxml import isoschematron
-from collections import defaultdict
-
 from sdv.validators import (ValidationError, ValidationResults)
 import sdv.utils as utils
 
