@@ -135,7 +135,7 @@ class STIXBestPracticesTests(unittest.TestCase):
         json_ = self.results.as_json()
         d1 = self.results.as_dict()
         d2 = json.loads(json_)
-        self.assertDictEqual(d1, d2)
+        self.assertEqual(d1, d2)
 
     def test_unknown_version(self):
         func = sdv.validate_best_practices
