@@ -93,3 +93,22 @@ from .stix import (
     STIXSchemaValidator, STIXBestPracticeValidator, STIXProfileValidator,
     BestPracticeValidationResults, ProfileValidationResults
 )
+
+# Ignore pyflakes warnings about schematron package
+assert schematron
+assert SchematronValidator
+assert SchematronValidationResults
+
+
+# Ignore pyflakes import warnings about xml_schema package
+assert xml_schema
+assert XmlSchemaValidator
+assert XmlValidationResults
+
+# Ignore pyflakes import warnings about stix package
+assert stix
+assert STIXSchemaValidator
+assert STIXBestPracticeValidator
+assert STIXProfileValidator
+assert BestPracticeValidationResults
+assert ProfileValidationResults
