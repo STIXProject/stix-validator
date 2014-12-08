@@ -91,16 +91,22 @@ class InstanceMapping(object):
         """Sets the namespace and ns_alias properties.
 
         Raises:
-            KeyError: if `value` is not found in the internal namespace
-                dictionary.
+            .ProfileParseError: if `value` is not found in the internal
+                namespace dictionary.
 
         """
         if not value:
             self._namespace = None
             self._ns_alias = None
         else:
+            if value not in self._nsmap:
+                raise errors.ProfileParseError(
+                    "Unable to map namespace '%s' to namespace alias" % value
+                )
+
             self._namespace = value
             self._ns_alias = self._nsmap[value]
+
 
     @property
     def ns_alias(self):
@@ -114,6 +120,11 @@ class InstanceMapping(object):
                 any of the selector values are empty.
 
         """
+        if not self.label:
+            raise errors.ProfileParseError(
+                "Missing type label in Instance Mapping"
+            )
+
         if not self.namespace:
             raise errors.ProfileParseError(
                 "Missing namespace for '%s' in Instance Mapping "
