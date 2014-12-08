@@ -77,7 +77,6 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
 
     """
     def __init__(self, node, message=None):
-        collections.MutableMapping.__init__(self)
         ValidationError.__init__(self)
 
         self._inner = OrderedDict()
@@ -239,7 +238,6 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
 
     """
     def __init__(self):
-        collections.MutableSequence.__init__(self)
         ValidationResults.__init__(self, False)
 
         self._warnings = []

@@ -199,7 +199,7 @@ class XmlSchemaValidator(object):
          schemas in `graph`.
 
          """
-        for schema, includes in graph.iteritems():
+        for _, includes in graph.iteritems():
             if fp in includes:
                 return True
 
@@ -301,7 +301,7 @@ class XmlSchemaValidator(object):
         seen = []
         schemalocs = defaultdict(list)
 
-        for top, dirs, files in os.walk(schema_dir):
+        for top, _, files in os.walk(schema_dir):
             for fn in files:
                 if fn.endswith('.xsd'):
                     fp = os.path.abspath(os.path.join(top, fn))
@@ -375,7 +375,7 @@ class XmlSchemaValidator(object):
         """
         imports = {}
         for elem in root.iter():
-            for prefix, ns in elem.nsmap.iteritems():
+            for _, ns in elem.nsmap.iteritems():
                 if ns not in self._schemalocs:
                     continue
 

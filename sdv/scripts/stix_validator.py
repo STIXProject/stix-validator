@@ -295,11 +295,11 @@ def _print_profile_results(results, level):
     if results.is_valid:
         return
 
-    errors = collections.defaultdict(list)
+    errors_ = collections.defaultdict(list)
     for e in results.errors:
-        errors[e.message].append(e.line)
+        errors_[e.message].append(e.line)
 
-    for msg, lines in errors.iteritems():
+    for msg, lines in errors_.iteritems():
         _print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
 
 

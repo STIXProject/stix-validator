@@ -283,8 +283,7 @@ def parse_vocab_name(typename):
 
     """
     type_ = re.split(":|-", typename)
-    prefix, name, version = type_[0], type_[1], type_[2]
-    return name
+    return type_[1]
 
 
 def parse_vocab_version(typename):
@@ -302,8 +301,7 @@ def parse_vocab_version(typename):
 
     """
     type_ = re.split(":|-", typename)
-    prefix, name, version = type_[0], type_[1], type_[2]
-    return version
+    return type_[2]
 
 
 def get_version(doc):
