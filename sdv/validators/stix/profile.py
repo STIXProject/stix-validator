@@ -651,6 +651,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
     """
     def __init__(self, profile_fn):
+        self._schematron = None  # silence pylint
+
         with self._parse_profile(profile_fn) as profile:
             super(STIXProfileValidator, self).__init__(schematron=profile)
 
