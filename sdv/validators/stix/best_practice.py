@@ -28,8 +28,8 @@ def rule(version):
             method applies.
     """
     def decorator(func):
-        func._is_rule = True
-        func._version = version
+        func.is_rule = True
+        func.version = version
         return func
     return decorator
 
@@ -43,10 +43,10 @@ class BestPracticeMeta(type):
         result = type.__new__(metacls, name, bases, dict_)
 
         result._rules = collections.defaultdict(list)
-        rules = (x for x in dict_.itervalues() if hasattr(x, '_is_rule'))
+        rules = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
 
         for rule in rules:
-            result._rules[rule._version].append(rule)
+            result._rules[rule.version].append(rule)
 
         return result
 
@@ -799,7 +799,7 @@ class STIXBestPracticeValidator(object):
 
 __all__ = [
     'STIXBestPracticeValidator',
-    'BestPracticeValidationResults'
+    'BestPracticeValidationResults',
     'BestPracticeWarningCollection',
     'BestPracticeWarning'
 ]
