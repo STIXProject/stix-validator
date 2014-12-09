@@ -11,11 +11,14 @@ A Python tool and API that validates STIX XML instance documents.
 :Documentation: http://stix-validator.readthedocs.org
 :Information: http://stix.mitre.org
 
-|travis badge| |version badge| |downloads badge|
+|travis badge| |health badge| |version badge| |downloads badge|
 
 .. |travis badge| image:: https://api.travis-ci.org/STIXProject/stix-validator.png?branch=master
    :target: https://travis-ci.org/STIXProject/stix-validator
    :alt: Build Status
+.. |health badge| image:: https://landscape.io/github/STIXProject/stix-validator/master/landscape.svg
+   :target: https://landscape.io/github/STIXProject/stix-validator/master
+   :alt: Code Health
 .. |version badge| image:: https://pypip.in/v/stix-validator/badge.png
    :target: https://pypi.python.org/pypi/stix-validator/
 .. |downloads badge| image:: https://pypip.in/d/stix-validator/badge.png
