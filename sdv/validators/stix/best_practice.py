@@ -42,11 +42,11 @@ class BestPracticeMeta(type):
     def __new__(metacls, name, bases, dict_):
         result = type.__new__(metacls, name, bases, dict_)
 
-        result._rules = collections.defaultdict(list)
+        result._rules = collections.defaultdict(list)  # pylint: disable=W0212
         rules = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
 
         for rule in rules:
-            result._rules[rule.version].append(rule)
+            result._rules[rule.version].append(rule)  # pylint: disable=W0212
 
         return result
 
@@ -721,7 +721,7 @@ class STIXBestPracticeValidator(object):
 
         """
         sv = distutils.version.StrictVersion
-        checks = self._rules.iteritems()
+        checks = self._rules.iteritems()  # pylint: disable=E1101
 
         # Get a generator which yields all best practice methods that are
         # assigned a version number <= the input STIX document version number.
