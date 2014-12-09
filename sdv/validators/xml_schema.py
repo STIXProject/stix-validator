@@ -477,3 +477,10 @@ class XmlSchemaValidator(object):
         is_valid = xsd.validate(root)
 
         return XmlValidationResults(is_valid, xsd.error_log)
+
+
+__all__ = [
+    'XmlSchemaValidator',
+    'XmlValidationResults',
+    'XmlSchemaError'
+]

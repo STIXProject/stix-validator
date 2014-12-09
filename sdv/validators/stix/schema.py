@@ -105,3 +105,8 @@ class STIXSchemaValidator(object):
 
         results = validator.validate(root, schemaloc)
         return results
+
+
+__all__ = [
+    'STIXSchemaValidator'
+]

@@ -215,3 +215,10 @@ class SchematronValidator(object):
         svrl_report = self.schematron.validation_report
 
         return SchematronValidationResults(is_valid, root, svrl_report)
+
+
+__all__ = [
+    'SchematronValidator',
+    'SchematronValidationResults',
+    'SchematronError'
+]

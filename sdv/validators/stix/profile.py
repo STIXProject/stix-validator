@@ -107,7 +107,6 @@ class InstanceMapping(object):
             self._namespace = value
             self._ns_alias = self._nsmap[value]
 
-
     @property
     def ns_alias(self):
         return self._ns_alias
@@ -1069,3 +1068,10 @@ class STIXProfileValidator(schematron.SchematronValidator):
         svrl_report = self._schematron.validation_report
 
         return ProfileValidationResults(is_valid, root, svrl_report)
+
+
+__all__ = [
+    'STIXProfileValidator',
+    'ProfileError',
+    'ProfileValidationResults'
+]

@@ -796,3 +796,10 @@ class STIXBestPracticeValidator(object):
         results = self._run_rules(root, version)
 
         return results
+
+__all__ = [
+    'STIXBestPracticeValidator',
+    'BestPracticeValidationResults'
+    'BestPracticeWarningCollection',
+    'BestPracticeWarning'
+]

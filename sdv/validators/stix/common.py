@@ -419,6 +419,7 @@ def _get_observable(root, obs, namespaces):
         message="Failed to resolve idref '{0}'".format(idref)
     )
 
+
 def get_indicator_observables(root, indicator, namespaces):
     """Returns all Observable instances embedded or referenced within the
     `indicator`.
