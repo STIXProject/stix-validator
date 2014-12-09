@@ -936,7 +936,9 @@ class STIXProfileValidator(schematron.SchematronValidator):
             profile = Profile(namespaces)
             profile.extend(rules)
             yield profile.as_etree()
-
+        except xlrd.XLRDError as ex:
+            err = "Error occurred while parsing STIX Profile: %s" % str(ex)
+            raise errors.ProfileParseError(err)
         finally:
             self._unload_workbook(workbook)
 
