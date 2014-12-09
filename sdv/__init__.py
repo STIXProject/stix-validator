@@ -7,17 +7,9 @@ from version import __version__
 _PKG_DIR = os.path.dirname(__file__)
 XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 
-# This import needs to following the XSD_ROOT definition
-from sdv.validators import STIXSchemaValidator
-
-# Default STIXSchemaValidator instance
-DEFAULT_STIX_VALIDATOR = STIXSchemaValidator()
-
 # A cache of STIX XML validators that speeds up consecutive calls to
 # validate_xml() against non-bundled schema directories.
-__xml_validators = {
-    None: DEFAULT_STIX_VALIDATOR
-}
+__xml_validators = {}
 
 # A cache of STIX Profile validators to speed up consecutive calls to
 # validate_profile()
@@ -39,6 +31,11 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
         schemaloc: Use ``xsi:schemaLocation`` attribute on `doc` to perform
             validation.
 
+    Note:
+        The first time running this for a given `schemas` (or no `schemas`)
+        will take longer than following validation runs due to schema
+        compilation time.
+
     Returns:
         An instance of
         :class:`.XmlValidationResults`.
@@ -58,6 +55,8 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
             processing ``xs:include`` directives.
 
     """
+    from sdv.validators import STIXSchemaValidator
+
     try:
         validator = __xml_validators[schemas]
     except KeyError:
