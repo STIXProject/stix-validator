@@ -765,7 +765,7 @@ class STIXBestPracticeValidator(object):
             )
 
     def validate(self, doc, version=None):
-        """Checks that a SITX document aligns with `suggested authoring
+        """Checks that a STIX document aligns with `suggested authoring
         practices`_.
 
         .. _suggested authoring practices: http://stixproject.github.io/documentation/suggested-practices/
