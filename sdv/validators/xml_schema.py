@@ -373,14 +373,18 @@ class XmlSchemaValidator(object):
             A dictionary mapping namespaces to schemalocations.
 
         """
+        def _get_schemalocs(node):
+            schemalocs = {}
+            for ns in node.nsmap.itervalues():
+                # Ignore ns lookup failures. Should this raise an Exception?
+                with utils.ignored(KeyError):
+                    schemalocs[ns] = self._schemalocs[ns]
+            return schemalocs
+
         imports = {}
         for elem in root.iter():
-            for _, ns in elem.nsmap.iteritems():
-                if ns not in self._schemalocs:
-                    continue
-
-                schema_location = self._schemalocs[ns]
-                imports[ns] = schema_location
+            schemalocs = _get_schemalocs(elem)
+            imports.update(schemalocs)
 
         return imports
 
@@ -388,11 +392,9 @@ class XmlSchemaValidator(object):
         root = utils.get_etree_root(doc)
 
         if schemaloc:
-            imports = self._parse_schemaloc(root)
-        else:
-            imports = self._get_required_schemas(root)
+            return self._parse_schemaloc(root)
 
-        return imports
+        return self._get_required_schemas(root)
 
     def _build_uber_schema(self, doc, schemaloc=False):
         """Builds a schema which is made up of ``xs:import`` directives for
