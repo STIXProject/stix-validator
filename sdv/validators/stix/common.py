@@ -1,5 +1,4 @@
 import re
-import itertools
 from distutils.version import StrictVersion
 
 import sdv.errors as errors
