@@ -1,5 +1,6 @@
 import re
 from distutils.version import StrictVersion
+from lxml import etree
 
 import sdv.errors as errors
 import sdv.utils as utils
@@ -199,6 +200,22 @@ CYBOX_VOCAB_VERSIONS = {
         'ToolTypeVocab': '1.1',
     }
 }
+
+
+def is_idref_content_exception(node):
+    """Returns ``True`` if the `node` is an exception to the rule that
+    nodes containing an ``idref`` attribute should not contain content.
+
+    Note:
+        This function will need to be updated in the future to be STIX/CybOX
+        version-aware.
+
+    """
+    qname = etree.QName(node)
+    return all((
+        qname.localname == "Related_Object",
+        qname.namespace == "http://cybox.mitre.org/cybox-2"
+    ))
 
 
 def _get_cybox_vocab_version(name, version):
