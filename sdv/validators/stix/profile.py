@@ -676,7 +676,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         with self._parse_profile(profile_fn) as profile:
             super(STIXProfileValidator, self).__init__(schematron=profile)
 
-    def _build_rules(self, label, info, field, occurrence, types, values):
+    def _build_rules(self, info, field, occurrence, types, values):
         """Builds a ``_BaseProfileRule`` implementation list for the rule
         parameters.
 
@@ -806,7 +806,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 )
 
             rules = self._build_rules(
-                label=ctx_label,
                 info=instance_map[ctx_label],
                 field=field,
                 occurrence=occurrence,
