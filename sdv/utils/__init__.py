@@ -123,7 +123,7 @@ def list_xml_files(dir_, recursive=False):
             continue
 
     if recursive and dirs:
-        files.extend(get_xml_files(dirs))
+        files.extend(get_xml_files(dirs, recursive))
 
     return files
 
