@@ -31,7 +31,14 @@ COL_ALIAS          = 1
 # Occurrence values
 OCCURRENCE_PROHIBITED = 'prohibited'
 OCCURRENCE_REQUIRED   = 'required'
-ALLOWED_OCCURRENCES = (OCCURRENCE_PROHIBITED, OCCURRENCE_REQUIRED)
+OCCURRENCE_OPTIONAL   = 'optional'
+OCCURRENCE_SUGGESTED  = 'suggested'
+ALLOWED_OCCURRENCES   = (
+    OCCURRENCE_OPTIONAL,
+    OCCURRENCE_PROHIBITED,
+    OCCURRENCE_REQUIRED,
+    OCCURRENCE_SUGGESTED
+)
 
 # Used by profile schematron for reporting error line numbers.
 SAXON_LINENO = '[<value-of select="saxon:line-number()"/>]'
@@ -215,7 +222,7 @@ class Profile(collections.MutableSequence):
         for ctx, tests in collected.iteritems():
             rule = self._create_rule(ctx)
             rule.extend([test.as_etree() for test in tests])
-            rules.append(rule)
+            rules.append(self._pattern(rule))
 
         return rules
 
@@ -224,19 +231,20 @@ class Profile(collections.MutableSequence):
         the XML instance document is a ``STIX_Package``
 
         """
+
         ns_stix = "http://stix.mitre.org/stix-1"
         text = "The root element must be a STIX_Package instance"
         test = "%s:STIX_Package" % self._namespaces.get(ns_stix, 'stix')
 
         rule = self._create_rule("/")
-
         assertion = etree.XML(
             '<assert xmlns="%s" test="%s" role="error">%s %s</assert> ' %
             (schematron.NS_SCHEMATRON, test, text, SAXON_LINENO)
         )
 
         rule.append(assertion)
-        return rule
+        pattern = self._pattern(rule)
+        return pattern
 
     def _get_schema_node(self):
         return etree.Element(
@@ -244,11 +252,11 @@ class Profile(collections.MutableSequence):
             nsmap={None: schematron.NS_SCHEMATRON}
         )
 
-    def _get_pattern_node(self):
+    def _pattern(self, rule):
         ns = schematron.NS_SCHEMATRON
-        return etree.XML(
-            "<pattern xmlns='%s' id='%s'/>" % (ns, self.id)
-        )
+        pattern = etree.XML("<pattern xmlns='{0}'/>".format(ns))
+        pattern.append(rule)
+        return pattern
 
     def _get_namespaces(self):
         """Returns a list of etree Elements that represent Schematron
@@ -267,13 +275,13 @@ class Profile(collections.MutableSequence):
 
     def as_etree(self):
         """Returns an etree Schematron document for this ``Profile``."""
-        pattern = self._get_pattern_node()
-        pattern.append(self._get_root_rule())
-        pattern.extend(self.rules)
+        patterns = []
+        patterns.append(self._get_root_rule())
+        patterns.extend(self.rules)
 
         schema = self._get_schema_node()
         schema.extend(self._get_namespaces())
-        schema.append(pattern)
+        schema.extend(patterns)
 
         return schema
 
@@ -431,9 +439,10 @@ class AllowedValuesRule(_BaseProfileRule):
     This serializes to a schematron ``<assert>`` directive.
 
     """
-    def __init__(self, context, field, values=None):
+    def __init__(self, context, field, required=True, values=None):
         super(AllowedValuesRule, self).__init__(context, field)
         self._type = self._TYPE_ASSERT
+        self.is_required = required
         self.values = values
 
     @property
@@ -461,7 +470,7 @@ class AllowedValuesRule(_BaseProfileRule):
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        if self.is_attr:
+        if self.is_attr and self.is_required:
             return self._context
         else:
             return self.path
@@ -488,7 +497,7 @@ class AllowedValuesRule(_BaseProfileRule):
         name = self.field
         allowed = self.values
 
-        if self.is_attr:
+        if self.is_attr and self.is_required:
             test = " or ".join("%s='%s'" % (name, x) for x in allowed)
         else:
             test = " or ".join(".='%s'" % (x) for x in allowed)
@@ -497,9 +506,10 @@ class AllowedValuesRule(_BaseProfileRule):
 
 
 class AllowedImplsRule(_BaseProfileRule):
-    def __init__(self, context, field, impls=None):
+    def __init__(self, context, field, required=True, impls=None):
         super(AllowedImplsRule, self).__init__(context, field)
         self._type = self._TYPE_ASSERT
+        self.is_required = required
         self.impls = impls
 
     def _validate(self):
@@ -710,7 +720,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         ns_alias = info.ns_alias
 
         if not field.startswith("@"):
-            # elements must have a namespace alias attached which maps to
+            # Elements must have a namespace alias attached which maps to
             # the defining namespace for the underlying data type of the
             # instance selector.
             fieldname = "%s:%s" % (ns_alias, field)
@@ -719,22 +729,27 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         rules = []
         for context in selectors:
+            is_required = False
+
             if occurrence == OCCURRENCE_REQUIRED:
+                is_required = True
                 rule = RequiredRule(context, fieldname)
                 rules.append(rule)
             elif occurrence == OCCURRENCE_PROHIBITED:
                 rule = ProhibitedRule(context, fieldname)
                 rules.append(rule)
                 continue  # Cannot set prohibited values or impls
+            elif occurrence == OCCURRENCE_OPTIONAL:
+                pass
             else:
-                continue  # Only build rules for 'prohibited' and 'required'
+                continue
 
             if types:
-                rule = AllowedImplsRule(context, fieldname, types)
+                rule = AllowedImplsRule(context, fieldname, is_required, types)
                 rules.append(rule)
 
             if values:
-                rule = AllowedValuesRule(context, fieldname, values)
+                rule = AllowedValuesRule(context, fieldname, is_required, values)
                 rules.append(rule)
 
         return rules
@@ -785,7 +800,10 @@ class STIXProfileValidator(schematron.SchematronValidator):
             values = value(i, COL_ALLOWED_VALUES)
 
             if occurrence not in ALLOWED_OCCURRENCES:
-                continue
+                err = "Found unknown occurrence '{0}' in worksheet '{1}'."
+                raise errors.ProfileParseError(
+                    err.format(occurrence, worksheet.name)
+                )
 
             rules = self._build_rules(
                 label=ctx_label,
