@@ -403,13 +403,30 @@ class STIXBestPracticeValidator(object):
 
     @rule('1.0')
     def _check_idref_with_content(self, root, namespaces, version):
-        """Checks that constructs with idref set do not contain content."""
+        """Checks that constructs with idref set do not contain content.
+
+        Note:
+            CybOX Related_Objects are an exception to the rule, as they
+            reference related content via their ``idref`` attribute, but
+            contain a ``Relationship`` element to define the type of
+            relationship.
+
+        """
+        def _is_related_object(node):
+            qname = etree.QName(node)
+            return all((
+                qname.localname == "Related_Object",
+                qname.namespace == "http://cybox.mitre.org/cybox-2"
+            ))
 
         def _has_content(node):
-            return bool(node.text) or len(node) > 0
+            # len(node) includes XML comments so we need to count just elements.
+            return bool(node.text) or len(node.findall('*')) > 0
 
         nodes = root.xpath("//*[@idref]")
-        warnings = [BestPracticeWarning(x) for x in nodes if _has_content(x)]
+        warnings = [
+            BestPracticeWarning(x) for x in nodes if _has_content(x) and not _is_related_object(x)
+        ]
 
         results = BestPracticeWarningCollection("IDREF with Content")
         results.extend(warnings)

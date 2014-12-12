@@ -8,6 +8,7 @@
 	xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
 	xmlns:cybox="http://cybox.mitre.org/cybox-2"
 	xmlns:cyboxCommon="http://cybox.mitre.org/common-2"
+	xmlns:cyboxVocabs="http://cybox.mitre.org/default_vocabularies-2"
 	xmlns:DomainNameObj="http://cybox.mitre.org/objects#DomainNameObject-1"
 	xmlns:marking="http://data-marking.mitre.org/Marking-1"
 	xmlns:example="http://example.com/"
@@ -19,6 +20,7 @@
 	http://stix.mitre.org/default_vocabularies-1 http://stix.mitre.org/XMLSchema/default_vocabularies/1.1.1/stix_default_vocabularies.xsd
 	http://cybox.mitre.org/cybox-2 http://cybox.mitre.org/XMLSchema/core/2.1/cybox_core.xsd
 	http://cybox.mitre.org/common-2 http://cybox.mitre.org/XMLSchema/common/2.1/cybox_common.xsd
+	http://cybox.mitre.org/default_vocabularies-2 http://cybox.mitre.org/XMLSchema/default_vocabularies/2.1/cybox_default_vocabularies.xsd
 	http://cybox.mitre.org/objects#DomainNameObject-1 http://cybox.mitre.org/XMLSchema/objects/Domain_Name/1.0/Domain_Name_Object.xsd
 	http://data-marking.mitre.org/Marking-1  http://stix.mitre.org/XMLSchema/data_marking/1.1.1/data_marking.xsd"
 	id="example:Indicator-ba1d406e-937c-414f-9231-6e1dbe64fe8b" version="1.1.1" timestamp="2014-05-08T09:00:00.000000Z">
@@ -46,6 +48,12 @@
 					</cyboxCommon:Custom_Properties>
 					<DomainNameObj:Value apply_condition="ANY">malicious1.example.com##comma##malicious2.example.com##comma##malicious3.example.com</DomainNameObj:Value>
 				</cybox:Properties>
+				<cybox:Related_Objects>
+					<cybox:Related_Object idref="example:Object-12c760ba-cd2c-4f5d-a37d-18212eac7a39">
+						<!-- This should pass the idref-with-content checks, since it is a CybOX Related Object -->
+						<cybox:Relationship xsi:type="cyboxVocabs:ObjectRelationshipVocab-1.1">Allocated_By</cybox:Relationship>
+					</cybox:Related_Object>
+				</cybox:Related_Objects>
 			</cybox:Object>
 		</cybox:Observable>
 	</stix:Observables>
@@ -82,5 +90,11 @@
 			<indicator:Observable idref="example:Observable-12c760ba-cd2c-4f5d-a37d-18212eac7929"/>
 		</stix:Indicator>
 		<stix:Indicator xsi:type="indicator:IndicatorType" idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" timestamp="2014-02-20T10:00:00.000000Z" version="2.1.1" />
+		<stix:Indicator xsi:type="indicator:IndicatorType" idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" version="2.1.1">
+			<indicator:Title>Testing idref with content</indicator:Title>
+		</stix:Indicator>
+		<stix:Indicator xsi:type="indicator:IndicatorType" idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" version="2.1.1">
+			<!-- Testing if best practice validation says that an XML comment is "content" for idref-with-content checks -->
+		</stix:Indicator>
 	</stix:Indicators>
 </stix:STIX_Package>
