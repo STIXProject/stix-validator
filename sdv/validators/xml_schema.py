@@ -199,7 +199,7 @@ class XmlSchemaValidator(object):
          schemas in `graph`.
 
          """
-        for _, includes in graph.iteritems():
+        for includes in graph.itervalues():
             if fp in includes:
                 return True
 

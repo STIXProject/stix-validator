@@ -167,7 +167,7 @@ def get_type_ns(doc, typename):
 
     """
     root = get_etree_root(doc)
-    prefix, _ = typename.split(':')
+    prefix = typename.split(':')[0]
 
     try:
         return root.nsmap[prefix]
