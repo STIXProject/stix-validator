@@ -1043,7 +1043,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             ''
         )
 
-        return etree.parse(StringIO(s))
+        return etree.parse(StringIO.StringIO(s))
 
     @schematron.SchematronValidator.schematron.getter
     def schematron(self):
@@ -1069,7 +1069,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         s = s.replace(to_replace, '')
         s = s.replace('<ns prefix="saxon" uri="http://icl.com/saxon"/>', '')
 
-        return etree.parse(StringIO(s))
+        return etree.parse(StringIO.StringIO(s))
 
     def validate(self, doc):
         """Validates an XML instance document against a STIX profile.
