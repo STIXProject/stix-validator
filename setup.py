@@ -46,13 +46,13 @@ extras_require = {
 
 setup(
     name='stix-validator',
-    description='STIX Document Validator',
+    description='APIs and scripts for validating STIX and CybOX documents.',
     author='The MITRE Corporation',
     author_email='stix@mitre.org',
     url='http://stix.mitre.org/',
     version=get_version(),
     packages=find_packages(),
-    scripts=['sdv/scripts/stix_validator.py'],
+    scripts=['sdv/scripts/stix_validator.py', 'sdv/scripts/cybox_validator.py'],
     include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,

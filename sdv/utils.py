@@ -4,6 +4,7 @@ import contextlib
 
 # external
 from lxml import etree
+from distutils.version import StrictVersion
 
 # internal
 import sdv.errors as errors
@@ -179,3 +180,24 @@ def get_type_ns(doc, typename):
         raise errors.ValidationError(
             "xsi:type '%s' contains unresolvable namespace prefix." % typename
         )
+
+
+def get_namespace(node):
+    qname = etree.QName(node)
+    return qname.namespace
+
+
+def is_stix(doc):
+    root = get_etree_root(doc)
+    namespace = get_namespace(root)
+    return namespace.startswith("http://stix.mitre.org")
+
+
+def is_cybox(doc):
+    root = get_etree_root(doc)
+    namespace = get_namespace(root)
+    return namespace.startswith("http://cybox.mitre.org")
+
+
+def is_version_equal(x, y):
+    return StrictVersion(x) == StrictVersion(y)

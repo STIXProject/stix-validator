@@ -9,34 +9,14 @@ import sdv
 import sdv.utils as utils
 import sdv.errors as errors
 from sdv.validators import xml_schema as xml
-from sdv.validators.stix import common as stix
+from sdv.validators.cybox import common as cybox
 
 
-class _XmlSchemaValidator(xml.XmlSchemaValidator):
-    """Needed to resolve namespace collisions between CybOX 2.1 and
-    STIX v1.1.1.
-
-    CybOX imports CPE 2.3. The STIX CVRF extension imports CPE 2.2a. Both
-    are defined within the 'http://cpe.mitre.org/language/2.0' namespace,
-    which results in a namespace collision.
-
-    To resolve this, we force the 'http://cpe.mitre.org/language/2.0' namespace
-    to map to the CPE 2.3 schemas.
-
-    """
-    OVERRIDE_SCHEMALOC = {
-        'http://cpe.mitre.org/language/2.0': os.path.join(
-            sdv.XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
-        )
-    }
-
-
-class STIXSchemaValidator(object):
+class CyboxSchemaValidator(object):
     SCHEMAS = {
-        '1.1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1'),
-        '1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1'),
-        '1.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1'),
-        '1.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0')
+        '2.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1', 'cybox'),
+        '2.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1', 'cybox'),
+        '2.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0', 'cybox')
     }
 
     _KEY_SCHEMALOC = 'schemaloc'
@@ -47,36 +27,36 @@ class STIXSchemaValidator(object):
         self._is_user_defined = bool(schema_dir)
 
     def _get_validators(self, schema_dir=None):
-        validators = {self._KEY_SCHEMALOC: _XmlSchemaValidator()}
+        validators = {self._KEY_SCHEMALOC: xml.XmlSchemaValidator()}
 
         if schema_dir:
             validators = {
-                self._KEY_USER_DEFINED: _XmlSchemaValidator(schema_dir)
+                self._KEY_USER_DEFINED: xml.XmlSchemaValidator(schema_dir)
             }
         else:
             for version, location in self.SCHEMAS.iteritems():
-                validator = _XmlSchemaValidator(location)
+                validator = xml.XmlSchemaValidator(location)
                 validators[version] = validator
 
         return validators
 
     def _get_version(self, doc):
         try:
-            return stix.get_version(doc)
+            return cybox.get_version(doc)
         except KeyError:
-            raise errors.UnknownSTIXVersionError(
-                "Unable to validate instance document. STIX version not "
+            raise errors.UnknownCyboxVersionError(
+                "Unable to validate instance document. CybOX version not "
                 "found in instance document and not supplied to validate() "
                 "method"
             )
 
     def validate(self, doc, version=None, schemaloc=False):
-        """Performs XML Schema validation against a STIX document.
+        """Performs XML Schema validation against a CybOX document.
 
         Args:
-            doc: The STIX document. This can be a filename, file-like object,
+            doc: The CybOX document. This can be a filename, file-like object,
                 ``etree._Element``, or ``etree._ElementTree`` instance.
-            version: The version of the STIX document. If ``None`` an attempt
+            version: The version of the CybOX document. If ``None`` an attempt
                 will be made to extract the version from `doc`.
             schemaloc: If ``True``, the ``xsi:schemaLocation`` attribute on
                 `doc` will be used to drive the validation.
@@ -86,10 +66,10 @@ class STIXSchemaValidator(object):
             :class:`.XmlValidationResults`.
 
         Raises:
-            .UnknownSTIXVersionError: If `version` is ``None`` and
-                `doc` does not contain STIX version information.
-            .InvalidSTIXVersionError: If `version` is an invalid
-                STIX version or `doc` contains an invalid STIX version number.
+            .UnknownCyboxVersionError: If `version` is ``None`` and
+                `doc` does not contain CybOX version information.
+            .InvalidCyboxVersionError: If `version` is an invalid
+                CybOX version or `doc` contains an invalid CybOX version number.
             .ValidationError: If the class was not initialized with a
                 schema directory and `schemaloc` is ``False``.
             .XMLSchemaImportError: If an error occurs while processing the
@@ -107,7 +87,7 @@ class STIXSchemaValidator(object):
             validator = self._xml_validators[self._KEY_USER_DEFINED]
         else:
             version = version or self._get_version(doc)
-            stix.check_version(version)
+            cybox.check_version(version)
             validator = self._xml_validators[version]
 
         results = validator.validate(root, schemaloc)
@@ -115,5 +95,5 @@ class STIXSchemaValidator(object):
 
 
 __all__ = [
-    'STIXSchemaValidator'
+    'CyboxSchemaValidator'
 ]

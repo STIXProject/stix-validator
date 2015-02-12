@@ -79,6 +79,33 @@ class InvalidSTIXVersionError(ValidationError):
         self.found = found
 
 
+class UnknownCyboxVersionError(ValidationError):
+    """Raised when no CybOX version information can be found in an instance
+    document and no version information was provided to a method which
+    requires version information.
+
+    """
+    pass
+
+
+class InvalidCyboxVersionError(ValidationError):
+    """Raised when an invalid version of CybOX is discovered within an instance
+    document or is passed into a method which depends on CybOX version
+    information.
+
+    Args:
+        message: The error message.
+        expected: A version or list of expected versions.
+        found: The CybOX version that was declared for an instance document or
+            found within an instance document.
+
+    """
+    def __init__(self, message, expected=None, found=None):
+        super(InvalidCyboxVersionError, self).__init__(message)
+        self.expected = expected
+        self.found = found
+
+
 class ProfileParseError(ValidationError):
     """Raised when an error occurs during the parse or initialization
     of a STIX profile document.

@@ -3,9 +3,11 @@
 
 # builtin
 import os
+import collections
 
 # internal
-from version import __version__
+from sdv import errors, utils
+from sdv.version import __version__
 
 # lazy imports
 validators = None
@@ -14,35 +16,38 @@ validators = None
 _PKG_DIR = os.path.dirname(__file__)
 XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 
-# A cache of STIX XML validators that speeds up consecutive calls to
+# A cache of STIX and CybOX XML validators that speeds up consecutive calls to
 # validate_xml() against non-bundled schema directories.
-__xml_validators = {}
+__xml_validators = collections.defaultdict(dict)
 
 # A cache of STIX Profile validators to speed up consecutive calls to
 # validate_profile()
 __profile_validators = {}
 
 
-def _load_validators_mod():
-    """Lazily load the sdv.validators module"""
+def _load_sdv_mods():
+    """Lazily load the sdv.validators modules. This is to prevent
+    circular imports while minimizing the performance overhead of imports.
 
+    """
     global validators
     if not validators:
         import sdv.validators as validators
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
-    """Performs `XML Schema`_ validation against a STIX document.
+    """Performs `XML Schema`_ validation against a `STIX`_ or `CybOX`_ document.
 
-    .. _XML Schema: http://stix.mitre.org/language/
+    .. _STIX: http://stix.mitre.org/language/
+    .. _CybOX: http://cybox.mitre.org/language/
 
     Args:
         doc: A STIX document to validate. This can be a filename, file-like
             object, ``etree._Element`` or ``etree._ElementTree`` object.
-        version: The version of the STIX document being validated. If ``None``
-            an attempt will be made to extract the version from `doc`.
-        schemas: A string path to a directory of STIX schemas. If ``None``,
-            the validation code will leverage its bundled STIX schemas.
+        version: The version of the STIX/CybOX document being validated. If
+            ``None`` an attempt will be made to extract the version from `doc`.
+        schemas: A string path to a directory of STIX/CybOX schemas. If ``None``,
+            the validation code will leverage its bundled STIX/CybOX schemas.
         schemaloc: Use ``xsi:schemaLocation`` attribute on `doc` to perform
             validation.
 
@@ -70,13 +75,14 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
             processing ``xs:include`` directives.
 
     """
-    _load_validators_mod()
+    _load_sdv_mods()
+    klass = validators.get_xml_validator_class(doc)
 
     try:
-        validator = __xml_validators[schemas]
+        validator = __xml_validators[klass][schemas]
     except KeyError:
-        validator = validators.STIXSchemaValidator(schema_dir=schemas)
-        __xml_validators[schemas] = validator
+        validator = klass(schema_dir=schemas)
+        __xml_validators[klass][schemas] = validator
 
     return validator.validate(doc, version=version, schemaloc=schemaloc)
 
@@ -108,7 +114,11 @@ def validate_best_practices(doc, version=None):
             in `doc` contains an invalid STIX version number.
 
     """
-    _load_validators_mod()
+    _load_sdv_mods()
+
+    if not utils.is_stix(doc):
+        raise errors.ValidationError("Input document is not a STIX document.")
+
     validator = validators.STIXBestPracticeValidator()
     return validator.validate(doc, version=version)
 
@@ -137,7 +147,10 @@ def validate_profile(doc, profile):
             parse the `profile`.
 
     """
-    _load_validators_mod()
+    _load_sdv_mods()
+
+    if not utils.is_stix(doc):
+        raise errors.ValidationError("Input document is not a STIX document.")
 
     try:
         validator = __profile_validators[profile]
