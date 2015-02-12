@@ -1,14 +1,18 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
 import os
-import xlrd
 import collections
 import functools
 import contextlib
-from StringIO import StringIO
+import StringIO
+
+# external
+import xlrd
 from lxml import etree
 
+# internal
 import sdv.utils as utils
 import sdv.errors as errors
 from sdv.validators import schematron

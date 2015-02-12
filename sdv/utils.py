@@ -1,12 +1,16 @@
+# builtin
 import os
 import contextlib
+
+# external
 from lxml import etree
+
+# internal
 import sdv.errors as errors
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
 TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
-
 
 @contextlib.contextmanager
 def ignored(*exceptions):
@@ -98,7 +102,7 @@ def get_schemaloc_pairs(node):
     return pairs
 
 
-def list_xml_files(dir_, recursive=False):
+def list_xml_files(directory, recursive=False):
     """Returns a list of file paths for XML files contained within `dir_`.
 
     Args:
@@ -112,8 +116,8 @@ def list_xml_files(dir_, recursive=False):
     """
     files, dirs = [], []
 
-    for fn in os.listdir(dir_):
-        fp = os.path.join(dir_, fn)
+    for fn in os.listdir(directory):
+        fp = os.path.join(directory, fn)
 
         if fn.endswith('.xml'):
             files.append(fp)

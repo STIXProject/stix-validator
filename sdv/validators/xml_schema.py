@@ -1,12 +1,17 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
 import os
-from collections import defaultdict
+import collections
+
+# external
 from lxml import etree
-from sdv.validators import (ValidationError, ValidationResults)
+
+# internal
 import sdv.errors as errors
 import sdv.utils as utils
+from sdv.validators.base import (ValidationError, ValidationResults)
 
 NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
 NS_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
@@ -49,12 +54,7 @@ class XmlSchemaError(ValidationError):
             * ``'message'``: The error message
             * ``'line'``: The line number associated with the error
         """
-        d = {
-            'message': self.message,
-            'line': self.line
-        }
-
-        return d
+        return dict(message=self.message, line=self.line)
 
     def __unicode__(self):
         return unicode(self.message)
@@ -185,7 +185,7 @@ class XmlSchemaValidator(object):
             schemas in `schema_paths`.
 
         """
-        graph = defaultdict(list)
+        graph = collections.defaultdict(list)
 
         for fp in schema_paths:
             root = utils.get_etree_root(fp)
@@ -299,7 +299,7 @@ class XmlSchemaValidator(object):
 
         """
         seen = []
-        schemalocs = defaultdict(list)
+        schemalocs = collections.defaultdict(list)
 
         for top, _, files in os.walk(schema_dir):
             for fn in files:
@@ -434,10 +434,7 @@ class XmlSchemaValidator(object):
 
         for ns, loc in imports.iteritems():
             loc = loc.replace("\\", "/")
-            attrib = {
-                'namespace': ns,
-                'schemaLocation': loc
-            }
+            attrib = dict(namespace=ns, schemaLocation=loc)
             import_ = etree.Element(TAG_XS_IMPORT, attrib=attrib)
             xsd.append(import_)
 

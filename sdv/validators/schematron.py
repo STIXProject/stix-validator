@@ -1,9 +1,13 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
-from lxml import isoschematron
-from sdv.validators import (ValidationError, ValidationResults)
+# external
+import lxml.isoschematron
+
+# internal
 import sdv.utils as utils
+from sdv.validators.base import (ValidationError, ValidationResults)
+
 
 NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
 NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
@@ -81,12 +85,7 @@ class SchematronError(ValidationError):
             * ``'message'``: The error message
             * ``'line'``: The line number associated with the error
         """
-        d = {
-            'message': self.message,
-            'line': self.line
-        }
-
-        return d
+        return dict(message=self.message, line=self.line)
 
 
 class SchematronValidationResults(ValidationResults):
@@ -170,7 +169,7 @@ class SchematronValidator(object):
             raise ValueError("Input schematron document cannot be None")
 
         root = utils.get_etree_root(sch)
-        schematron = isoschematron.Schematron(
+        schematron = lxml.isoschematron.Schematron(
             root,
             store_report=True,
             store_xslt=True,
@@ -214,7 +213,11 @@ class SchematronValidator(object):
         is_valid = self.schematron.validate(root)
         svrl_report = self.schematron.validation_report
 
-        return SchematronValidationResults(is_valid, root, svrl_report)
+        return SchematronValidationResults(
+            is_valid=is_valid,
+            doc=root,
+            svrl_report=svrl_report
+        )
 
 
 __all__ = [

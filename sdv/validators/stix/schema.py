@@ -1,15 +1,18 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
 import os
-import common as stix
-from sdv import XSD_ROOT
-import sdv.errors as errors
+
+# internal
+import sdv
 import sdv.utils as utils
-from sdv.validators import XmlSchemaValidator
+import sdv.errors as errors
+from sdv.validators import xml_schema as xml
+from sdv.validators.stix import common as stix
 
 
-class _XmlSchemaValidator(XmlSchemaValidator):
+class _XmlSchemaValidator(xml.XmlSchemaValidator):
     """Needed to resolve namespace collisions between CybOX 2.1 and
     STIX v1.1.1.
 
@@ -19,17 +22,17 @@ class _XmlSchemaValidator(XmlSchemaValidator):
     """
     OVERRIDE_SCHEMALOC = {
         'http://cpe.mitre.org/language/2.0': os.path.join(
-            XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
+            sdv.XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
         )
     }
 
 
 class STIXSchemaValidator(object):
     SCHEMAS = {
-        '1.1.1': os.path.join(XSD_ROOT, 'stix_1.1.1'),
-        '1.1': os.path.join(XSD_ROOT, 'stix_1.1'),
-        '1.0.1': os.path.join(XSD_ROOT, 'stix_1.0.1'),
-        '1.0': os.path.join(XSD_ROOT, 'stix_1.0')
+        '1.1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1'),
+        '1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1'),
+        '1.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1'),
+        '1.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0')
     }
 
     _KEY_SCHEMALOC = 'schemaloc'

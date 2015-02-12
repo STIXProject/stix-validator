@@ -1,16 +1,20 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
 import re
 import collections
 import itertools
 import distutils.version
+
+# external
 from lxml import etree
 
-from sdv.validators import (ValidationError, ValidationResults)
+# internal
 import sdv.errors as errors
 import sdv.utils as utils
-import common as stix
+from sdv.validators.stix import common as stix
+from sdv.validators.base import (ValidationError, ValidationResults)
 
 # Python 2.6 doesn't have collections.OrderedDict :(
 try:
@@ -727,13 +731,20 @@ class STIXBestPracticeValidator(object):
         to the STIX `version`.
 
         """
-        sv = distutils.version.StrictVersion
+        def is_applicable(func_version, stix_version):
+            if not func_version:
+                return True
+
+            return StrictVersion(func_version) <= StrictVersion(stix_version)
+
+
+        StrictVersion = distutils.version.StrictVersion
         checks = self._rules.iteritems()  # pylint: disable=E1101
 
         # Get a generator which yields all best practice methods that are
         # assigned a version number <= the input STIX document version number.
-        rules = itertools.chain(
-            *(funcs for (x, funcs) in checks if not x or sv(x) <= sv(version))
+        rules = itertools.chain.from_iterable(
+            funcs for (x, funcs) in checks if is_applicable(x, version)
         )
 
         return rules
@@ -775,7 +786,7 @@ class STIXBestPracticeValidator(object):
         """Checks that a STIX document aligns with `suggested authoring
         practices`_.
 
-        .. _suggested authoring practices: http://stixproject.github.io/documentation/suggested-practices/
+        .. _suggested authoring practices: http://stix.roject.github.io/documentation/suggested-practices/
 
         Args:
             doc: The STIX document. Can be a filename, file-like object,

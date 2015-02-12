@@ -1,9 +1,16 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
 import os
+
+# internal
 from version import __version__
 
+# lazy imports
+validators = None
+
+# constants
 _PKG_DIR = os.path.dirname(__file__)
 XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 
@@ -14,6 +21,14 @@ __xml_validators = {}
 # A cache of STIX Profile validators to speed up consecutive calls to
 # validate_profile()
 __profile_validators = {}
+
+
+def _load_validators_mod():
+    """Lazily load the sdv.validators module"""
+
+    global validators
+    if not validators:
+        import sdv.validators as validators
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False):
@@ -55,12 +70,12 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
             processing ``xs:include`` directives.
 
     """
-    from sdv.validators import STIXSchemaValidator
+    _load_validators_mod()
 
     try:
         validator = __xml_validators[schemas]
     except KeyError:
-        validator = STIXSchemaValidator(schema_dir=schemas)
+        validator = validators.STIXSchemaValidator(schema_dir=schemas)
         __xml_validators[schemas] = validator
 
     return validator.validate(doc, version=version, schemaloc=schemaloc)
@@ -93,9 +108,8 @@ def validate_best_practices(doc, version=None):
             in `doc` contains an invalid STIX version number.
 
     """
-    from sdv.validators import STIXBestPracticeValidator
-
-    validator = STIXBestPracticeValidator()
+    _load_validators_mod()
+    validator = validators.STIXBestPracticeValidator()
     return validator.validate(doc, version=version)
 
 
@@ -123,12 +137,12 @@ def validate_profile(doc, profile):
             parse the `profile`.
 
     """
-    from sdv.validators import STIXProfileValidator
+    _load_validators_mod()
 
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = STIXProfileValidator(profile)
+        validator = validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.validate(doc)
