@@ -158,16 +158,17 @@ class XmlSchemaValidator(object):
 
         """
         xs_includes = root.findall(TAG_XS_INCLUDE)
-        dir_ = os.path.dirname(fp)
+        dir = os.path.dirname(fp)
 
         includes = []
         for include in xs_includes:
             loc = include.attrib['schemaLocation']
 
+            # If the path is relative, get the absolute path
             if os.path.isabs(loc):
                 locpath = loc
             else:
-                locpath = os.path.abspath(os.path.join(dir_, loc))
+                locpath = os.path.abspath(os.path.join(dir, loc))
 
             includes.append(locpath)
 
@@ -196,14 +197,10 @@ class XmlSchemaValidator(object):
 
     def _is_included(self, graph, fp):
         """Returns ``True`` if the schema at `fp` was included by any other
-         schemas in `graph`.
+        schemas in `graph`.
 
-         """
-        for includes in graph.itervalues():
-            if fp in includes:
-                return True
-
-        return False
+        """
+        return any(fp in includes for includes in graph.itervalues())
 
     def _get_include_root(self, ns, list_schemas):
         """Attempts to determine the "root" schema for a targetNamespace.
