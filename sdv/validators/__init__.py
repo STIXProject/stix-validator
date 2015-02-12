@@ -38,7 +38,5 @@ from .stix import *
 
 
 __all__ = [
-    'ValidationError',
-    'ValidationErrorResults',
-    'ValidationResults'
+    'ValidationErrorResults'
 ]
