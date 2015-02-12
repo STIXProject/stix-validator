@@ -815,6 +815,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+
 __all__ = [
     'STIXBestPracticeValidator',
     'BestPracticeValidationResults',

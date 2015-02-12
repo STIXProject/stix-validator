@@ -233,8 +233,10 @@ class XmlSchemaValidator(object):
             return list_schemas[0]
 
         for fp in graph:
-            if (not self._is_included(graph, fp) and
-               (len(graph[fp]) > 0)):
+            has_ancestors = self._is_included(graph, fp)
+            has_children  = len(graph[fp]) > 0
+
+            if has_children and not has_ancestors:
                 return fp
 
         raise errors.XMLSchemaIncludeError(
@@ -303,15 +305,17 @@ class XmlSchemaValidator(object):
 
         for top, _, files in os.walk(schema_dir):
             for fn in files:
-                if fn.endswith('.xsd'):
-                    fp = os.path.abspath(os.path.join(top, fn))
-                    target_ns = utils.get_target_ns(fp)
+                if not fn.endswith('.xsd'):
+                    continue
 
-                    if (target_ns, fn) in seen:
-                        continue
+                fp = os.path.abspath(os.path.join(top, fn))
+                target_ns = utils.get_target_ns(fp)
 
-                    schemalocs[target_ns].append(fp)
-                    seen.append((target_ns, fn))
+                if (target_ns, fn) in seen:
+                    continue
+
+                schemalocs[target_ns].append(fp)
+                seen.append((target_ns, fn))
 
         for ns, loc in self.OVERRIDE_SCHEMALOC.iteritems():
             schemalocs[ns] = [loc]
