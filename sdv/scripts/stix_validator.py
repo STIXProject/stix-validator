@@ -39,8 +39,8 @@ import json
 
 import sdv
 import sdv.codes as codes
-import sdv.errors as errors
 import sdv.utils as utils
+import sdv.errors as errors
 import sdv.validators as validators
 
 # Only print results and/or system errors.

@@ -183,21 +183,50 @@ def get_type_ns(doc, typename):
 
 
 def get_namespace(node):
+    """Returns the namespace for which `node` falls under.
+
+    Args:
+        node: An etree node.
+
+    """
     qname = etree.QName(node)
     return qname.namespace
 
 
 def is_stix(doc):
+    """Attempts to determine if the input `doc` is a STIX XML instance document.
+    If the root-level element falls under a namespace which starts with
+    ``http://stix.mitre.org``, this will return True.
+
+    """
     root = get_etree_root(doc)
     namespace = get_namespace(root)
     return namespace.startswith("http://stix.mitre.org")
 
 
 def is_cybox(doc):
+    """Attempts to determine if the input `doc` is a CybOX XML instance
+    document. If the root-level element falls under a namespace which starts
+    with ``http://cybox.mitre.org``, this will return True.
+
+    """
+
     root = get_etree_root(doc)
     namespace = get_namespace(root)
     return namespace.startswith("http://cybox.mitre.org")
 
 
 def is_version_equal(x, y):
+    """Attempts to determine if the `x` amd `y` version numbers are semantically
+    equivalent.
+
+    Examples:
+        The version strings "2.1.0" and "2.1" represent semantically equivalent
+        versions, despite not being equal strings.
+
+    Args:
+        x: A string version number. Ex: '2.1.0'
+        y: A string version number. Ex: '2.1'
+
+    """
     return StrictVersion(x) == StrictVersion(y)
