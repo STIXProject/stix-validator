@@ -158,7 +158,7 @@ class XmlSchemaValidator(object):
 
         """
         xs_includes = root.findall(TAG_XS_INCLUDE)
-        dir = os.path.dirname(fp)
+        dir_ = os.path.dirname(fp)
 
         includes = []
         for include in xs_includes:
@@ -168,7 +168,7 @@ class XmlSchemaValidator(object):
             if os.path.isabs(loc):
                 locpath = loc
             else:
-                locpath = os.path.abspath(os.path.join(dir, loc))
+                locpath = os.path.abspath(os.path.join(dir_, loc))
 
             includes.append(locpath)
 
