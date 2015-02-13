@@ -25,7 +25,7 @@ def ignored(*exceptions):
         pass
 
 
-def get_xml_parser():
+def get_xml_parser(encoding=None):
     """Returns an ``etree.ETCompatXMLParser`` instance."""
     parser = etree.ETCompatXMLParser(
         huge_tree=True,

@@ -35,7 +35,7 @@ def _load_sdv_mods():
         import sdv.validators as validators
 
 
-def validate_xml(doc, version=None, schemas=None, schemaloc=False):
+def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
     """Performs `XML Schema`_ validation against a `STIX`_ or `CybOX`_ document.
 
     .. _STIX: http://stix.mitre.org/language/
@@ -76,7 +76,9 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False):
 
     """
     _load_sdv_mods()
-    klass = validators.get_xml_validator_class(doc)
+
+    # Get the validator class required to validate `doc`
+    klass = klass or validators.get_xml_validator_class(doc)
 
     try:
         validator = __xml_validators[klass][schemas]
@@ -159,3 +161,57 @@ def validate_profile(doc, profile):
         __profile_validators[profile] = validator
 
     return validator.validate(doc)
+
+
+def profile_to_xslt(profile):
+    """Converts the `STIX Profile`_ `profile` into an XSLT representation.
+
+    .. _STIX Profile: http://stixproject.github.io/documentation/profiles/
+
+    Args:
+        profile: A filename to a STIX Profile document.
+
+    Returns:
+         An ``etree._ElementTree`` XSLT representation of `profile`.
+
+    Raises:
+        .ProfileParseError: If an error occurred while attempting to
+            parse the `profile`.
+
+    """
+    _load_sdv_mods()
+
+    try:
+        validator = __profile_validators[profile]
+    except KeyError:
+        validator = validators.STIXProfileValidator(profile)
+        __profile_validators[profile] = validator
+
+    return validator.xslt
+
+
+def profile_to_schematron(profile):
+    """Converts the `STIX Profile`_ `profile` into a schematron representation.
+
+    .. _STIX Profile: http://stixproject.github.io/documentation/profiles/
+
+    Args:
+        profile: A filename to a STIX Profile document.
+
+    Returns:
+         An ``etree._ElementTree`` Schematron representation of `profile`.
+
+    Raises:
+        .ProfileParseError: If an error occurred while attempting to
+            parse the `profile`.
+
+    """
+    _load_sdv_mods()
+
+    try:
+        validator = __profile_validators[profile]
+    except KeyError:
+        validator = validators.STIXProfileValidator(profile)
+        __profile_validators[profile] = validator
+
+    return validator.schematron

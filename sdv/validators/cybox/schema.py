@@ -50,6 +50,13 @@ class CyboxSchemaValidator(object):
                 "method"
             )
 
+    def _check_root(self, doc):
+        if utils.is_cybox(doc):
+            return
+
+        error = "Input document does not contain a valid CybOX root element."
+        raise errors.ValidationError(error)
+
     def validate(self, doc, version=None, schemaloc=False):
         """Performs XML Schema validation against a CybOX document.
 
@@ -80,6 +87,9 @@ class CyboxSchemaValidator(object):
 
         """
         root = utils.get_etree_root(doc)
+
+        # Check that this is a CybOX document
+        self._check_root(root)
 
         if schemaloc:
             validator = self._xml_validators[self._KEY_SCHEMALOC]
