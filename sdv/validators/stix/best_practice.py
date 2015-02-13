@@ -782,6 +782,13 @@ class STIXBestPracticeValidator(object):
                 "Document did not contain a 'version' attribute"
             )
 
+    def _check_root(self, doc):
+        if utils.is_stix(doc):
+            return
+
+        error = "Input document does not contain a valid STIX root element."
+        raise errors.ValidationError(error)
+
     def validate(self, doc, version=None):
         """Checks that a STIX document aligns with `suggested authoring
         practices`_.
@@ -808,8 +815,9 @@ class STIXBestPracticeValidator(object):
 
         """
         root = utils.get_etree_root(doc)
-        version = version or self._get_version(doc)
+        self._check_root(root)
 
+        version = version or self._get_version(doc)
         stix.check_version(version)
         results = self._run_rules(root, version)
 

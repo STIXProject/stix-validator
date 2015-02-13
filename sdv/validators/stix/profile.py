@@ -1071,6 +1071,13 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return etree.parse(StringIO.StringIO(s))
 
+    def _check_root(self, doc):
+        if utils.is_stix(doc):
+            return
+
+        error = "Input document does not contain a valid STIX root element."
+        raise errors.ValidationError(error)
+
     def validate(self, doc):
         """Validates an XML instance document against a STIX profile.
 
@@ -1087,6 +1094,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         """
         root = utils.get_etree_root(doc)
+        self._check_root(root)
         is_valid = self._schematron.validate(root)
         svrl_report = self._schematron.validation_report
 

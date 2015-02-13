@@ -120,10 +120,6 @@ def validate_best_practices(doc, version=None):
 
     """
     _load_sdv_mods()
-
-    if not utils.is_stix(doc):
-        raise errors.ValidationError("Input document is not a STIX document.")
-
     validator = validators.STIXBestPracticeValidator()
     return validator.validate(doc, version=version)
 
@@ -153,9 +149,6 @@ def validate_profile(doc, profile):
 
     """
     _load_sdv_mods()
-
-    if not utils.is_stix(doc):
-        raise errors.ValidationError("Input document is not a STIX document.")
 
     try:
         validator = __profile_validators[profile]
