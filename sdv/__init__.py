@@ -42,14 +42,17 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
     .. _CybOX: http://cybox.mitre.org/language/
 
     Args:
-        doc: A STIX document to validate. This can be a filename, file-like
-            object, ``etree._Element`` or ``etree._ElementTree`` object.
+        doc: A STIX/CybOX document to validate. This can be a filename,
+            file-like object, ``etree._Element`` or ``etree._ElementTree``
+            object.
         version: The version of the STIX/CybOX document being validated. If
             ``None`` an attempt will be made to extract the version from `doc`.
         schemas: A string path to a directory of STIX/CybOX schemas. If ``None``,
             the validation code will leverage its bundled STIX/CybOX schemas.
         schemaloc: Use ``xsi:schemaLocation`` attribute on `doc` to perform
             validation.
+        klass: Internal use only. The validator klass to use for validating
+            `doc`.
 
     Note:
         The first time running this for a given `schemas` (or no `schemas`)
@@ -66,7 +69,7 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
         .UnknownSTIXVersionError: If `version` is ``None`` and
             `doc` does not contain a ``@version`` attribute value.
         .InvalidSTIXVersionError: If `version` or the ``version``
-            attribute in `doc` contains an invalid STIX version number.
+            attribute in `doc` contains an invalid STIX/CybOX version number.
         .ValidationError: If the class was not initialized with a schema
                 directory and `schemaloc` is ``False``.
         .XMLSchemaImportError: If an error occurs while processing
