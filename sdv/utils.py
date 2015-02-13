@@ -32,7 +32,8 @@ def get_xml_parser(encoding=None):
         resolve_entities=False,
         remove_comments=False,
         strip_cdata=False,
-        remove_blank_text=True
+        remove_blank_text=True,
+        encoding=encoding
     )
 
     return parser
