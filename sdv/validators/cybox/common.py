@@ -8,10 +8,6 @@ import functools
 import sdv.errors as errors
 import sdv.utils as utils
 
-
-NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
-
-TAG_XSI_TYPE = "{%s}type" % NS_XSI
 TAG_CYBOX_MAJOR  = "cybox_major_version"
 TAG_CYBOX_MINOR  = "cybox_minor_version"
 TAG_CYBOX_UPDATE = "cybox_update_version"

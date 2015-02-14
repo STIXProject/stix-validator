@@ -6,14 +6,8 @@ import lxml.isoschematron
 
 # internal
 import sdv.utils as utils
+import sdv.xmlconst as xmlconst
 from sdv.validators.base import (ValidationError, ValidationResults)
-
-
-NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
-NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
-NS_SAXON = "http://icl.com/saxon"   # libxml2 requires this namespace
-NS_SAXON_SF_NET = "http://saxon.sf.net/"
-
 
 class SchematronError(ValidationError):
     """Represents an error found in a SVRL report.
@@ -71,7 +65,7 @@ class SchematronError(ValidationError):
         return self._line
 
     def _parse_message(self, error):
-        message = error.find("{%s}text" % NS_SVRL)
+        message = error.find("{%s}text" % xmlconst.NS_SVRL)
 
         if message is None:
             return ""
@@ -115,7 +109,7 @@ class SchematronValidationResults(ValidationResults):
             return []
 
         xpath = "//svrl:failed-assert | //svrl:successful-report"
-        nsmap = {'svrl': NS_SVRL}
+        nsmap = {'svrl': xmlconst.NS_SVRL}
         errors = svrl_report.xpath(xpath, namespaces=nsmap)
 
         return [SchematronError(self._doc, x) for x in errors]

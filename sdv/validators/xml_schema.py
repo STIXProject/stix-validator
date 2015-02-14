@@ -11,12 +11,8 @@ from lxml import etree
 # internal
 import sdv.errors as errors
 import sdv.utils as utils
+import sdv.xmlconst as xmlconst
 from sdv.validators.base import (ValidationError, ValidationResults)
-
-NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
-NS_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
-TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
-TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
 
 
 class XmlSchemaError(ValidationError):
@@ -157,7 +153,7 @@ class XmlSchemaValidator(object):
             A list of file paths to included schemas.
 
         """
-        xs_includes = root.findall(TAG_XS_INCLUDE)
+        xs_includes = root.findall(xmlconst.TAG_XS_INCLUDE)
         dir_ = os.path.dirname(fp)
 
         includes = []
@@ -436,7 +432,7 @@ class XmlSchemaValidator(object):
         for ns, loc in imports.iteritems():
             loc = loc.replace("\\", "/")
             attrib = dict(namespace=ns, schemaLocation=loc)
-            import_ = etree.Element(TAG_XS_IMPORT, attrib=attrib)
+            import_ = etree.Element(xmlconst.TAG_XS_IMPORT, attrib=attrib)
             xsd.append(import_)
 
         return etree.XMLSchema(xsd)

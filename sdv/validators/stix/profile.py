@@ -15,6 +15,7 @@ from lxml import etree
 # internal
 import sdv.utils as utils
 import sdv.errors as errors
+import sdv.xmlconst as xmlconst
 from sdv.validators.stix import common as stix
 from sdv.validators import schematron
 
@@ -212,7 +213,7 @@ class Profile(collections.MutableSequence):
 
     def _create_rule(self, ctx):
         return etree.XML(
-            '<rule xmlns="%s" context="%s"/>' % (schematron.NS_SCHEMATRON, ctx)
+            '<rule xmlns="%s" context="%s"/>' % (xmlconst.NS_SCHEMATRON, ctx)
         )
 
     @property
@@ -244,7 +245,7 @@ class Profile(collections.MutableSequence):
         rule = self._create_rule("/")
         assertion = etree.XML(
             '<assert xmlns="%s" test="%s" role="error">%s %s</assert> ' %
-            (schematron.NS_SCHEMATRON, test, text, SAXON_LINENO)
+            (xmlconst.NS_SCHEMATRON, test, text, SAXON_LINENO)
         )
 
         rule.append(assertion)
@@ -253,12 +254,12 @@ class Profile(collections.MutableSequence):
 
     def _get_schema_node(self):
         return etree.Element(
-            "{%s}schema" % schematron.NS_SCHEMATRON,
-            nsmap={None: schematron.NS_SCHEMATRON}
+            "{%s}schema" % xmlconst.NS_SCHEMATRON,
+            nsmap={None: xmlconst.NS_SCHEMATRON}
         )
 
     def _pattern(self, rule):
-        ns = schematron.NS_SCHEMATRON
+        ns = xmlconst.NS_SCHEMATRON
         pattern = etree.XML("<pattern xmlns='{0}'/>".format(ns))
         pattern.append(rule)
         return pattern
@@ -271,7 +272,7 @@ class Profile(collections.MutableSequence):
         namespaces = []
 
         for ns, prefix in self._namespaces.iteritems():
-            namespace = etree.Element("{%s}ns" % schematron.NS_SCHEMATRON)
+            namespace = etree.Element("{%s}ns" % xmlconst.NS_SCHEMATRON)
             namespace.set("prefix", prefix)
             namespace.set("uri", ns)
             namespaces.append(namespace)
@@ -372,7 +373,7 @@ class _BaseProfileRule(object):
         """
         args = (
             self.type,                   # 'assert' or 'report'
-            schematron.NS_SCHEMATRON,    # schematron namespace
+            xmlconst.NS_SCHEMATRON,      # schematron namespace
             self.test,                   # test selector
             self.role,                   # "error"
             self.message,                # error message
@@ -556,9 +557,9 @@ class AllowedImplsRule(_BaseProfileRule):
 
     @_BaseProfileRule.message.getter
     def message(self):
-        return "The allowed implementations for {0} are {1}".format(
-            self.path, self.impls
-        )
+        msg = "The allowed implementations for {0} are {1}"
+        msg = msg.format(self.path, self.impls)
+        return msg
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -662,7 +663,7 @@ class ProfileValidationResults(schematron.SchematronValidationResults):
             return None
 
         xpath = "//svrl:failed-assert | //svrl:successful-report"
-        nsmap = {'svrl': schematron.NS_SVRL}
+        nsmap = {'svrl': xmlconst.NS_SVRL}
         errors = svrl_report.xpath(xpath, namespaces=nsmap)
 
         return [ProfileError(self._doc, x) for x in errors]
@@ -834,7 +835,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         """
         value = functools.partial(self._get_value, worksheet)
         is_empty_row = functools.partial(self._is_empty_row, worksheet)
-        nsmap = {schematron.NS_SAXON: 'saxon'}
+        nsmap = {xmlconst.NS_SAXON: 'saxon'}
 
         def check_namespace(ns, alias):
             if not all((ns, alias)):

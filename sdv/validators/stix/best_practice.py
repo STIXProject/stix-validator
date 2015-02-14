@@ -12,6 +12,7 @@ from lxml import etree
 
 # internal
 import sdv.utils as utils
+import sdv.xmlconst as xmlconst
 from sdv.validators.stix import common as stix
 from sdv.validators.base import (ValidationError, ValidationResults)
 
@@ -488,7 +489,7 @@ class STIXBestPracticeValidator(object):
         xpath = "//*[contains(@xsi:type, 'Vocab-')]"
 
         for vocab in root.xpath(xpath, namespaces=namespaces):
-            xsi_type = vocab.attrib[stix.TAG_XSI_TYPE]
+            xsi_type = vocab.attrib[xmlconst.TAG_XSI_TYPE]
             name = stix.parse_vocab_name(xsi_type)
             found = stix.parse_vocab_version(xsi_type)
             expected = stix.get_vocab_version(root, version, xsi_type)

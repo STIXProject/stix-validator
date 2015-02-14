@@ -60,16 +60,6 @@ class STIXSchemaValidator(object):
 
         return validators
 
-    def _get_version(self, doc):
-        try:
-            return stix.get_version(doc)
-        except KeyError:
-            raise errors.UnknownSTIXVersionError(
-                "Unable to validate instance document. STIX version not "
-                "found in instance document and not supplied to validate() "
-                "method"
-            )
-
     @stix.check_stix
     def validate(self, doc, version=None, schemaloc=False):
         """Performs XML Schema validation against a STIX document.
