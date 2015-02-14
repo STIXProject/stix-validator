@@ -52,7 +52,26 @@ class XMLSchemaImportError(ValidationError):
     pass
 
 
-class UnknownSTIXVersionError(ValidationError):
+class UnknownVersionError(ValidationError):
+    """Base Exception for errors raised as a result of not being able to
+    determine the version of an input document.
+
+    """
+    pass
+
+
+class InvalidVersionError(ValidationError):
+    """Base Exception for errors raised as a result of invalid version
+    information being declared for a document, or found within a document.
+
+    """
+    def __init__(self, message, expected=None, found=None):
+        super(InvalidVersionError, self).__init__(message)
+        self.expected = expected
+        self.found = found
+
+
+class UnknownSTIXVersionError(UnknownVersionError):
     """Raised when no STIX version information can be found in an instance
     document and no version information was provided to a method which
     requires version information.
@@ -61,7 +80,7 @@ class UnknownSTIXVersionError(ValidationError):
     pass
 
 
-class InvalidSTIXVersionError(ValidationError):
+class InvalidSTIXVersionError(InvalidVersionError):
     """Raised when an invalid version of STIX is discovered within an instance
     document or is passed into a method which depends on STIX version
     information.
@@ -73,13 +92,10 @@ class InvalidSTIXVersionError(ValidationError):
             found within an instance document.
 
     """
-    def __init__(self, message, expected=None, found=None):
-        super(InvalidSTIXVersionError, self).__init__(message)
-        self.expected = expected
-        self.found = found
+    pass
 
 
-class UnknownCyboxVersionError(ValidationError):
+class UnknownCyboxVersionError(UnknownVersionError):
     """Raised when no CybOX version information can be found in an instance
     document and no version information was provided to a method which
     requires version information.
@@ -88,7 +104,7 @@ class UnknownCyboxVersionError(ValidationError):
     pass
 
 
-class InvalidCyboxVersionError(ValidationError):
+class InvalidCyboxVersionError(InvalidVersionError):
     """Raised when an invalid version of CybOX is discovered within an instance
     document or is passed into a method which depends on CybOX version
     information.
@@ -100,10 +116,7 @@ class InvalidCyboxVersionError(ValidationError):
             found within an instance document.
 
     """
-    def __init__(self, message, expected=None, found=None):
-        super(InvalidCyboxVersionError, self).__init__(message)
-        self.expected = expected
-        self.found = found
+    pass
 
 
 class ProfileParseError(ValidationError):
