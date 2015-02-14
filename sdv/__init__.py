@@ -36,7 +36,7 @@ def _load_sdv_mods():
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
-    """Performs `XML Schema`_ validation against a `STIX`_ or `CybOX`_ document.
+    """Performs XML Schema validation against a `STIX`_ or `CybOX`_ document.
 
     .. _STIX: http://stix.mitre.org/language/
     .. _CybOX: http://cybox.mitre.org/language/
