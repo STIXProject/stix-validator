@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2014 - The MITRE Corporation
+# Copyright (C) 2015 - The MITRE Corporation
 # For license information, see the LICENSE.txt file
 
 import sys
