@@ -4,9 +4,9 @@
 .. module:: sdv.validators.stix.best_practice
 
 .. autoclass:: STIXBestPracticeValidator
-    :members:
-    :undoc-members:
     :show-inheritance:
+
+    .. automethod:: validate(doc, version=None)
 
 .. autoclass:: BestPracticeWarning
     :members: line, as_dict, as_json, core_keys, other_keys

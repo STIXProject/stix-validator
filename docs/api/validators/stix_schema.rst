@@ -4,5 +4,6 @@
 .. module:: sdv.validators.stix.schema
 
 .. autoclass:: STIXSchemaValidator
-    :members: validate
     :show-inheritance:
+
+    .. automethod:: validate(doc, version=None, schemaloc=False)
