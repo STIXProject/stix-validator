@@ -40,23 +40,7 @@ class CyboxSchemaValidator(object):
 
         return validators
 
-    def _get_version(self, doc):
-        try:
-            return cybox.get_version(doc)
-        except KeyError:
-            raise errors.UnknownCyboxVersionError(
-                "Unable to validate instance document. CybOX version not "
-                "found in instance document and not supplied to validate() "
-                "method"
-            )
-
-    def _check_root(self, doc):
-        if utils.is_cybox(doc):
-            return
-
-        error = "Input document does not contain a valid CybOX root element."
-        raise errors.ValidationError(error)
-
+    @cybox.check_cybox
     def validate(self, doc, version=None, schemaloc=False):
         """Performs XML Schema validation against a CybOX document.
 
@@ -88,16 +72,12 @@ class CyboxSchemaValidator(object):
         """
         root = utils.get_etree_root(doc)
 
-        # Check that this is a CybOX document
-        self._check_root(root)
-
         if schemaloc:
             validator = self._xml_validators[self._KEY_SCHEMALOC]
         elif self._is_user_defined:
             validator = self._xml_validators[self._KEY_USER_DEFINED]
         else:
-            version = version or self._get_version(doc)
-            cybox.check_version(version)
+            version = version or cybox.get_version(doc)
             validator = self._xml_validators[version]
 
         results = validator.validate(root, schemaloc)

@@ -1,6 +1,9 @@
 # Copyright (c) 2014, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
+import functools
+
 # internal
 import sdv.errors as errors
 import sdv.utils as utils
@@ -38,9 +41,8 @@ def get_version(doc):
     cybox_update = observables.attrib.get(TAG_CYBOX_UPDATE)
 
     if not any((cybox_major, cybox_minor, cybox_update)):
-        raise errors.UnknownCyboxVersionError(
-            "The input CybOX document has no version information."
-        )
+        error = "The input CybOX document has no version information."
+        raise errors.UnknownCyboxVersionError(error)
 
     if cybox_update not in (None, '0'):
         version = "%s.%s.%s" % (cybox_major, cybox_minor, cybox_update)
@@ -69,3 +71,42 @@ def check_version(version):
         expected=CYBOX_VERSIONS,
         found=version
     )
+
+
+def check_root(doc):
+    if utils.is_cybox(doc):
+        return
+
+    error = "Input document does not contain a valid CybOX root element."
+    raise errors.ValidationError(error)
+
+
+def check_cybox(func):
+    """Decorator which checks that the input document is a STIX document
+    and that it contains a valid STIX version number.
+
+    """
+    @functools.wraps(func)
+    def _check_cybox(*args, **kwargs):
+        try:
+            doc = args[1]
+        except IndexError:
+            doc = kwargs['doc']
+
+        try:
+            version = args[2]
+        except IndexError:
+            version = kwargs.get('version')
+
+        doc = utils.get_etree_root(doc)
+
+        # Check that the root is a valid CybOX root-level element
+        check_root(doc)
+
+        # Get the CybOX document version number and attempt
+        version = version or get_version(doc)
+        check_version(version)
+
+        return func(*args, **kwargs)
+
+    return _check_cybox
