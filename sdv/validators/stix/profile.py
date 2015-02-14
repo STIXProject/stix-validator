@@ -15,6 +15,7 @@ from lxml import etree
 # internal
 import sdv.utils as utils
 import sdv.errors as errors
+from sdv.validators.stix import common as stix
 from sdv.validators import schematron
 
 # Rule worksheet columns
@@ -1071,13 +1072,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return etree.parse(StringIO.StringIO(s))
 
-    def _check_root(self, doc):
-        if utils.is_stix(doc):
-            return
-
-        error = "Input document does not contain a valid STIX root element."
-        raise errors.ValidationError(error)
-
+    @stix.check_stix
     def validate(self, doc):
         """Validates an XML instance document against a STIX profile.
 
@@ -1094,7 +1089,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         """
         root = utils.get_etree_root(doc)
-        self._check_root(root)
         is_valid = self._schematron.validate(root)
         svrl_report = self._schematron.validation_report
 

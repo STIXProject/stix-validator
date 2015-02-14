@@ -3,15 +3,14 @@
 
 # builtin
 import re
-import collections
 import itertools
+import collections
 import distutils.version
 
 # external
 from lxml import etree
 
 # internal
-import sdv.errors as errors
 import sdv.utils as utils
 from sdv.validators.stix import common as stix
 from sdv.validators.base import (ValidationError, ValidationResults)
@@ -764,31 +763,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    def _get_version(self, doc):
-        """Attempts to return the version of the STIX `doc`.
-
-        Args:
-            doc: A STIX document. This can be a filename, file-like object,
-                ``etree._Element`` or ``etree._ElementTree`` instance.
-
-        Returns:
-            The version for the STIX `doc`.
-
-        """
-        try:
-            return stix.get_version(doc)
-        except KeyError:
-            raise errors.UnknownSTIXVersionError(
-                "Document did not contain a 'version' attribute"
-            )
-
-    def _check_root(self, doc):
-        if utils.is_stix(doc):
-            return
-
-        error = "Input document does not contain a valid STIX root element."
-        raise errors.ValidationError(error)
-
+    @stix.check_stix
     def validate(self, doc, version=None):
         """Checks that a STIX document aligns with `suggested authoring
         practices`_.
@@ -815,12 +790,8 @@ class STIXBestPracticeValidator(object):
 
         """
         root = utils.get_etree_root(doc)
-        self._check_root(root)
-
-        version = version or self._get_version(doc)
-        stix.check_version(version)
+        version = version or stix.get_version(doc)
         results = self._run_rules(root, version)
-
         return results
 
 

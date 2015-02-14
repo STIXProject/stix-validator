@@ -1,9 +1,18 @@
+# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# See LICENSE.txt for complete terms.
+
+# builtin
 import re
+import functools
 from distutils.version import StrictVersion
+
+# external
 from lxml import etree
 
+# internal
 import sdv.errors as errors
 import sdv.utils as utils
+
 
 NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 TAG_XSI_TYPE = "{%s}type" % NS_XSI
@@ -331,12 +340,17 @@ def get_version(doc):
         The version of the document.
 
     Raises:
-        KeyError: If the document does not contain a ``version`` attribute
-            on the root node.
+        .UnknownSTIXVersionError: If the document does not contain a
+            ``version`` attribute on the root node.
         .ValidationError: If there are any issues parsing `doc`.
     """
     root = utils.get_etree_root(doc)
-    return root.attrib['version']
+
+    try:
+        return root.attrib['version']
+    except KeyError:
+        error = "Document did not contain a 'version' attribute"
+        raise errors.UnknownSTIXVersionError(error)
 
 
 def check_version(version):
@@ -459,3 +473,42 @@ def get_indicator_observables(root, indicator, namespaces):
             observables.append(obs)
 
     return observables
+
+
+def check_root(doc):
+    if utils.is_stix(doc):
+        return
+
+    error = "Input document does not contain a valid STIX root element."
+    raise errors.ValidationError(error)
+
+
+def check_stix(func):
+    """Decorator which checks that the input document is a STIX document
+    and that it contains a valid STIX version number.
+
+    """
+    @functools.wraps(func)
+    def _check_stix(*args, **kwargs):
+        try:
+            doc = args[1]
+        except IndexError:
+            doc = kwargs['doc']
+
+        try:
+            version = args[2]
+        except IndexError:
+            version = kwargs.get('version')
+
+        doc = utils.get_etree_root(doc)
+
+        # Check that the root is a valid STIX root-level element
+        check_root(doc)
+
+        # Get the STIX document version number and attempt
+        version = version or get_version(doc)
+        check_version(version)
+
+        return func(*args, **kwargs)
+
+    return _check_stix

@@ -70,13 +70,7 @@ class STIXSchemaValidator(object):
                 "method"
             )
 
-    def _check_root(self, doc):
-        if utils.is_stix(doc):
-            return
-
-        error = "Input document does not contain a valid STIX root element."
-        raise errors.ValidationError(error)
-
+    @stix.check_stix
     def validate(self, doc, version=None, schemaloc=False):
         """Performs XML Schema validation against a STIX document.
 
@@ -108,16 +102,12 @@ class STIXSchemaValidator(object):
         """
         root = utils.get_etree_root(doc)
 
-        # check that this is a STIX document
-        self._check_root(root)
-
         if schemaloc:
             validator = self._xml_validators[self._KEY_SCHEMALOC]
         elif self._is_user_defined:
             validator = self._xml_validators[self._KEY_USER_DEFINED]
         else:
-            version = version or self._get_version(doc)
-            stix.check_version(version)
+            version = version or stix.get_version(doc)
             validator = self._xml_validators[version]
 
         results = validator.validate(root, schemaloc)
