@@ -10,7 +10,7 @@ import collections
 import sdv
 import sdv.codes as codes
 import sdv.utils as utils
-import sdv.validators as validators
+import sdv.validators.base as base
 
 _QUIET = False
 
@@ -93,12 +93,8 @@ class ValidationResults(object):
         self.fatal = None
 
 
-class ValidationErrorResults(ValidationResults):
+class ValidationErrorResults(base.ValidationResults):
     """Can be used to communicate a failed validation due to a raised Exception.
-
-    Note:
-        This is only used by the ``stix_validator.py`` script at the moment and
-        not actually returned from any ``validate()`` methods.
 
     Args:
         error: An ``Exception`` instance raised by validation code.
