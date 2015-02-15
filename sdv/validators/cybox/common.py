@@ -5,8 +5,8 @@
 import functools
 
 # internal
-import sdv.errors as errors
-import sdv.utils as utils
+from sdv import errors, utils
+
 
 TAG_CYBOX_MAJOR  = "cybox_major_version"
 TAG_CYBOX_MINOR  = "cybox_minor_version"

@@ -5,11 +5,12 @@
 import lxml.isoschematron
 
 # internal
-import sdv.utils as utils
-import sdv.xmlconst as xmlconst
-from sdv.validators.base import (ValidationError, ValidationResults)
+from sdv import utils, xmlconst
 
-class SchematronError(ValidationError):
+# relative
+from .  import base
+
+class SchematronError(base.ValidationError):
     """Represents an error found in a SVRL report.
 
     Args:
@@ -82,7 +83,7 @@ class SchematronError(ValidationError):
         return dict(message=self.message, line=self.line)
 
 
-class SchematronValidationResults(ValidationResults):
+class SchematronValidationResults(base.ValidationResults):
     """Used to hold results of a Schematron validation process.
 
     Args:

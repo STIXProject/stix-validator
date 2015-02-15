@@ -9,13 +9,13 @@ import collections
 from lxml import etree
 
 # internal
-import sdv.errors as errors
-import sdv.utils as utils
-import sdv.xmlconst as xmlconst
-from sdv.validators.base import (ValidationError, ValidationResults)
+from sdv import errors, utils, xmlconst
+
+# relative
+from . import base
 
 
-class XmlSchemaError(ValidationError):
+class XmlSchemaError(base.ValidationError):
     """Represents an XML Schema validation error.
 
     Args:
@@ -59,7 +59,7 @@ class XmlSchemaError(ValidationError):
         return unicode(self).encode("utf-8")
 
 
-class XmlValidationResults(ValidationResults):
+class XmlValidationResults(base.ValidationResults):
     """Results of XML schema validation. Returned from
     :meth:`XmlSchemaValidator.validate`.
 

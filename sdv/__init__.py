@@ -5,9 +5,9 @@
 import os
 import collections
 
-# internal
-from sdv import errors, utils
-from sdv.version import __version__
+# relative
+from . import errors, utils
+from .version import __version__
 
 # lazy imports
 validators = None

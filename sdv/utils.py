@@ -9,9 +9,8 @@ import contextlib
 from lxml import etree
 from distutils.version import StrictVersion
 
-# internal
-import sdv.errors as errors
-import sdv.xmlconst as xmlconst
+# relative
+from . import errors, xmlconst
 
 @contextlib.contextmanager
 def ignored(*exceptions):

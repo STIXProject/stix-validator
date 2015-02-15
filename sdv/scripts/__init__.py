@@ -93,6 +93,34 @@ class ValidationResults(object):
         self.fatal = None
 
 
+class ValidationErrorResults(ValidationResults):
+    """Can be used to communicate a failed validation due to a raised Exception.
+
+    Note:
+        This is only used by the ``stix_validator.py`` script at the moment and
+        not actually returned from any ``validate()`` methods.
+
+    Args:
+        error: An ``Exception`` instance raised by validation code.
+
+    Attributes:
+        is_valid: Always ``False``.
+        error: The string representation of the Exception being passed in.
+        exception: The exception which produced these results.
+
+    """
+    def __init__(self, error):
+        self._is_valid = False
+        self.error = str(error)
+        self.exception = error
+
+    def as_dict(self):
+        d = super(ValidationErrorResults, self).as_dict()
+        d['error'] = self.error
+
+        return d
+
+
 class ArgumentError(Exception):
     """An exception to be raised when invalid or incompatible arguments are
     passed into the application via the command line.
@@ -483,7 +511,7 @@ def validate_file(fn, options):
             info(msg)
 
     except Exception as ex:
-        results.fatal = validators.ValidationErrorResults(ex)
+        results.fatal = ValidationErrorResults(ex)
         msg = (
             "Unexpected error occurred with file '{0}'. No further validation "
             "will be performed: {1}"

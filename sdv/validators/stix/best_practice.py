@@ -11,10 +11,12 @@ import distutils.version
 from lxml import etree
 
 # internal
-import sdv.utils as utils
-import sdv.xmlconst as xmlconst
-from sdv.validators.stix import common as stix
-from sdv.validators.base import (ValidationError, ValidationResults)
+from sdv import utils, xmlconst
+
+# relative
+from . import common
+from .. import base
+
 
 # Python 2.6 doesn't have collections.OrderedDict :(
 try:
@@ -55,7 +57,7 @@ class BestPracticeMeta(type):
         return result
 
 
-class BestPracticeWarning(collections.MutableMapping, ValidationError):
+class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
     """Represents a best practice warning. These are built within best
     practice rule checking methods and attached to
     :class:`BestPracticeWarningCollection` instances.
@@ -81,7 +83,7 @@ class BestPracticeWarning(collections.MutableMapping, ValidationError):
 
     """
     def __init__(self, node, message=None):
-        ValidationError.__init__(self)
+        base.ValidationError.__init__(self)
 
         self._inner = OrderedDict()
         self._node = node
@@ -235,18 +237,18 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         return {self.name: [x.as_dict() for x in self]}
 
 
-class BestPracticeValidationResults(ValidationResults, collections.MutableSequence):
+class BestPracticeValidationResults(base.ValidationResults, collections.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
     like a ``list`` and accepts instances of
     :class:`BestPracticeWarningCollection`.
 
     """
     def __init__(self):
-        ValidationResults.__init__(self, False)
+        base.ValidationResults.__init__(self, False)
 
         self._warnings = []
 
-    @ValidationResults.is_valid.getter
+    @base.ValidationResults.is_valid.getter
     def is_valid(self):
         """Returns ``True`` if an instance of this class contains no warning
         collections or only contains only warning collections.
@@ -308,7 +310,7 @@ class BestPracticeValidationResults(ValidationResults, collections.MutableSequen
               dictionaries.
 
         """
-        d = ValidationResults.as_dict(self)
+        d = base.ValidationResults.as_dict(self)
 
         if any(self):
             d['errors'] = [x.as_dict() for x in self if x]
@@ -332,8 +334,8 @@ class STIXBestPracticeValidator(object):
 
         """
         to_check = itertools.chain(
-            stix.STIX_CORE_COMPONENTS,
-            stix.CYBOX_CORE_COMPONENTS
+            common.STIX_CORE_COMPONENTS,
+            common.CYBOX_CORE_COMPONENTS
         )
         results = BestPracticeWarningCollection('Missing IDs')
         xpath = " | ".join("//%s" % x for x in to_check)
@@ -355,8 +357,8 @@ class STIXBestPracticeValidator(object):
 
         """
         to_check = itertools.chain(
-            stix.STIX_CORE_COMPONENTS,
-            stix.CYBOX_CORE_COMPONENTS
+            common.STIX_CORE_COMPONENTS,
+            common.CYBOX_CORE_COMPONENTS
         )
         regex = re.compile(r'\w+:\w+-')
         results = BestPracticeWarningCollection('ID Format')
@@ -415,7 +417,7 @@ class STIXBestPracticeValidator(object):
 
         """
         def is_invalid(node):
-            if stix.is_idref_content_exception(node):
+            if common.is_idref_content_exception(node):
                 return False
             return bool(node.text) or len(node.findall('*')) > 0
 
@@ -434,12 +436,12 @@ class STIXBestPracticeValidator(object):
 
         """
         to_check = (
-            "{0}:Indicator".format(stix.PREFIX_STIX_CORE),
-            "{0}:Indicator".format(stix.PREFIX_STIX_COMMON)
+            "{0}:Indicator".format(common.PREFIX_STIX_CORE),
+            "{0}:Indicator".format(common.PREFIX_STIX_COMMON)
         )
         results = BestPracticeWarningCollection("Indicator Suggestions")
         xpath = " | ".join("//%s" % x for x in to_check)
-        ns = namespaces[stix.PREFIX_STIX_INDICATOR]
+        ns = namespaces[common.PREFIX_STIX_INDICATOR]
 
         for indicator in root.xpath(xpath, namespaces=namespaces):
             missing = []
@@ -465,7 +467,7 @@ class STIXBestPracticeValidator(object):
     @rule('1.0')
     def _check_root_element(self, root, namespaces, version):
         """Checks that the root element is a STIX_Package."""
-        ns = namespaces[stix.PREFIX_STIX_CORE]
+        ns = namespaces[common.PREFIX_STIX_CORE]
         results = BestPracticeWarningCollection("Root Element")
 
         if root.tag != "{%s}STIX_Package" % (ns):
@@ -490,9 +492,9 @@ class STIXBestPracticeValidator(object):
 
         for vocab in root.xpath(xpath, namespaces=namespaces):
             xsi_type = vocab.attrib[xmlconst.TAG_XSI_TYPE]
-            name = stix.parse_vocab_name(xsi_type)
-            found = stix.parse_vocab_version(xsi_type)
-            expected = stix.get_vocab_version(root, version, xsi_type)
+            name = common.parse_vocab_name(xsi_type)
+            found = common.parse_vocab_version(xsi_type)
+            expected = common.get_vocab_version(root, version, xsi_type)
 
             if found == expected:
                 continue
@@ -511,7 +513,7 @@ class STIXBestPracticeValidator(object):
         the latest version.
 
         """
-        to_check = stix.STIX_COMPONENT_VERSIONS[version]
+        to_check = common.STIX_COMPONENT_VERSIONS[version]
         results = BestPracticeWarningCollection('Latest Component Versions')
 
         def _is_expected(node, expected):
@@ -544,7 +546,7 @@ class STIXBestPracticeValidator(object):
 
         """
         results = BestPracticeWarningCollection("Timestamp Use")
-        to_check = stix.STIX_CORE_COMPONENTS
+        to_check = common.STIX_CORE_COMPONENTS
         xpath = " | ".join("//%s" % x for x in to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
 
@@ -592,20 +594,20 @@ class STIXBestPracticeValidator(object):
     def _check_titles(self, root, namespaces, version):
         """Checks that all major STIX constructs have a Title element."""
         to_check = (
-            '{0}:STIX_Package/{0}:STIX_Header'.format(stix.PREFIX_STIX_CORE),
-            '{0}:Campaign'.format(stix.PREFIX_STIX_CORE),
-            '{0}:Campaign'.format(stix.PREFIX_STIX_COMMON),
-            '{0}:Course_Of_Action'.format(stix.PREFIX_STIX_CORE),
-            '{0}:Course_Of_Action'.format(stix.PREFIX_STIX_COMMON),
-            '{0}:Exploit_Target'.format(stix.PREFIX_STIX_CORE),
-            '{0}:Exploit_Target'.format(stix.PREFIX_STIX_COMMON),
-            '{0}:Incident'.format(stix.PREFIX_STIX_CORE),
-            '{0}:Incident'.format(stix.PREFIX_STIX_COMMON),
-            '{0}:Indicator'.format(stix.PREFIX_STIX_CORE),
-            '{0}:Indicator'.format(stix.PREFIX_STIX_COMMON),
-            '{0}:Threat_Actor'.format(stix.PREFIX_STIX_COMMON),
-            '{0}:TTP'.format(stix.PREFIX_STIX_CORE),
-            '{0}:TTP'.format(stix.PREFIX_STIX_COMMON)
+            '{0}:STIX_Package/{0}:STIX_Header'.format(common.PREFIX_STIX_CORE),
+            '{0}:Campaign'.format(common.PREFIX_STIX_CORE),
+            '{0}:Campaign'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Course_Of_Action'.format(common.PREFIX_STIX_CORE),
+            '{0}:Course_Of_Action'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Exploit_Target'.format(common.PREFIX_STIX_CORE),
+            '{0}:Exploit_Target'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Incident'.format(common.PREFIX_STIX_CORE),
+            '{0}:Incident'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Indicator'.format(common.PREFIX_STIX_CORE),
+            '{0}:Indicator'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(common.PREFIX_STIX_COMMON),
+            '{0}:TTP'.format(common.PREFIX_STIX_CORE),
+            '{0}:TTP'.format(common.PREFIX_STIX_COMMON)
         )
         results = BestPracticeWarningCollection("Missing Titles")
         xpath = " | ".join("//%s" % x for x in to_check)
@@ -628,7 +630,7 @@ class STIXBestPracticeValidator(object):
 
         """
         results = BestPracticeWarningCollection("Data Marking Control XPath")
-        xpath = "//%s:Controlled_Structure" % stix.PREFIX_DATA_MARKING
+        xpath = "//%s:Controlled_Structure" % common.PREFIX_DATA_MARKING
 
         def _test_xpath(node):
             """Checks that the xpath found on `node` meets the following
@@ -677,8 +679,8 @@ class STIXBestPracticeValidator(object):
         )
 
         selectors = (
-            "//{0}:Indicator".format(stix.PREFIX_STIX_CORE),
-            "//{0}:Indicator".format(stix.PREFIX_STIX_COMMON)
+            "//{0}:Indicator".format(common.PREFIX_STIX_CORE),
+            "//{0}:Indicator".format(common.PREFIX_STIX_COMMON)
         )
 
         xpath = " | ".join(selectors)
@@ -703,12 +705,12 @@ class STIXBestPracticeValidator(object):
 
             """
             for indicator in indicators:
-                observables = stix.get_indicator_observables(
+                observables = common.get_indicator_observables(
                     root, indicator, namespaces
                 )
                 yield (indicator, observables)
 
-        xpath = ".//{0}:Properties".format(stix.PREFIX_CYBOX_CORE)
+        xpath = ".//{0}:Properties".format(common.PREFIX_CYBOX_CORE)
         for indicator, observables in _get_observables(indicators):
             id_ = indicator.attrib.get('id', 'No ID Found')
 
@@ -754,7 +756,7 @@ class STIXBestPracticeValidator(object):
         against the `root` document.
 
         """
-        namespaces = stix.get_stix_namespaces(version)
+        namespaces = common.get_stix_namespaces(version)
         results = BestPracticeValidationResults()
         rules = self._get_rules(version)
 
@@ -764,12 +766,12 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @stix.check_stix
+    @common.check_stix
     def validate(self, doc, version=None):
         """Checks that a STIX document aligns with `suggested authoring
         practices`_.
 
-        .. _suggested authoring practices: http://stix.roject.github.io/documentation/suggested-practices/
+        .. _suggested authoring practices: http://common.roject.github.io/documentation/suggested-practices/
 
         Args:
             doc: The STIX document. Can be a filename, file-like object,
@@ -791,7 +793,7 @@ class STIXBestPracticeValidator(object):
 
         """
         root = utils.get_etree_root(doc)
-        version = version or stix.get_version(doc)
+        version = version or common.get_version(doc)
         results = self._run_rules(root, version)
         return results
 

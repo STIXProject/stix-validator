@@ -13,11 +13,12 @@ import xlrd
 from lxml import etree
 
 # internal
-import sdv.utils as utils
-import sdv.errors as errors
-import sdv.xmlconst as xmlconst
-from sdv.validators.stix import common as stix
-from sdv.validators import schematron
+from sdv import errors, utils, xmlconst
+
+# relative
+from . import common
+from .. import schematron
+
 
 # Rule worksheet columns
 COL_FIELD_NAME     = 0
@@ -1073,7 +1074,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return etree.parse(StringIO.StringIO(s))
 
-    @stix.check_stix
+    @common.check_stix
     def validate(self, doc):
         """Validates an XML instance document against a STIX profile.
 

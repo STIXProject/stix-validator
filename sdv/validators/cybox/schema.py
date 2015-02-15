@@ -7,8 +7,11 @@ import os
 # internal
 import sdv
 import sdv.utils as utils
-from sdv.validators import xml_schema as xml
-from sdv.validators.cybox import common as cybox
+
+# relative
+from . import common as cybox
+from .. import xml_schema as xml
+
 
 
 class CyboxSchemaValidator(object):

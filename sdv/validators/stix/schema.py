@@ -7,9 +7,10 @@ import os
 # internal
 import sdv
 import sdv.utils as utils
-import sdv.errors as errors
-from sdv.validators import xml_schema as xml
-from sdv.validators.stix import common as stix
+
+# relative
+from . import common as stix
+from .. import xml_schema as xml
 
 
 class _XmlSchemaValidator(xml.XmlSchemaValidator):
