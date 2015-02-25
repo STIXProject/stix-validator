@@ -481,10 +481,8 @@ def check_root(doc):
 
 
 def check_stix(func):
-    """Decorator which checks that the input document is a STIX document
-    and that it contains a valid STIX version number.
+    """Decorator which checks that the input document is a STIX document."""
 
-    """
     @functools.wraps(func)
     def _check_stix(*args, **kwargs):
         try:
@@ -492,19 +490,11 @@ def check_stix(func):
         except IndexError:
             doc = kwargs['doc']
 
-        try:
-            version = args[2]
-        except IndexError:
-            version = kwargs.get('version')
-
-        doc = utils.get_etree_root(doc)
+        # Get the root element for the input doc
+        root = utils.get_etree_root(doc)
 
         # Check that the root is a valid STIX root-level element
-        check_root(doc)
-
-        # Get the STIX document version number and attempt
-        version = version or get_version(doc)
-        check_version(version)
+        check_root(root)
 
         return func(*args, **kwargs)
 
