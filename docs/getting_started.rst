@@ -1,7 +1,7 @@
 Getting Started
 ===============
 
-This page gives an introduction to **stix-validator** and how to use it.  Please
+This page gives an introduction to **stix-validator** scripts. Please
 note that this page is being actively worked on and feedback is welcome! If
 you have a suggestion or something doesn't look right, let us know:
 (stix@mitre.org).
@@ -20,16 +20,21 @@ you have any issues, please refer to the instructions found on the
 Scripts
 -------
 
-These instructions tell you how to validate STIX content using the
+The **stix-validator** library comes with two scripts capable of performing
+the validation of STIX and CybOX documents: ``stix_validator.py`` and
+``cybox_validator.py``. These scripts can be found on your ``PATH`` after
+installing the **stix-validator**.
+
+These instructions tell you how to validate STIX and CybOX content using the
 scripts bundled with **stix-validator**.
 
 
 STIX Document Validator
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Currently, the only script bundled with **stix-validator** is the
-``stix_validator.py`` script, which can be found on your ``PATH`` after
-installing **stix-validator**.
+The ``stix_validator.py`` script can be used to validate STIX content in
+a number of ways. The following sections describe the validation options
+and expected behavior of the ``stix_validator.py`` script.
 
 Options
 ^^^^^^^
@@ -46,7 +51,7 @@ Running :code:`stix_validator.py -h` displays the following:
                              [--quiet] [--json-results]
                              [FILES [FILES ...]]
 
-    STIX Document Validator v2.0.0
+    STIX Document Validator v2.1
 
     positional arguments:
       FILES                 A whitespace separated list of STIX files or
@@ -85,7 +90,6 @@ something like the following:
 
 .. code-block:: bash
 
-    [-] Initializing STIX XML Schema validator
     [-] Performing xml schema validation on stix-content.xml
     [-] Performing xml schema validation on another-stix-doc.xml
     ============================================================
@@ -95,17 +99,83 @@ something like the following:
     [-] Results: another-stix-doc.xml
     [+] XML Schema: True
 
+
+CybOX Document Validator
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``cybox_validator.py`` script can be used to perform XML Schema validation
+on one or more input CybOX documents. The following sections describe the
+validation options and expected behavior of the ``cybox_validator.py`` script.
+
+Options
+^^^^^^^
+
+The ``cybox_validator.py`` script provides CybOX XML Schema validation
+capabilities to your command line.
+
+.. code-block:: bash
+
+    $ cybox_validator.py -h
+    usage: cybox_validator.py [-h] [--cybox-version LANG_VERSION]
+                              [--schema-dir SCHEMA_DIR] [--use-schemaloc]
+                              [--quiet] [--json-results] [--recursive]
+                              [FILES [FILES ...]]
+
+    CybOX Document Validator v2.1
+
+    positional arguments:
+      FILES                 A whitespace separated list of CybOX files or
+                            directories of CybOX files to validate.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --cybox-version LANG_VERSION
+                            The version of CybOX to validate against
+      --schema-dir SCHEMA_DIR
+                            Schema directory. If not provided, the CybOX schemas
+                            bundled with the stix-validator library will be used.
+      --use-schemaloc       Use schemaLocation attribute to determine schema
+                            locations.
+      --quiet               Only print results and errors if they occur.
+      --json-results        Print results as raw JSON. This also sets --quiet.
+      --recursive           Recursively descend into input directories.
+
+Example CybOX Schema Validation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To perform xml schema validation, just pass in a path to the CybOX filename,
+filenames, and/or directories containing CybOX content.
+
+.. code-block:: bash
+
+    $ cybox_validator.py cybox-content.xml another-cybox-doc.xml
+
+If these documents were valid, the ``cybox_validator.py`` script would print
+something like the following:
+
+.. code-block:: bash
+
+    [-] Performing xml schema validation on cybox-content.xml
+    [-] Performing xml schema validation on another-cybox-doc.xml
+    ============================================================
+    [-] Results: cybox-content.xml
+    [+] XML Schema: True
+    ============================================================
+    [-] Results: another-cybox-doc.xml
+    [+] XML Schema: True
+
+
 Exit Codes
-^^^^^^^^^^
+~~~~~~~~~~
 
 Exit status codes for the **stix-validator** bundled scripts are
 defined within :mod:`sdv.codes` module.
 
-When invoking the ``stix_validator.py`` script from another process, developers
-can inspect the exit code after execution to determine the results of the
-validation attempt. Exit status codes can be combined via bitmasks to convey
-multiple results (multiple files validated and/or multiple validation methods
-selected).
+When invoking the ``stix_validator.py`` or ``cybox_validator.py`` scripts from
+another process, developers can inspect the exit code after execution to
+determine the results of the validation attempt. Exit status codes can be
+combined via bitmasks to convey multiple results (multiple files validated
+and/or multiple validation methods selected).
 
 The following script demonstrates an example of invoking ``stix-validator.py``
 from another Python script.
@@ -150,7 +220,7 @@ from another Python script.
 
 .. note::
 
-    Invoking ``stix_validator.py`` as a subprocess may not always be the best
-    method for validating STIX documents from a Python script. The :mod:`sdv`
-    module contains methods for performing STIX XML, Best Practice, and Profile
-    validation!
+    Invoking ``stix_validator.py`` or ``cybox_validator.py`` as a subprocess
+    may not always be the best method for validating STIX documents from a
+    Python script. The :mod:`sdv` module contains methods for performing STIX
+    and CybOX validation!

@@ -1,35 +1,37 @@
-STIX XML Schema Validation
-==========================
+XML Schema Validation
+=====================
 
 The **stix-validator** library provides methods and data types to help perform
-STIX XML Schema validation. The **stix-validator** library bundles all versions
-of STIX XML Schema files with it, but also supports the ability to validate
-validate against external directories of schemas or remote schema locations.
+STIX and CybOX XML Schema validation. The **stix-validator** library bundles
+all versions of STIX and CybOX XML Schema files with it, but also supports the
+ability to validate validate against external directories of schemas or
+remote, web-accessible schema locations.
 
 The following code examples demonstrate different ways you can utilize the
-STIX XML Schema validation capabilities in **stix-validator**.
+STIX and CyOX XML Schema validation capabilities in **stix-validator**.
 
 .. contents::
     :depth: 2
 
-Validating STIX Documents
--------------------------
+Validating STIX and CybOX Documents
+-----------------------------------
 
 The **stix-validator** :meth:`sdv.validate_xml` method can be used to validate
-STIX XML files or file-like objects.
+STIX and CybOX XML files or file-like objects.
 
 .. code-block:: python
 
     import sdv
 
-    # Validate the 'stix-content.xml' STIX document using bundled STIX schemas.
-    results = sdv.validate_xml('stix-content.xml')
+    # Validate the 'xml-content.xml' STIX/CybOX document using bundled XML schemas.
+    results = sdv.validate_xml('xml-content.xml')
 
     # Print the result!
     print results.is_valid
 
-The :meth:`sdv.validate_xml` method acts as a proxy to the
-:class:`.STIXSchemaValidator` class and is equivalent to the following:
+When validating STIX content, The :meth:`sdv.validate_xml` method acts as a
+proxy to the :class:`.STIXSchemaValidator` class and is equivalent to the
+following:
 
 .. code-block:: python
 
@@ -38,18 +40,21 @@ The :meth:`sdv.validate_xml` method acts as a proxy to the
     # Create the validator instance
     validator = STIXSchemaValidator()
 
-    # Validate 'stix-content.xml` STIX document using bundled STIX schemas
-    results = validator.validate('stix-content.xml')
+    # Validate 'xml-content.xml` STIX document using bundled STIX schemas
+    results = validator.validate('xml-content.xml')
 
     # Print the results!
     print results.is_valid
 
 
-The examples above pass the ``'stix-content.xml'`` filename into
+When validating CybOX content, the :meth:`sdv.validate_xml` method passes its
+input to the :class:`.CyboxSchemaValidator` class.
+
+The examples above pass the ``'xml-content.xml'`` filename into
 :meth:`sdv.validate_xml` and :meth:`.STIXSchemaValidator.validate`, but these
-methods can also accept file-like objects (such as files on disk or
-``StringIO`` instances), ``etree._Element`` instances, or
-``etree._ElementTree`` instances. Neato!
+methods (and all other validation methods) can also accept file-like objects
+(such as files on disk or ``StringIO`` instances), ``etree._Element``
+instances, or ``etree._ElementTree`` instances. Super duper neato!
 
 
 Using Non-bundled Schemas
@@ -77,12 +82,12 @@ directory containing all the schemas required for validation.
 
     Validating against external schema directories requires that **all**
     schemas necessary for validation be found under the directory. This
-    includes STIX schemas.
+    includes STIX schemas!
 
 Using ``xsi:schemaLocation``
 ----------------------------
 
-STIX content that contains an ``xsi:schemaLocation`` attribute referring to
+XML content that contains an ``xsi:schemaLocation`` attribute referring to
 external schemas can be validated using the ``xsi:schemaLocation`` value
 by making use of the ``schemaloc`` parameter,
 
@@ -90,21 +95,20 @@ by making use of the ``schemaloc`` parameter,
 
     import sdv
 
-    # Use the xsi:schemaLocation attribute to resolve STIX schemas
-    results = sdv.validate_xml('stix-content.xml', schemaloc=True)
+    # Use the xsi:schemaLocation attribute to resolve remote schemas
+    results = sdv.validate_xml('xml-content.xml', schemaloc=True)
 
     # Print the results!
     print results.is_valid
 
-STIX Versions
--------------
+STIX and CybOX Versions
+-----------------------
 
 By default, the **stix-validator** will attempt to determine the version of the
-input STIX document by inspecting the ``@version`` attribute on the top-level
-``STIX_Package`` element.
+input STIX/CybOX document by inspecting the document for version information.
 
-If the ``@version`` attribute is not found on a document, users must declare
-a version for the STIX document via the ``version`` parameter:
+If the input document contains no version information, users must declare
+a version for the STIX/CybOX document via the ``version`` parameter:
 
 .. code-block:: python
 
@@ -117,15 +121,24 @@ a version for the STIX document via the ``version`` parameter:
     # Print the result!
     print results.is_valid
 
-If a version is not passed in or found on the document, an
-:class:`.UnknownSTIXVersionError` exception is raised. If an invalid version
-is found or declared for the STIX document, an
-:class:`.InvalidSTIXVersionError` exception is raised.
+Unknown Versions
+~~~~~~~~~~~~~~~~
 
-.. note::
+If a version is not passed in nor found on the document, one of the following
+:class:`.UnknownVersionError` implementations are raised:
 
-    Both the ``version`` parameter and ``@version`` attribute are ignored if
-    users pass in ``schemaloc`` or ``schemas`` parameters.
+* :class:`.UnknownSTIXVersionError` if validating a STIX document.
+* :class:`.UnknownCyboxVersionError` if validating a CybOX document.
+
+Invalid Versions
+~~~~~~~~~~~~~~~~
+
+If an invalid version is passed in nor found on the document, one of the
+following :class:`.InvalidVersionError` implementations are raised:
+
+* :class:`.InvalidSTIXVersionError` if validating a STIX document.
+* :class:`.InvalidCyboxVersionError` if validating a CybOX document.
+
 
 Retrieving XML Schema Validation Errors
 ---------------------------------------
@@ -137,10 +150,8 @@ The XmlValidationResults Class
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 XML Schema validation results are communicated via the
-:class:`.XmlValidationResults` and :class:`.XmlSchemaError` classes.
-
-The :meth:`sdv.validate_xml` and :meth:`.STIXSchemaValidator.validate` methods
-both return an instance of :class:`.XmlValidationResults`.
+:class:`.XmlValidationResults` and :class:`.XmlSchemaError` classes. The
+:meth:`sdv.validate_xml` returns an instance of :class:`.XmlValidationResults`.
 
 To determine if a document was valid, users only need to inspect the
 ``is_valid`` property:
@@ -149,8 +160,8 @@ To determine if a document was valid, users only need to inspect the
 
     import sdv
 
-    # Validate the 'stix-content.xml' STIX document using bundled STIX schemas.
-    results = sdv.validate_xml('stix-content.xml')
+    # Validate the 'xml-content.xml' input document using bundled schemas.
+    results = sdv.validate_xml('xml-content.xml')
 
     # Print the result!
     print results.is_valid
@@ -166,9 +177,9 @@ errors and methods for accessing those details.
 
     import sdv
 
-    results = sdv.validate_xml('stix-content.xml')
+    results = sdv.validate_xml('xml-content.xml')
 
-    # If 'stix-content.xml' is invalid, print each error
+    # If 'xml-content.xml' is invalid, print each error
     if not results.is_valid:
         for error in results.errors:
             print "Line Number:", error.line
@@ -186,8 +197,8 @@ use of the :meth:`.XmlValidationResults.as_dict()` and
 
     import sdv
 
-    # Validate 'stix-content.xml'
-    results = sdv.validate_xml('stix-content.xml')
+    # Validate 'xml-content.xml'
+    results = sdv.validate_xml('xml-content.xml')
 
     # Retrieve results as dictionary
     result_dictionary = results.as_dict()  # returns {'result': True} if valid

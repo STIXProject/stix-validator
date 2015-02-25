@@ -1,4 +1,4 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # builtin
@@ -12,10 +12,7 @@ from lxml import etree
 # internal
 import sdv.errors as errors
 import sdv.utils as utils
-
-
-NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
-TAG_XSI_TYPE = "{%s}type" % NS_XSI
+import sdv.xmlconst as xmlconst
 
 PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'
@@ -401,7 +398,7 @@ def get_stix_namespaces(version):
     # between revisions of STIX. There is no need to look up specific sets
     # of namespaces for a given version of STIX.
     nsmap = {
-        PREFIX_XSI: NS_XSI,
+        PREFIX_XSI: xmlconst.NS_XSI,
         PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',
         PREFIX_STIX_COMMON: 'http://stix.mitre.org/common-1',
         PREFIX_STIX_CAMPAIGN: 'http://stix.mitre.org/Campaign-1',

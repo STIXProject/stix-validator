@@ -2,7 +2,7 @@ Code Examples
 =============
 
 The following sections provide examples of how to perform
-STIX XML Schema, Profile, and "Best Practices" validation with
+XML Schema, STIX Profile, and STIX "Best Practices" validation with
 **stix-validator**.
 
 .. toctree::

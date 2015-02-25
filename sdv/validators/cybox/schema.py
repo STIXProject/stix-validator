@@ -1,4 +1,4 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # builtin
@@ -7,9 +7,11 @@ import os
 # internal
 import sdv
 import sdv.utils as utils
-import sdv.errors as errors
-from sdv.validators import xml_schema as xml
-from sdv.validators.cybox import common as cybox
+
+# relative
+from . import common as cybox
+from .. import xml_schema as xml
+
 
 
 class CyboxSchemaValidator(object):

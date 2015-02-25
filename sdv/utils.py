@@ -1,3 +1,6 @@
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
+# See LICENSE.txt for complete terms.
+
 # builtin
 import os
 import contextlib
@@ -6,12 +9,8 @@ import contextlib
 from lxml import etree
 from distutils.version import StrictVersion
 
-# internal
-import sdv.errors as errors
-
-NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
-TAG_XSI_TYPE = "{%s}type" % NS_XSI
-TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
+# relative
+from . import errors, xmlconst
 
 @contextlib.contextmanager
 def ignored(*exceptions):
@@ -97,7 +96,7 @@ def get_schemaloc_pairs(node):
         KeyError: If `node` does not have an xsi:schemaLocation attribute.
 
     """
-    schemalocs = node.attrib[TAG_SCHEMALOCATION]
+    schemalocs = node.attrib[xmlconst.TAG_SCHEMALOCATION]
     l = schemalocs.split()
     pairs = zip(l[::2], l[1::2])
 

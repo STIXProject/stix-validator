@@ -1,13 +1,13 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # builtin
 import os
 import collections
 
-# internal
-from sdv import errors, utils
-from sdv.version import __version__
+# relative
+from . import errors, utils
+from .version import __version__
 
 # lazy imports
 validators = None
@@ -36,7 +36,7 @@ def _load_sdv_mods():
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
-    """Performs `XML Schema`_ validation against a `STIX`_ or `CybOX`_ document.
+    """Performs XML Schema validation against a `STIX`_ or `CybOX`_ document.
 
     .. _STIX: http://stix.mitre.org/language/
     .. _CybOX: http://cybox.mitre.org/language/
@@ -51,7 +51,7 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
             the validation code will leverage its bundled STIX/CybOX schemas.
         schemaloc: Use ``xsi:schemaLocation`` attribute on `doc` to perform
             validation.
-        klass: Internal use only. The validator klass to use for validating
+        klass: **Internal use only**. The validator klass to use for validating
             `doc`.
 
     Note:
@@ -68,8 +68,12 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
             processing `schemas`.
         .UnknownSTIXVersionError: If `version` is ``None`` and
             `doc` does not contain a ``@version`` attribute value.
+        .UnknownCyboxVersionError: If `version` is ``None`` and `doc` does not
+            contain CybOX version information.
         .InvalidSTIXVersionError: If `version` or the ``version``
-            attribute in `doc` contains an invalid STIX/CybOX version number.
+            attribute in `doc` contains an invalid STIX version number.
+        .InvalidCyboxVersionError: if `version` or the version information on
+            `doc` contain an invalid CybOX version number.
         .ValidationError: If the class was not initialized with a schema
                 directory and `schemaloc` is ``False``.
         .XMLSchemaImportError: If an error occurs while processing
@@ -113,6 +117,7 @@ def validate_best_practices(doc, version=None):
 
     Raises:
         IOError: If `doc` is not a valid XML document.
+        .ValidationError: If `doc` is not a well-formed STIX document.
         .UnknownSTIXVersionError: If `version` is ``None`` and
             `doc` does not contain version information.
         .InvalidSTIXVersionError: If `version` or the ``@version`` attribute
@@ -144,6 +149,8 @@ def validate_profile(doc, profile):
 
     Raises:
         IOError: If `doc` is not a valid XML document.
+        .ValidationError: If the input document is not a well-formed STIX
+            document.
         .ProfileParseError: If an error occurred while attempting to
             parse the `profile`.
 

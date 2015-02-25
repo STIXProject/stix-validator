@@ -1,17 +1,13 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # builtin
 import functools
 
 # internal
-import sdv.errors as errors
-import sdv.utils as utils
+from sdv import errors, utils
 
 
-NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
-
-TAG_XSI_TYPE = "{%s}type" % NS_XSI
 TAG_CYBOX_MAJOR  = "cybox_major_version"
 TAG_CYBOX_MINOR  = "cybox_minor_version"
 TAG_CYBOX_UPDATE = "cybox_update_version"

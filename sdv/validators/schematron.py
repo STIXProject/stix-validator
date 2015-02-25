@@ -1,21 +1,16 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # external
 import lxml.isoschematron
 
 # internal
-import sdv.utils as utils
-from sdv.validators.base import (ValidationError, ValidationResults)
+from sdv import utils, xmlconst
 
+# relative
+from .  import base
 
-NS_SVRL = "http://purl.oclc.org/dsdl/svrl"
-NS_SCHEMATRON = "http://purl.oclc.org/dsdl/schematron"
-NS_SAXON = "http://icl.com/saxon"   # libxml2 requires this namespace
-NS_SAXON_SF_NET = "http://saxon.sf.net/"
-
-
-class SchematronError(ValidationError):
+class SchematronError(base.ValidationError):
     """Represents an error found in a SVRL report.
 
     Args:
@@ -71,7 +66,7 @@ class SchematronError(ValidationError):
         return self._line
 
     def _parse_message(self, error):
-        message = error.find("{%s}text" % NS_SVRL)
+        message = error.find("{%s}text" % xmlconst.NS_SVRL)
 
         if message is None:
             return ""
@@ -88,7 +83,7 @@ class SchematronError(ValidationError):
         return dict(message=self.message, line=self.line)
 
 
-class SchematronValidationResults(ValidationResults):
+class SchematronValidationResults(base.ValidationResults):
     """Used to hold results of a Schematron validation process.
 
     Args:
@@ -115,7 +110,7 @@ class SchematronValidationResults(ValidationResults):
             return []
 
         xpath = "//svrl:failed-assert | //svrl:successful-report"
-        nsmap = {'svrl': NS_SVRL}
+        nsmap = {'svrl': xmlconst.NS_SVRL}
         errors = svrl_report.xpath(xpath, namespaces=nsmap)
 
         return [SchematronError(self._doc, x) for x in errors]

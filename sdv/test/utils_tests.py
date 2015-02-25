@@ -1,6 +1,11 @@
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
+# See LICENSE.txt for complete terms.
+
 import unittest
 from StringIO import StringIO
+
 from lxml import etree
+
 import sdv.utils as utils
 import sdv.errors as errors
 

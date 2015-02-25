@@ -1,4 +1,4 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # builtin
@@ -7,9 +7,10 @@ import os
 # internal
 import sdv
 import sdv.utils as utils
-import sdv.errors as errors
-from sdv.validators import xml_schema as xml
-from sdv.validators.stix import common as stix
+
+# relative
+from . import common as stix
+from .. import xml_schema as xml
 
 
 class _XmlSchemaValidator(xml.XmlSchemaValidator):
@@ -59,16 +60,6 @@ class STIXSchemaValidator(object):
                 validators[version] = validator
 
         return validators
-
-    def _get_version(self, doc):
-        try:
-            return stix.get_version(doc)
-        except KeyError:
-            raise errors.UnknownSTIXVersionError(
-                "Unable to validate instance document. STIX version not "
-                "found in instance document and not supplied to validate() "
-                "method"
-            )
 
     @stix.check_stix
     def validate(self, doc, version=None, schemaloc=False):

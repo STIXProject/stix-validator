@@ -1,4 +1,4 @@
-# Copyright (c) 2014, The MITRE Corporation. All rights reserved.
+# Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
 # builtin
@@ -9,17 +9,13 @@ import collections
 from lxml import etree
 
 # internal
-import sdv.errors as errors
-import sdv.utils as utils
-from sdv.validators.base import (ValidationError, ValidationResults)
+from sdv import errors, utils, xmlconst
 
-NS_XML_SCHEMA_INSTANCE = "http://www.w3.org/2001/XMLSchema-instance"
-NS_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
-TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
-TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
+# relative
+from . import base
 
 
-class XmlSchemaError(ValidationError):
+class XmlSchemaError(base.ValidationError):
     """Represents an XML Schema validation error.
 
     Args:
@@ -63,7 +59,7 @@ class XmlSchemaError(ValidationError):
         return unicode(self).encode("utf-8")
 
 
-class XmlValidationResults(ValidationResults):
+class XmlValidationResults(base.ValidationResults):
     """Results of XML schema validation. Returned from
     :meth:`XmlSchemaValidator.validate`.
 
@@ -157,7 +153,7 @@ class XmlSchemaValidator(object):
             A list of file paths to included schemas.
 
         """
-        xs_includes = root.findall(TAG_XS_INCLUDE)
+        xs_includes = root.findall(xmlconst.TAG_XS_INCLUDE)
         dir_ = os.path.dirname(fp)
 
         includes = []
@@ -436,7 +432,7 @@ class XmlSchemaValidator(object):
         for ns, loc in imports.iteritems():
             loc = loc.replace("\\", "/")
             attrib = dict(namespace=ns, schemaLocation=loc)
-            import_ = etree.Element(TAG_XS_IMPORT, attrib=attrib)
+            import_ = etree.Element(xmlconst.TAG_XS_IMPORT, attrib=attrib)
             xsd.append(import_)
 
         return etree.XMLSchema(xsd)

@@ -1,15 +1,16 @@
 STIX Document Validator
 =======================
 
-A Python tool and API that validates STIX XML instance documents.
+A Python tool and API that validates STIX and CybOX XML instance documents.
 
-.. _XML Schema: http://stix.mitre.org/language/
+.. _STIX XML Schema: http://stix.mitre.org/language/
+.. _CybOX XML Schema: http://cybox.mitre.org/language/
 .. _STIX Profiles: http://stixproject.github.io/documentation/profiles/
-.. _Best Practices: http://stixproject.github.io/documentation/suggested-practices/
+.. _STIX Best Practices: http://stixproject.github.io/documentation/suggested-practices/
 
 :Source: https://github.com/STIXProject/stix-validator
 :Documentation: http://stix-validator.readthedocs.org
-:Information: http://stix.mitre.org
+:Information: http://stix.mitre.org http://cybox.mitre.org
 
 |travis badge| |health badge| |version badge| |downloads badge|
 
@@ -27,13 +28,17 @@ A Python tool and API that validates STIX XML instance documents.
 Validation
 ----------
 
-The **STIX Document Validator** can perform the following forms of 
+The **STIX Document Validator (sdv)** can perform the following forms of
 STIX document validation:
 
-* `XML Schema`_: Validate STIX documents against bundled or external 
+* `STIX XML Schema`_: Validate STIX documents against bundled or external
   STIX schemas.
 * `STIX Profiles`_: Verify STIX Profile conformance (**experimental**)
-* `Best Practices`_: Verify alignment with STIX Best Practices.
+* `STIX Best Practices`_: Verify alignment with STIX Best Practices.
+
+The following forms of CybOX document validation are also possible:
+
+* `CybOX XML Schema`_
 
 Dependencies
 ------------
@@ -83,14 +88,19 @@ This will install the ``sdv`` package into your Python installation's
 How To Use
 ----------
 
-The **STIX Document Validator** bundles a ``stix_validator.py`` script
-which can can validate a STIX XML document against STIX schemas, STIX 
-Best Practices, and STIX Profiles.
+The **STIX Document Validator** bundles two scripts: ``stix_validator.py``
+and ``cybox_validator.py``.
+
+STIX Validation
+"""""""""""""""
+
+The ``stix_validator.py`` script  can can validate a STIX XML document against
+STIX schemas, STIX Best Practices, and STIX Profiles.
 
 **NOTE:** The STIX Profile validation and conversion capabilities should be
 considered **experimental.**
 
-**Validate using local schemas**  
+**Validate using bundled schemas**
 
 ::
 
@@ -138,16 +148,54 @@ considered **experimental.**
 
   $ stix_validator.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>
 
-All STIX Documents?
--------------------
 
-The **STIX Document Validator** bundles a schema directory with it, which 
-includes all STIX schema files (v1.0 through v1.1.1). If an instance document 
-uses constructs or languages defined by other schemas a user must point the 
-**STIX Document Validator** at those schemas in order to validate.
+CybOX Validation
+""""""""""""""""
+
+The ``cybox_validator.py`` script can perform CybOX XML Schema validation.
+
+**Validate using bundled schemas**
+
+::
+
+  $ cybox_validator.py <cybox_document.xml>
+
+**Validate using schemaLocation**
+
+::
+
+  $ cybox_validator.py --use-schemaloc <cybox_document.xml>
+
+**Validate using non-bundled schemas**
+
+::
+
+  $ cybox_validator.py --schema-dir </path/to/schemas> <cybox_document.xml>
+
+**Validate a directory of CybOX documents**
+
+::
+
+  $ cybox_validator.py </path/to/cybox_dir>
+
+**Validate multiple files and/or directories**
+
+::
+
+  $ cybox_validator.py <one.xml> <two.xml> <directory_of_files> ...
+
+
+All STIX and CybOX Documents?
+-----------------------------
+
+The **STIX Document Validator** bundles XML schemas with it, which
+includes all STIX (v1.0 through v1.1.1) and CybOX (2.0 through v2.1) schema
+files. If a document includes instances of schematic constructs defined
+outside of the STIX or CybOX languages, a user must point the
+**STIX Document Validator** scripts at those schemas in order to validate.
 
 To use schemas other than those bundled with the **STIX Document Validator**
-use the ``--schemas-dir`` flag to pass in a path to a STIX schema directory.
+use the ``--schemas-dir`` flag to pass in a path to a schema directory.
 
 Common Libxml2 Error
 --------------------
