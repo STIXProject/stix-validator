@@ -792,9 +792,19 @@ class STIXBestPracticeValidator(object):
             .ValidationError: If there are any issues parsing `doc`.
 
         """
+        # Get the element for the input document
         root = utils.get_etree_root(doc)
-        version = version or common.get_version(doc)
+
+        # Get the STIX version for the input `doc` if one is not passed in.
+        version = version or common.get_version(root)
+
+        # Check that the version number is a valid STIX version number
+        common.check_version(version)
+
+        # Run the best practice checks applicable for the STIX version number.
         results = self._run_rules(root, version)
+
+        # Return the results
         return results
 
 

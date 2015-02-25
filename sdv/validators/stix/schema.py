@@ -7,9 +7,10 @@ import os
 # internal
 import sdv
 import sdv.utils as utils
+import sdv.errors as errors
 
 # relative
-from . import common as stix
+from . import common
 from .. import xml_schema as xml
 
 
@@ -61,9 +62,33 @@ class STIXSchemaValidator(object):
 
         return validators
 
-    @stix.check_stix
+    def _get_versioned_validator(self, version):
+        try:
+            return self._xml_validators[version]
+        except KeyError:
+            error = (
+                "Invalid STIX version number provided or found in input "
+                "document: '{0}'"
+            ).format(version)
+
+            raise errors.InvalidSTIXVersionError(
+                message=error,
+                found=version,
+                expected=common.STIX_VERSIONS
+            )
+
+    @common.check_stix
     def validate(self, doc, version=None, schemaloc=False):
         """Performs XML Schema validation against a STIX document.
+
+        When validating against the set of bundled schemas, a STIX version
+        number must be declared for the input `doc`. If a user does not pass in
+        a `version` parameter, an attempt will be made to collect the version
+        from the input `doc`.
+
+        Note:
+            If `schemaloc` is ``True`` or this class was initialized with a
+            ``schema_dir``, no version checking or verification will occur.
 
         Args:
             doc: The STIX document. This can be a filename, file-like object,
@@ -98,8 +123,8 @@ class STIXSchemaValidator(object):
         elif self._is_user_defined:
             validator = self._xml_validators[self._KEY_USER_DEFINED]
         else:
-            version = version or stix.get_version(doc)
-            validator = self._xml_validators[version]
+            version = version or common.get_version(root)
+            validator = self._get_versioned_validator(version)
 
         results = validator.validate(root, schemaloc)
         return results
