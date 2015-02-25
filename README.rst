@@ -117,6 +117,10 @@ considered **experimental.**
 ::
 
   $ stix_validator.py --schema-dir </path/to/schemas> <stix_document.xml>
+  
+**NOTE:** If you are trying to validate a STIX document from a checked-out
+copy of STIX schema repository, make sure you have also cloned the CybOX 
+schema submodule with ``git submodule init`` and ``git submodule update``.
 
 **Validate a directory of STIX documents**  
 
