@@ -10,7 +10,7 @@ from . import errors, utils
 from .version import __version__
 
 # lazy imports
-validators = None
+pkg_validators = None
 
 # constants
 _PKG_DIR = os.path.dirname(__file__)
@@ -30,9 +30,9 @@ def _load_sdv_mods():
     circular imports while minimizing the performance overhead of imports.
 
     """
-    global validators
-    if not validators:
-        import sdv.validators as validators
+    global pkg_validators
+    if not pkg_validators:
+        import sdv.validators as pkg_validators
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
@@ -85,7 +85,7 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
     _load_sdv_mods()
 
     # Get the validator class required to validate `doc`
-    klass = klass or validators.get_xml_validator_class(doc)
+    klass = klass or pkg_validators.get_xml_validator_class(doc)
 
     try:
         validator = __xml_validators[klass][schemas]
@@ -125,7 +125,7 @@ def validate_best_practices(doc, version=None):
 
     """
     _load_sdv_mods()
-    validator = validators.STIXBestPracticeValidator()
+    validator = pkg_validators.STIXBestPracticeValidator()
     return validator.validate(doc, version=version)
 
 
@@ -160,7 +160,7 @@ def validate_profile(doc, profile):
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = validators.STIXProfileValidator(profile)
+        validator = pkg_validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.validate(doc)
@@ -187,7 +187,7 @@ def profile_to_xslt(profile):
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = validators.STIXProfileValidator(profile)
+        validator = pkg_validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.xslt
@@ -214,7 +214,7 @@ def profile_to_schematron(profile):
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = validators.STIXProfileValidator(profile)
+        validator = pkg_validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.schematron
