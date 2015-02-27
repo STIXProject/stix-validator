@@ -9,9 +9,6 @@ import collections
 from . import errors, utils
 from .version import __version__
 
-# lazy imports
-pkg_validators = None
-
 # constants
 _PKG_DIR = os.path.dirname(__file__)
 XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
@@ -23,16 +20,6 @@ __xml_validators = collections.defaultdict(dict)
 # A cache of STIX Profile validators to speed up consecutive calls to
 # validate_profile()
 __profile_validators = {}
-
-
-def _load_sdv_mods():
-    """Lazily load the sdv.validators modules. This is to prevent
-    circular imports while minimizing the performance overhead of imports.
-
-    """
-    global pkg_validators
-    if not pkg_validators:
-        import sdv.validators as pkg_validators
 
 
 def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
@@ -82,10 +69,11 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
             processing ``xs:include`` directives.
 
     """
-    _load_sdv_mods()
+    import sdv.validators
 
-    # Get the validator class required to validate `doc`
-    klass = klass or pkg_validators.get_xml_validator_class(doc)
+    # Get the validator class required to validate `doc`. I.e., STIX or CybOX?
+    if not klass:
+        klass = sdv.validators.get_xml_validator_class(doc)
 
     try:
         validator = __xml_validators[klass][schemas]
@@ -124,8 +112,8 @@ def validate_best_practices(doc, version=None):
             in `doc` contains an invalid STIX version number.
 
     """
-    _load_sdv_mods()
-    validator = pkg_validators.STIXBestPracticeValidator()
+    import sdv.validators
+    validator = sdv.validators.STIXBestPracticeValidator()
     return validator.validate(doc, version=version)
 
 
@@ -155,12 +143,12 @@ def validate_profile(doc, profile):
             parse the `profile`.
 
     """
-    _load_sdv_mods()
+    import sdv.validators
 
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = pkg_validators.STIXProfileValidator(profile)
+        validator = sdv.validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.validate(doc)
@@ -182,12 +170,12 @@ def profile_to_xslt(profile):
             parse the `profile`.
 
     """
-    _load_sdv_mods()
+    import sdv.validators
 
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = pkg_validators.STIXProfileValidator(profile)
+        validator = sdv.validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.xslt
@@ -209,12 +197,12 @@ def profile_to_schematron(profile):
             parse the `profile`.
 
     """
-    _load_sdv_mods()
+    import sdv.validators
 
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = pkg_validators.STIXProfileValidator(profile)
+        validator = sdv.validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.schematron
