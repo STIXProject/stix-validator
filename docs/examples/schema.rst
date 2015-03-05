@@ -57,6 +57,8 @@ methods (and all other validation methods) can also accept file-like objects
 instances, or ``etree._ElementTree`` instances. Super duper neato!
 
 
+.. _non-bundled schemas:
+
 Using Non-bundled Schemas
 -------------------------
 
@@ -84,6 +86,8 @@ directory containing all the schemas required for validation.
     schemas necessary for validation be found under the directory. This
     includes STIX schemas!
 
+.. _xsi-schemaLocation:
+
 Using ``xsi:schemaLocation``
 ----------------------------
 
@@ -104,8 +108,15 @@ by making use of the ``schemaloc`` parameter,
 STIX and CybOX Versions
 -----------------------
 
-By default, the **stix-validator** will attempt to determine the version of the
-input STIX/CybOX document by inspecting the document for version information.
+The **stix-validator** is bundled with official STIX and CybOX schemas, which
+enables validation of STIX and CybOX XML documents without requiring users
+to provide schemas.
+
+Because we bundle several versions of the STIX and CybOX schemas, the
+**stix-validator** needs to know what version of STIX or CybOX to validate
+input documents against. By default, the **stix-validator** will attempt to
+determine the version of the input STIX/CybOX document by inspecting the
+document for version information.
 
 If the input document contains no version information, users must declare
 a version for the STIX/CybOX document via the ``version`` parameter:
@@ -120,6 +131,18 @@ a version for the STIX/CybOX document via the ``version`` parameter:
 
     # Print the result!
     print results.is_valid
+
+
+.. note::
+
+    No version information is required by the **stix-validator** when performing
+    validation against :ref:`non-bundled schemas <non-bundled schemas>` or when
+    validating using :ref:`xsi:schemaLocation <xsi-schemaLocation>`.
+    Any ``version`` values that are passed in will be **ignored** by the API.
+
+    **However**, the schemas may define constraints or requirements for version
+    numbers, so validation errors regarding invalid or missing version
+    numbers are still reported as :class:`.XmlSchemaError` objects.
 
 Unknown Versions
 ~~~~~~~~~~~~~~~~
