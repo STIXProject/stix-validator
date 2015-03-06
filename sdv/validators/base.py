@@ -75,7 +75,7 @@ class _BaseSchemaValidator(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _get_document_version(self):
+    def _get_document_version(self, doc):
         raise NotImplementedError()
 
     @abc.abstractmethod

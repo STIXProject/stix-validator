@@ -6,7 +6,6 @@ import os
 
 # internal
 import sdv
-import sdv.utils as utils
 import sdv.errors as errors
 
 # relative
