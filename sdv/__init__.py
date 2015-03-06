@@ -182,7 +182,7 @@ def profile_to_xslt(profile):
 
 
 def profile_to_schematron(profile):
-    """Converts the `STIX Profile`_ `profile` into a schematron representation.
+    """Converts the `STIX Profile`_ `profile` into a Schematron representation.
 
     .. _STIX Profile: http://stixproject.github.io/documentation/profiles/
 
