@@ -13,7 +13,7 @@ from . import common
 from .. import xml_schema, base
 
 
-class CyboxSchemaValidator(base._BaseSchemaValidator):
+class CyboxSchemaValidator(base.BaseSchemaValidator):
     _SCHEMAS = {
         '2.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1', 'cybox'),
         '2.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1', 'cybox'),

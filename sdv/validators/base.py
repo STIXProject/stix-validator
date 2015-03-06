@@ -55,7 +55,7 @@ class ValidationResults(object):
         return json.dumps(self.as_dict())
 
 
-class _BaseSchemaValidator(object):
+class BaseSchemaValidator(object):
     """Abstract base class for language-specific XML Schema validator classes.
     E.g., STIXSchemaValidator and CyboxSchemaValidator.
 
@@ -144,4 +144,5 @@ class _BaseSchemaValidator(object):
 __all__ = [
     'ValidationError',
     'ValidationResults'
+    'BaseSchemaValidator'
 ]
