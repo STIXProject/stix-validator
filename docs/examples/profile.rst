@@ -160,22 +160,22 @@ STIX Profiles are currently defined using multi-worksheet Excel documents. The
 .. code-block:: python
 
     import sdv
-   
+
     # STIX Profile filename
     PROFILE = "/path/to/stix/profile.xlsx"
 
     # Convert the STIX Profile into a Schematron document
-    schematron  = sdv.profile_to_schematron(PROFILE)
+    schematron = sdv.profile_to_schematron(PROFILE)
 
     # Convert the STIX Profile into an XSLT document
-    xslt        = sdv.profile_to_xslt(PROFILE)
+    xslt = sdv.profile_to_xslt(PROFILE)
 
     # Write the returned Scheamtron document to a file
     schematron.write(
-        "/path/to/output/filename.sch,  # Output Schematron file path
-        pretty_print=True,              # Pretty print the file (not necessary)
-        xml_declaration=True,           # Write out <?xml version="1.0" encoding="UTF-8"?>
-        encoding="UTF-8"                # Set the encoding to UTF-8
+        "/path/to/output/filename.sch",  # Output Schematron file path
+        pretty_print=True,               # Pretty print the file (not necessary)
+        xml_declaration=True,            # Write out <?xml version="1.0" encoding="UTF-8"?>
+        encoding="UTF-8"                 # Set the encoding to UTF-8
     )
 
     # Write out the returned XSLT document to a file
