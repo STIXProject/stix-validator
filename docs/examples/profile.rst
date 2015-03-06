@@ -146,3 +146,43 @@ use of the :meth:`.ProfileValidationResults.as_dict()` and
     # Retrieve results as JSON
     result_json = results.as_json() # returns '{"result": true}' JSON if valid
 
+
+Converting STIX Profiles to XSLT and Schematron
+-----------------------------------------------
+
+STIX Profiles are currently defined using multi-worksheet Excel documents. The
+**stix-validator** API provides methods for converting Excel documents into
+`ISO Schematron`_ and `XSLT`_ documents.
+
+.. _ISO Schematron: http://www.schematron.com/
+.. _XSLT: http://www.w3.org/TR/xslt
+
+.. code-block:: python
+
+    import sdv
+   
+    # STIX Profile filename
+    PROFILE = "/path/to/stix/profile.xlsx"
+
+    # Convert the STIX Profile into a Schematron document
+    schematron  = sdv.profile_to_schematron(PROFILE)
+
+    # Convert the STIX Profile into an XSLT document
+    xslt        = sdv.profile_to_xslt(PROFILE)
+
+    # Write the returned Scheamtron document to a file
+    schematron.write(
+        "/path/to/output/filename.sch,  # Output Schematron file path
+        pretty_print=True,              # Pretty print the file (not necessary)
+        xml_declaration=True,           # Write out <?xml version="1.0" encoding="UTF-8"?>
+        encoding="UTF-8"                # Set the encoding to UTF-8
+    )
+
+    # Write out the returned XSLT document to a file
+    xslt.write(
+        "/path/to/output/filename.xslt", # Output XSLT file path
+        pretty_print=True,               # Pretty print the file (not necessary)
+        xml_declaration=True,            # Write out <?xml version="1.0" encoding="UTF-8"?>
+        encoding="UTF-8"                 # Set the encoding to UTF-8
+    )
+
