@@ -143,6 +143,6 @@ class BaseSchemaValidator(object):
 
 __all__ = [
     'ValidationError',
-    'ValidationResults'
+    'ValidationResults',
     'BaseSchemaValidator'
 ]
