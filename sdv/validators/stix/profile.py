@@ -3,9 +3,10 @@
 
 # builtin
 import os
+import itertools
 import collections
-import functools
 import contextlib
+import functools
 import StringIO
 
 # external
@@ -36,15 +37,26 @@ COL_NAMESPACE      = 0
 COL_ALIAS          = 1
 
 # Occurrence values
-OCCURRENCE_PROHIBITED = 'prohibited'
-OCCURRENCE_REQUIRED   = 'required'
-OCCURRENCE_OPTIONAL   = 'optional'
-OCCURRENCE_SUGGESTED  = 'suggested'
-ALLOWED_OCCURRENCES   = (
-    OCCURRENCE_OPTIONAL,
-    OCCURRENCE_PROHIBITED,
-    OCCURRENCE_REQUIRED,
-    OCCURRENCE_SUGGESTED
+OCCURRENCE_PROHIBITED       = ('prohibited', 'must not')
+OCCURRENCE_REQUIRED         = ('required', 'must')
+OCCURRENCE_OPTIONAL         = ('optional', 'may')
+OCCURRENCE_SUGGESTED        = ('suggested', 'should')
+OCCURRENCE_DISCOURAGED      = ('should not',)
+ALL_OPTIONAL_OCCURRENCES    = tuple(
+    itertools.chain(
+        OCCURRENCE_OPTIONAL,
+        OCCURRENCE_SUGGESTED,
+        OCCURRENCE_DISCOURAGED
+    )
+)
+ALLOWED_OCCURRENCES         = tuple(
+    itertools.chain(
+        OCCURRENCE_OPTIONAL,
+        OCCURRENCE_PROHIBITED,
+        OCCURRENCE_DISCOURAGED,
+        OCCURRENCE_REQUIRED,
+        OCCURRENCE_SUGGESTED
+    )
 )
 
 # Used by profile schematron for reporting error line numbers.
@@ -738,15 +750,15 @@ class STIXProfileValidator(schematron.SchematronValidator):
         for context in selectors:
             is_required = False
 
-            if occurrence == OCCURRENCE_REQUIRED:
+            if occurrence in OCCURRENCE_REQUIRED:
                 is_required = True
                 rule = RequiredRule(context, fieldname)
                 rules.append(rule)
-            elif occurrence == OCCURRENCE_PROHIBITED:
+            elif occurrence in OCCURRENCE_PROHIBITED:
                 rule = ProhibitedRule(context, fieldname)
                 rules.append(rule)
                 continue  # Cannot set prohibited values or impls
-            elif occurrence == OCCURRENCE_OPTIONAL:
+            elif occurrence in ALL_OPTIONAL_OCCURRENCES:
                 pass
             else:
                 continue
