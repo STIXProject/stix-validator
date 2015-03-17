@@ -37,12 +37,19 @@ COL_NAMESPACE      = 0
 COL_ALIAS          = 1
 
 # Occurrence values
-OCCURRENCE_PROHIBITED   = ('prohibited', 'must not')
-OCCURRENCE_REQUIRED     = ('required', 'must')
-OCCURRENCE_OPTIONAL     = ('optional', 'may')
-OCCURRENCE_SUGGESTED    = ('suggested', 'should')
-OCCURRENCE_DISCOURAGED  = ('should not',)
-ALLOWED_OCCURRENCES     = tuple(
+OCCURRENCE_PROHIBITED       = ('prohibited', 'must not')
+OCCURRENCE_REQUIRED         = ('required', 'must')
+OCCURRENCE_OPTIONAL         = ('optional', 'may')
+OCCURRENCE_SUGGESTED        = ('suggested', 'should')
+OCCURRENCE_DISCOURAGED      = ('should not',)
+ALL_OPTIONAL_OCCURRENCES    = tuple(
+    itertools.chain(
+        OCCURRENCE_OPTIONAL,
+        OCCURRENCE_SUGGESTED,
+        OCCURRENCE_DISCOURAGED
+    )
+)
+ALLOWED_OCCURRENCES         = tuple(
     itertools.chain(
         OCCURRENCE_OPTIONAL,
         OCCURRENCE_PROHIBITED,
@@ -751,6 +758,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 rule = ProhibitedRule(context, fieldname)
                 rules.append(rule)
                 continue  # Cannot set prohibited values or impls
+            elif occurrence in ALL_OPTIONAL_OCCURRENCES:
+                pass
             else:
                 continue
 
