@@ -6,8 +6,8 @@ import os
 import collections
 
 # relative
-from . import utils
-from .version import __version__
+from .version import __version__  # noqa
+
 
 # constants
 _PKG_DIR = os.path.dirname(__file__)
