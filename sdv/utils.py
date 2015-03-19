@@ -55,9 +55,9 @@ def get_etree_root(doc):
 
     """
     try:
-        if isinstance(doc, etree._Element):
+        if isinstance(doc, etree._Element):  # noqa
             root = doc
-        elif isinstance(doc, etree._ElementTree):
+        elif isinstance(doc, etree._ElementTree):  # noqa
             root = doc.getroot()
         else:
             parser = get_xml_parser()
