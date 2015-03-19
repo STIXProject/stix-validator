@@ -414,7 +414,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_idref_with_content(self, root, namespaces, version): # noqa
+    def _check_idref_with_content(self, root, namespaces, version):  # noqa
         """Checks that constructs with idref set do not contain content.
 
         Note:
