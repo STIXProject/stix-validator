@@ -6,7 +6,7 @@ import os
 import collections
 
 # relative
-from . import errors, utils
+from . import utils
 from .version import __version__
 
 # constants
