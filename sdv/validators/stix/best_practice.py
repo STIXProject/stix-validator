@@ -327,7 +327,7 @@ class STIXBestPracticeValidator(object):
         pass
 
     @rule('1.0')
-    def _check_id_presence(self, root, namespaces, version):
+    def _check_id_presence(self, root, namespaces, version):  # noqa
         """Checks that all major STIX/CybOX constructs have id attributes set.
         Constructs with idref attributes set should not have an id attribute
         and are thus omitted from the results.
@@ -634,7 +634,7 @@ class STIXBestPracticeValidator(object):
         return results
 
     @rule('1.0')
-    def _check_marking_control_xpath(self, root, namespaces, version):
+    def _check_marking_control_xpath(self, root, namespaces, version):  # noqa
         """Checks that data marking controlled structure XPaths are valid
         and resolve to nodes in the `root` document.
 

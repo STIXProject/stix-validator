@@ -28,7 +28,11 @@ class XmlSchemaError(base.ValidationError):
     """
     def __init__(self, error):
         super(XmlSchemaError, self).__init__()
-        self.message = str(error)
+
+        if error:
+            self.message = unicode(error)
+        else:
+            self.message = None
 
     @property
     def line(self):
@@ -37,11 +41,11 @@ class XmlSchemaError(base.ValidationError):
             return None
 
         try:
-            error = self.message
-            tokenized = error.split(":")
-            return tokenized[1]
-        except:
-            return "UNKNOWN"
+            # libxml2 schema validation errors are tokenized by colons
+            tokenized = self.message.split(":")
+            return int(tokenized[1])
+        except (IndexError, TypeError, ValueError):
+            return None
 
     def as_dict(self):
         """Returns a dictionary representation.
