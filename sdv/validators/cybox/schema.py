@@ -6,58 +6,40 @@ import os
 
 # internal
 import sdv
-import sdv.utils as utils
 import sdv.errors as errors
 
 # relative
 from . import common
-from .. import xml_schema as xml
+from .. import xml_schema, base
 
 
-
-class CyboxSchemaValidator(object):
-    SCHEMAS = {
+class CyboxSchemaValidator(base.BaseSchemaValidator):
+    _SCHEMAS = {
         '2.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1', 'cybox'),
         '2.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1', 'cybox'),
         '2.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0', 'cybox')
     }
 
-    _KEY_SCHEMALOC = 'schemaloc'
-    _KEY_USER_DEFINED = 'user'
-
     def __init__(self, schema_dir=None):
-        self._xml_validators = self._get_validators(schema_dir)
-        self._is_user_defined = bool(schema_dir)
+        super(CyboxSchemaValidator, self).__init__()
 
-    def _get_validators(self, schema_dir=None):
-        validators = {self._KEY_SCHEMALOC: xml.XmlSchemaValidator()}
+    def _get_document_version(self, doc):
+        return common.get_version(doc)
 
-        if schema_dir:
-            validators = {
-                self._KEY_USER_DEFINED: xml.XmlSchemaValidator(schema_dir)
-            }
-        else:
-            for version, location in self.SCHEMAS.iteritems():
-                validator = xml.XmlSchemaValidator(location)
-                validators[version] = validator
+    def _raise_invalid_version(self, version):
+        error = (
+            "Invalid CybOX version number provided or found in input "
+            "document: '{0}'"
+        ).format(version)
 
-        return validators
+        raise errors.InvalidCyboxVersionError(
+            message=error,
+            found=version,
+            expected=common.CYBOX_VERSIONS
+        )
 
-    def _get_versioned_validator(self, version):
-        try:
-            return self._xml_validators[version]
-        except KeyError:
-            error = (
-                "Invalid CybOX version number provided or found in input "
-                "document: '{0}'"
-            ).format(version)
-
-            raise errors.InvalidCyboxVersionError(
-                message=error,
-                found=version,
-                expected=common.CYBOX_VERSIONS
-            )
-
+    def _get_validator_impl(self, schema_dir=None):
+        return xml_schema.XmlSchemaValidator(schema_dir=schema_dir)
 
     @common.check_cybox
     def validate(self, doc, version=None, schemaloc=False):
@@ -88,7 +70,8 @@ class CyboxSchemaValidator(object):
             .UnknownCyboxVersionError: If `version` is ``None`` and
                 `doc` does not contain CybOX version information.
             .InvalidCyboxVersionError: If `version` is an invalid
-                CybOX version or `doc` contains an invalid CybOX version number.
+                CybOX version or `doc` contains an invalid CybOX version
+                number.
             .ValidationError: If the class was not initialized with a
                 schema directory and `schemaloc` is ``False``.
             .XMLSchemaImportError: If an error occurs while processing the
@@ -98,18 +81,7 @@ class CyboxSchemaValidator(object):
             .ValidationError: If there are any issues parsing `doc`.
 
         """
-        root = utils.get_etree_root(doc)
-
-        if schemaloc:
-            validator = self._xml_validators[self._KEY_SCHEMALOC]
-        elif self._is_user_defined:
-            validator = self._xml_validators[self._KEY_USER_DEFINED]
-        else:
-            version = version or common.get_version(root)
-            validator = self._get_versioned_validator(version)
-
-        results = validator.validate(root, schemaloc)
-        return results
+        return self._validate(doc=doc, version=version, schemaloc=schemaloc)
 
 
 __all__ = [

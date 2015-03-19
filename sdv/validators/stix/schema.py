@@ -6,15 +6,14 @@ import os
 
 # internal
 import sdv
-import sdv.utils as utils
 import sdv.errors as errors
 
 # relative
 from . import common
-from .. import xml_schema as xml
+from .. import xml_schema, base
 
 
-class _XmlSchemaValidator(xml.XmlSchemaValidator):
+class _XmlSchemaValidator(xml_schema.XmlSchemaValidator):
     """Needed to resolve namespace collisions between CybOX 2.1 and
     STIX v1.1.1.
 
@@ -33,49 +32,34 @@ class _XmlSchemaValidator(xml.XmlSchemaValidator):
     }
 
 
-class STIXSchemaValidator(object):
-    SCHEMAS = {
+class STIXSchemaValidator(base.BaseSchemaValidator):
+    _SCHEMAS = {
         '1.1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1'),
         '1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1'),
         '1.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1'),
         '1.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0')
     }
 
-    _KEY_SCHEMALOC = 'schemaloc'
-    _KEY_USER_DEFINED = 'user'
-
     def __init__(self, schema_dir=None):
-        self._xml_validators = self._get_validators(schema_dir)
-        self._is_user_defined = bool(schema_dir)
+        super(STIXSchemaValidator, self).__init__(schema_dir=schema_dir)
 
-    def _get_validators(self, schema_dir=None):
-        validators = {self._KEY_SCHEMALOC: _XmlSchemaValidator()}
+    def _get_document_version(self, doc):
+        return common.get_version(doc)
 
-        if schema_dir:
-            validators = {
-                self._KEY_USER_DEFINED: _XmlSchemaValidator(schema_dir)
-            }
-        else:
-            for version, location in self.SCHEMAS.iteritems():
-                validator = _XmlSchemaValidator(location)
-                validators[version] = validator
+    def _raise_invalid_version(self, version):
+        error = (
+            "Invalid STIX version number provided or found in input "
+            "document: '{0}'"
+        ).format(version)
 
-        return validators
+        raise errors.InvalidSTIXVersionError(
+            message=error,
+            expected=common.STIX_VERSIONS,
+            found=version
+        )
 
-    def _get_versioned_validator(self, version):
-        try:
-            return self._xml_validators[version]
-        except KeyError:
-            error = (
-                "Invalid STIX version number provided or found in input "
-                "document: '{0}'"
-            ).format(version)
-
-            raise errors.InvalidSTIXVersionError(
-                message=error,
-                found=version,
-                expected=common.STIX_VERSIONS
-            )
+    def _get_validator_impl(self, schema_dir=None):
+        return _XmlSchemaValidator(schema_dir=schema_dir)
 
     @common.check_stix
     def validate(self, doc, version=None, schemaloc=False):
@@ -116,18 +100,7 @@ class STIXSchemaValidator(object):
             .ValidationError: If there are any issues parsing `doc`.
 
         """
-        root = utils.get_etree_root(doc)
-
-        if schemaloc:
-            validator = self._xml_validators[self._KEY_SCHEMALOC]
-        elif self._is_user_defined:
-            validator = self._xml_validators[self._KEY_USER_DEFINED]
-        else:
-            version = version or common.get_version(root)
-            validator = self._get_versioned_validator(version)
-
-        results = validator.validate(root, schemaloc)
-        return results
+        return self._validate(doc=doc, version=version, schemaloc=schemaloc)
 
 
 __all__ = [
