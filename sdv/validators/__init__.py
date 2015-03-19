@@ -5,10 +5,10 @@
 from sdv import errors, utils
 
 # relative
-from .xml_schema import *
-from .schematron import *
-from .stix import *
-from .cybox import *
+from .xml_schema import *  # noqa
+from .schematron import *  # noqa
+from .stix import *  # noqa
+from .cybox import *  # noqa
 
 
 def get_xml_validator_class(doc):
