@@ -73,6 +73,7 @@ def _set_validation_options(args):
     options.in_files = args.files
     options.in_profile = args.profile
     options.recursive = args.recursive
+    options.use_schemaloc = args.use_schemaloc
 
     # output options
     options.xslt_out = args.xslt

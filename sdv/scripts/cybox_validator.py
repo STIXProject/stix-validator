@@ -56,6 +56,7 @@ def _set_validation_options(args):
     options.schema_dir = args.schema_dir
     options.in_files = args.files
     options.recursive = args.recursive
+    options.use_schemaloc = args.use_schemaloc
 
     # output options
     options.json_results = args.json
