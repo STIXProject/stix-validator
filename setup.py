@@ -37,6 +37,7 @@ extras_require = {
     'docs': [
         'Sphinx==1.2.1',
         'sphinxcontrib-napoleon==0.2.4',
+        'sphinx_rtd_theme==0.1.7',
     ],
     'test': [
         "nose==1.3.0",
