@@ -16,6 +16,10 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 
+rst_prolog = """
+**Version**: {}
+""".format(release)
+
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 
