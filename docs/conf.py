@@ -31,9 +31,6 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 else:
     html_theme = 'default'
 
-html_show_sourcelink = False
-htmlhelp_basename = 'stix-validatordoc'
-
 latex_elements = {}
 latex_documents = [
   ('index', 'stix-validator.tex', u'stix-validator Documentation',
