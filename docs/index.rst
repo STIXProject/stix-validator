@@ -1,5 +1,5 @@
-Welcome to stix-validator's documentation!
-==========================================
+stix-validator |release| Documentation
+======================================
 
 The Structued Threat Information eXpression (STIX) and Cyber Observable
 eXpression (CybOX) are collaborative, community-driven efforts to define and
