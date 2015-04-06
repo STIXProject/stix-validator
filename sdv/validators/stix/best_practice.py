@@ -738,6 +738,48 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    @rule('1.0')
+    def _check_example_namespace(self, root, namespaces, version):  # noqa
+        """Checks for nodes in the input `root` document that contain IDs
+        which fall under the ``example`` namespace.
+
+        """
+        ex_namespaces = ('http://example.com', 'http://example.com/')
+
+        # Get all the namespaces used in the document
+        doc_nsmap = common.get_document_namespaces(root)
+
+        # Element tags to check for example ID presence
+        to_check = itertools.chain(
+            common.STIX_CORE_COMPONENTS,
+            common.CYBOX_CORE_COMPONENTS
+        )
+
+        results = BestPracticeWarningCollection('IDs Use Example Namespace')
+        xpath = " | ".join("//%s" % x for x in to_check)
+
+        for node in root.xpath(xpath, namespaces=namespaces):
+            if 'id' not in node.attrib:
+                continue
+
+            # ID attr found. Break it up into ns prefix and local parts
+            id_parts = node.attrib['id'].split(":")
+
+            if len(id_parts) != 2:
+                continue
+
+            # Try to get the namespace mapped to the ID ns prefix
+            prefix, localpart = id_parts
+            ns = doc_nsmap.get(prefix)
+
+            if ns not in ex_namespaces:
+                continue
+
+            result = BestPracticeWarning(node=node)
+            results.append(result)
+
+        return results
+
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
         to the STIX `version`.

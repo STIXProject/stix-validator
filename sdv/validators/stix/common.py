@@ -499,3 +499,20 @@ def check_stix(func):
         return func(*args, **kwargs)
 
     return _check_stix
+
+
+def get_document_namespaces(doc):
+    """Returns namespace dictionary for all the namespaces declared in the
+    input `doc`.
+
+    Args:
+        doc: A read()-able XML document or etree node.
+
+    """
+    root = utils.get_etree_root(doc)
+
+    nsmap = {}
+    for element in root.findall(".//*"):
+        nsmap.update(element.nsmap)
+
+    return nsmap
