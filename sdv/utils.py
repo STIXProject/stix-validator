@@ -15,7 +15,7 @@ from . import errors, xmlconst
 @contextlib.contextmanager
 def ignored(*exceptions):
     """Allows you to ignore exceptions cleanly using context managers. This
-    exists in Python 3.
+    exists in Python 3.4 as ``contextlib.suppress()``.
 
     """
     try:
@@ -27,11 +27,17 @@ def ignored(*exceptions):
 def get_xml_parser(encoding=None):
     """Returns an ``etree.ETCompatXMLParser`` instance."""
     parser = etree.ETCompatXMLParser(
+        attribute_defaults=False,
+        load_dtd=False,
         huge_tree=True,
-        resolve_entities=False,
+        no_network=True,
+        ns_clean=True,
+        recover=False,
+        remove_pis=False,
+        remove_blank_text=False,
         remove_comments=False,
-        strip_cdata=False,
-        remove_blank_text=True,
+        resolve_entities=False,
+        strip_cdata=True,
         encoding=encoding
     )
 
