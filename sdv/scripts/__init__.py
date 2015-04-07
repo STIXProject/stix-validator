@@ -6,6 +6,9 @@ import sys
 import json
 import collections
 
+# external
+import lxml.etree
+
 # internal
 import sdv
 import sdv.codes as codes
@@ -69,6 +72,7 @@ class ValidationOptions(object):
         self.in_files = None
         self.in_profile = None
         self.recursive = False
+        self.huge_tree = False
 
 
 class ValidationResults(object):
@@ -518,6 +522,24 @@ def validate_file(fn, options):
     return results
 
 
+def _set_huge_tree_parser():
+    parser = lxml.etree.ETCompatXMLParser(
+        attribute_defaults=False,
+        load_dtd=False,
+        huge_tree=True,
+        no_network=True,
+        ns_clean=True,
+        recover=False,
+        remove_pis=False,
+        remove_blank_text=False,
+        remove_comments=False,
+        resolve_entities=False,
+        strip_cdata=True
+    )
+
+    utils.set_xml_parser(parser)
+
+
 def run_validation(options):
     """Validates files based on command line options.
 
@@ -526,9 +548,13 @@ def run_validation(options):
             this validation run.
 
     """
-    files = utils.get_xml_files(options.in_files, options.recursive)
-    results = {}
+    if options.huge_tree:
+        _set_huge_tree_parser()
 
+    # The XML files to validate
+    files = utils.get_xml_files(options.in_files, options.recursive)
+
+    results = {}
     for fn in files:
         results[fn] = validate_file(fn, options)
 

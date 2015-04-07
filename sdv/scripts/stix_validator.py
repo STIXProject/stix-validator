@@ -74,6 +74,7 @@ def _set_validation_options(args):
     options.in_profile = args.profile
     options.recursive = args.recursive
     options.use_schemaloc = args.use_schemaloc
+    options.huge_tree = args.huge_tree
 
     # output options
     options.xslt_out = args.xslt
@@ -220,6 +221,14 @@ def _get_arg_parser():
         action="store_true",
         default=False,
         help="Recursively descend into input directories."
+    )
+
+    parser.add_argument(
+        "--huge-tree",
+        dest="huge_tree",
+        action="store_true",
+        default=False,
+        help="Disable libxml2 security restrictions on XML document size."
     )
 
     parser.add_argument(
