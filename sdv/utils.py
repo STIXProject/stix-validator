@@ -12,6 +12,10 @@ from distutils.version import StrictVersion
 # relative
 from . import errors, xmlconst
 
+
+_XML_PARSER = None
+
+
 @contextlib.contextmanager
 def ignored(*exceptions):
     """Allows you to ignore exceptions cleanly using context managers. This
@@ -25,23 +29,52 @@ def ignored(*exceptions):
 
 
 def get_xml_parser(encoding=None):
-    """Returns an ``etree.ETCompatXMLParser`` instance."""
-    parser = etree.ETCompatXMLParser(
-        attribute_defaults=False,
-        load_dtd=False,
-        huge_tree=True,
-        no_network=True,
-        ns_clean=True,
-        recover=False,
-        remove_pis=False,
-        remove_blank_text=False,
-        remove_comments=False,
-        resolve_entities=False,
-        strip_cdata=True,
-        encoding=encoding
-    )
+    """Returns the global XML parser object. If no global XML parser has
+    been set, one will be created and then returned.
 
-    return parser
+    Args:
+        encoding: The expected encoding of input documents. By default, an
+            attempt will be made to determine the input document encoding.
+
+    Return:
+        The global XML parser object.
+
+    """
+    global _XML_PARSER
+
+    if not _XML_PARSER:
+        _XML_PARSER = etree.ETCompatXMLParser(
+            attribute_defaults=False,
+            load_dtd=False,
+            huge_tree=True,
+            no_network=True,
+            ns_clean=True,
+            recover=False,
+            remove_pis=False,
+            remove_blank_text=False,
+            remove_comments=False,
+            resolve_entities=False,
+            strip_cdata=True,
+            encoding=encoding
+        )
+
+    return _XML_PARSER
+
+
+def set_xml_parser(parser):
+    """Set the XML parser to use internally. This should be an instance of
+    ``lxml.etree.XMLParser``.
+
+    Note:
+        Setting `parser` to an object that is not an instance
+        ``lxml.etree.XMLParser`` may result in undesired behaviors.
+
+    Args:
+        parser: An etree parser.
+
+    """
+    global _XML_PARSER
+    _XML_PARSER = parser
 
 
 def get_etree_root(doc):
