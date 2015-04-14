@@ -523,15 +523,22 @@ def idref_timestamp_resolves(root, idref, timestamp, namespaces):
     component under `root`.
 
     """
-    def ts(node):
-        return utils.parse_timestamp(node.get('timestamp'))
+    def ts_equal(source_ts, node):
+        node_ts = utils.parse_timestamp(node.get('timestamp'))
+
+        try:
+            return source_ts == node_ts
+        except TypeError:
+             # TypeError raised when comparing timestamps with and without
+             # tzinfo. Return False in this case.
+            return False
 
     root = utils.get_etree_root(root)
     timestamp = utils.parse_timestamp(timestamp)
     xpath = "//*[@id='{}']".format(idref)
     nodes = root.xpath(xpath, namespaces=namespaces)
 
-    return any(ts(node) == timestamp for node in nodes)
+    return any(ts_equal(timestamp, node) for node in nodes)
 
 
 
