@@ -535,7 +535,7 @@ def idref_timestamp_resolves(root, idref, timestamp, namespaces):
 
     root = utils.get_etree_root(root)
     timestamp = utils.parse_timestamp(timestamp)
-    xpath = "//*[@id='{}']".format(idref)
+    xpath = "//*[@id='{0}']".format(idref)
     nodes = root.xpath(xpath, namespaces=namespaces)
 
     return any(ts_equal(timestamp, node) for node in nodes)
