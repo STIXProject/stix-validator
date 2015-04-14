@@ -32,7 +32,12 @@ fn_readme = join(BASE_DIR, "README.rst")
 with open(fn_readme) as f:
     readme = f.read()
 
-install_requires = ['lxml>=3.3.5', 'xlrd>=0.9.2', 'ordereddict']
+install_requires = [
+    'lxml>=3.3.5',
+    'xlrd>=0.9.2',
+    'ordereddict',
+    'python-dateutil'
+]
 
 extras_require = {
     'docs': [
