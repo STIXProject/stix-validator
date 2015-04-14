@@ -2,9 +2,12 @@
 # See LICENSE.txt for complete terms.
 
 import unittest
+import datetime
 from StringIO import StringIO
 
 from lxml import etree
+import dateutil.parser
+import dateutil.tz
 
 import sdv.utils as utils
 import sdv.errors as errors
@@ -75,3 +78,17 @@ class UtilsTests(unittest.TestCase):
             root
         )
 
+    def test_has_tzinfo(self):
+        # No timezone
+        now = datetime.datetime.now()
+        tz_set = utils.has_tzinfo(now)
+        self.assertEqual(False, tz_set)
+
+        hastz = (
+            datetime.datetime.now(tz=dateutil.tz.tzutc()),  # UTC
+            dateutil.parser.parse('2015-04-14T16:10:50.658617Z'),  # Zulu
+        )
+
+        for ts in hastz:
+            tz_set = utils.has_tzinfo(ts)
+            self.assertEqual(True, tz_set)
