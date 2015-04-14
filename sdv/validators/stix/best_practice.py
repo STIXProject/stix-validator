@@ -558,17 +558,24 @@ class STIXBestPracticeValidator(object):
         xpath = " | ".join("//%s" % x for x in to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
 
-        def _idref_resolves(idref, timestamp):
-            xpath = "//*[@id='%s' and @timestamp='%s']" % (idref, timestamp)
-            nodes = root.xpath(xpath, namespaces=namespaces)
-            return all((nodes is not None, len(nodes) > 0))
-
         for node in nodes:
             attrib      = node.attrib.get
             id_         = attrib('id')
             idref       = attrib('idref')
             timestamp   = attrib('timestamp')
-            warning     = None
+
+            if timestamp:
+                tz_set = utils.has_tzinfo(timestamp)
+
+                if not tz_set:
+                    warning = BestPracticeWarning(
+                        node = node,
+                        message="Timestamp without timezone information."
+                    )
+                    warning['timestamp'] = timestamp
+                    results.append(warning)
+
+            warning = None  # overwritten below
 
             if id_ and not timestamp:
                 warning = BestPracticeWarning(
@@ -581,7 +588,14 @@ class STIXBestPracticeValidator(object):
                     message="IDREF present but missing timestamp"
                 )
             elif idref and timestamp:
-                if _idref_resolves(idref, timestamp):
+                resolves = common.idref_timestamp_resolves(
+                    root=root,
+                    idref=idref,
+                    timestamp=timestamp,
+                    namespaces=namespaces
+                )
+
+                if resolves:
                     continue
 
                 warning = BestPracticeWarning(

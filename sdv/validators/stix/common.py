@@ -516,3 +516,23 @@ def get_document_namespaces(doc):
         nsmap.update(element.nsmap)
 
     return nsmap
+
+
+def idref_timestamp_resolves(root, idref, timestamp, namespaces):
+    """Determines if an `idref` and `timestamp` pair resolve to an XML
+    component under `root`.
+
+
+
+    """
+    def ts(node):
+        return utils.parse_timestamp(node.get('timestamp'))
+
+    timestamp = utils.parse_timestamp(timestamp)
+    xpath = "//*[@id='{}']".format(idref)
+    nodes = root.xpath(xpath, namespaces=namespaces)
+
+    return any(ts(node) == timestamp for node in nodes)
+
+
+

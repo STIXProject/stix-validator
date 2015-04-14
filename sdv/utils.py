@@ -4,10 +4,12 @@
 # builtin
 import os
 import contextlib
+import datetime
+from distutils.version import StrictVersion
 
 # external
+import dateutil.parser
 from lxml import etree
-from distutils.version import StrictVersion
 
 # relative
 from . import errors, xmlconst
@@ -269,3 +271,27 @@ def is_version_equal(x, y):
 
     """
     return StrictVersion(x) == StrictVersion(y)
+
+
+def parse_timestamp(value):
+    """Attempts to parse `value` into an instance of ``datetime.datetime``. If
+    `value` is ``None``, this function will return ``None``.
+
+    Args:
+        value: A timestamp. This can be a string or datetime.datetime value.
+
+    """
+    if not value:
+        return None
+    elif isinstance(value, datetime.datetime):
+        return value
+    return dateutil.parser.parse(value)
+
+
+def has_tzinfo(timestamp):
+    """Returns ``True`` if the `timestamp` includes timezone or UTC offset
+    information.
+
+    """
+    ts = parse_timestamp(timestamp)
+    return ts and bool(ts.tzinfo)
