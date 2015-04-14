@@ -7,7 +7,9 @@ from lxml import etree
 
 import sdv
 import sdv.errors as errors
+import sdv.utils as utils
 import sdv.validators.stix.best_practice as bp
+from sdv.validators.stix import common
 
 STIX_NO_VERSION_XML = \
 """
@@ -110,6 +112,93 @@ BP_INVALID_XML = \
 </stix:STIX_Package>
 """
 
+# The idref/timestamp pairs are equal.
+TS_RESOLVES_XML = \
+"""
+<stix:STIX_Package
+        xmlns:campaign="http://stix.mitre.org/Campaign-1"
+        xmlns:cybox="http://cybox.mitre.org/cybox-2"
+        xmlns:cyboxCommon="http://cybox.mitre.org/common-2"
+        xmlns:cyboxVocabs="http://cybox.mitre.org/default_vocabularies-2"
+        xmlns:example="http://example.com"
+        xmlns:indicator="http://stix.mitre.org/Indicator-2"
+        xmlns:stix="http://stix.mitre.org/stix-1"
+        xmlns:stixCommon="http://stix.mitre.org/common-1"
+        xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="example:Package-b61d4796-b7f1-4300-bb72-4707e298ef21" version="1.1.1" timestamp="2015-04-14T15:24:19.416704+00:00">
+    <stix:Indicators>
+        <stix:Indicator id="example:indicator-1" timestamp="2015-04-14T15:24:19.416203+00:00" xsi:type='indicator:IndicatorType'>
+            <indicator:Related_Campaigns>
+                <indicator:Related_Campaign>
+                    <stixCommon:Campaign idref="example:campaign-1" timestamp="2015-04-14T15:24:19.416203+00:00"/>
+                </indicator:Related_Campaign>
+            </indicator:Related_Campaigns>
+        </stix:Indicator>
+    </stix:Indicators>
+    <stix:Campaigns>
+        <stix:Campaign id="example:campaign-1" timestamp="2015-04-14T15:24:19.416203+00:00" xsi:type='campaign:CampaignType'/>
+    </stix:Campaigns>
+</stix:STIX_Package>
+"""
+
+# The idref/timestamp pairs don't resolve
+TS_DOES_NOT_RESOLVE = \
+"""
+<stix:STIX_Package
+        xmlns:campaign="http://stix.mitre.org/Campaign-1"
+        xmlns:cybox="http://cybox.mitre.org/cybox-2"
+        xmlns:cyboxCommon="http://cybox.mitre.org/common-2"
+        xmlns:cyboxVocabs="http://cybox.mitre.org/default_vocabularies-2"
+        xmlns:example="http://example.com"
+        xmlns:indicator="http://stix.mitre.org/Indicator-2"
+        xmlns:stix="http://stix.mitre.org/stix-1"
+        xmlns:stixCommon="http://stix.mitre.org/common-1"
+        xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="example:Package-b61d4796-b7f1-4300-bb72-4707e298ef21" version="1.1.1" timestamp="2015-04-14T15:24:19.416704+00:00">
+    <stix:Indicators>
+        <stix:Indicator id="example:indicator-1" timestamp="2015-04-14T15:24:19.416203+00:00" xsi:type='indicator:IndicatorType'>
+            <indicator:Related_Campaigns>
+                <indicator:Related_Campaign>
+                    <stixCommon:Campaign idref="example:campaign-1" timestamp="2015-04-14T15:24:19.416203+00:00"/>
+                </indicator:Related_Campaign>
+            </indicator:Related_Campaigns>
+        </stix:Indicator>
+    </stix:Indicators>
+    <stix:Campaigns>
+        <stix:Campaign id="example:campaign-1" timestamp="2014-01-01T00:00:01+00:00" xsi:type='campaign:CampaignType'/>
+    </stix:Campaigns>
+</stix:STIX_Package>
+"""
+
+# Same time, different timezones.
+TS_TZ_RESOLVES = \
+"""
+<stix:STIX_Package
+        xmlns:campaign="http://stix.mitre.org/Campaign-1"
+        xmlns:cybox="http://cybox.mitre.org/cybox-2"
+        xmlns:cyboxCommon="http://cybox.mitre.org/common-2"
+        xmlns:cyboxVocabs="http://cybox.mitre.org/default_vocabularies-2"
+        xmlns:example="http://example.com"
+        xmlns:indicator="http://stix.mitre.org/Indicator-2"
+        xmlns:stix="http://stix.mitre.org/stix-1"
+        xmlns:stixCommon="http://stix.mitre.org/common-1"
+        xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="example:Package-b61d4796-b7f1-4300-bb72-4707e298ef21" version="1.1.1" timestamp="2015-04-14T15:24:19.416704+00:00">
+    <stix:Indicators>
+        <stix:Indicator id="example:indicator-1" timestamp="2015-04-14T15:24:19.416203+00:00" xsi:type='indicator:IndicatorType'>
+            <indicator:Related_Campaigns>
+                <indicator:Related_Campaign>
+                    <stixCommon:Campaign idref="example:campaign-1" timestamp="2015-04-14T15:24:19.416203+00:00"/>
+                </indicator:Related_Campaign>
+            </indicator:Related_Campaigns>
+        </stix:Indicator>
+    </stix:Indicators>
+    <stix:Campaigns>
+        <stix:Campaign id="example:campaign-1" timestamp="2015-04-14T12:24:19.416203-03:00" xsi:type='campaign:CampaignType'/>
+    </stix:Campaigns>
+</stix:STIX_Package>
+"""
+
 class STIXBestPracticesTests(unittest.TestCase):
 
     @classmethod
@@ -177,6 +266,58 @@ class BestPracticeWarningTests(unittest.TestCase):
         warning['foo'] = 'bar'
         d = warning.as_dict()
         self.assertTrue('foo' in d)
+
+
+class BestPracticeTimestampTests(unittest.TestCase):
+    def test_ts_resolves(self):
+        sio = StringIO(TS_RESOLVES_XML)
+
+        idref = "example:campaign-1"
+        timestamp="2015-04-14T15:24:19.416203+00:00"
+
+        resolves = common.idref_timestamp_resolves(
+            root=sio,
+            idref=idref,
+            timestamp=timestamp,
+            namespaces=common.get_stix_namespaces('1.1.1')
+        )
+
+        self.assertTrue(resolves)
+
+    def test_ts_not_resolves(self):
+        sio = StringIO(TS_DOES_NOT_RESOLVE)
+
+        idref = "example:campaign-1"
+        timestamp="2015-04-14T15:24:19.416203+00:00"
+
+        resolves = common.idref_timestamp_resolves(
+            root=sio,
+            idref=idref,
+            timestamp=timestamp,
+            namespaces=common.get_stix_namespaces('1.1.1')
+        )
+
+        self.assertEqual(resolves, False)
+
+    def test_ts_tz_resolves(self):
+        root = utils.get_etree_root(StringIO(TS_TZ_RESOLVES))
+
+        offset_resolves = common.idref_timestamp_resolves(
+            root=root,
+            idref="example:campaign-1",
+            timestamp="2015-04-14T15:24:19.416203+00:00",
+            namespaces=common.get_stix_namespaces('1.1.1')
+        )
+
+        zulu_resolves = common.idref_timestamp_resolves(
+            root=root,
+            idref="example:campaign-1",
+            timestamp="2015-04-14T15:24:19.416203Z",
+            namespaces=common.get_stix_namespaces('1.1.1')
+        )
+
+        self.assertTrue(zulu_resolves)
+        self.assertTrue(offset_resolves)
 
 
 if __name__ == '__main__':
