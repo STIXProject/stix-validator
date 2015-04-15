@@ -425,7 +425,8 @@ class STIXBestPracticeValidator(object):
         def is_invalid(node):
             if common.is_idref_content_exception(node):
                 return False
-            return bool(node.text) or len(node.findall('*')) > 0
+
+            return utils.has_content(node)
 
         nodes = root.xpath("//*[@idref]")
         warnings = [BestPracticeWarning(x) for x in nodes if is_invalid(x)]
@@ -574,8 +575,6 @@ class STIXBestPracticeValidator(object):
                     )
                     warning['timestamp'] = timestamp
                     results.append(warning)
-
-            warning = None  # overwritten below
 
             if id_ and not timestamp:
                 warning = BestPracticeWarning(

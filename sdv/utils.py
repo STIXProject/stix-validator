@@ -295,3 +295,31 @@ def has_tzinfo(timestamp):
     """
     ts = parse_timestamp(timestamp)
     return ts and bool(ts.tzinfo)
+
+
+def strip_whitespace(string):
+    """Returns a copy of `string` with all whitespace removed.
+
+    """
+    if string is None:
+        return None
+
+    return ''.join(string.split())
+
+
+def has_content(node):
+    """Returns ``True`` if the `node` has children or text nodes.
+
+    Note:
+        This will ignore whitespace and XML comments.
+
+    """
+    if node is None:
+        return False
+
+    if len(node.findall('*')) > 0:
+        return True
+
+    stripped = strip_whitespace(node.text)
+    return bool(stripped)
+
