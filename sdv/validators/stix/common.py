@@ -226,7 +226,7 @@ def is_idref_content_exception(node):
 
 def _get_cybox_vocab_version(name, version):
     descending = reversed(
-        sorted(CYBOX_VOCAB_VERSIONS.keys(), key=lambda x: StrictVersion(x))
+        sorted(CYBOX_VOCAB_VERSIONS.keys(), key=StrictVersion)
     )
     keys = tuple(descending)
     idx = keys.index
@@ -244,7 +244,7 @@ def _get_cybox_vocab_version(name, version):
 
 def _get_stix_vocab_version(name, version):
     descending = reversed(
-        sorted(STIX_VOCAB_VERSIONS.keys(), key=lambda x: StrictVersion(x))
+        sorted(STIX_VOCAB_VERSIONS.keys(), key=StrictVersion)
     )
     keys = tuple(descending)
     idx = keys.index
