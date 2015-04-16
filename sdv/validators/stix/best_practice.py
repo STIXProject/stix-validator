@@ -782,7 +782,7 @@ class STIXBestPracticeValidator(object):
                 continue
 
             # Try to get the namespace mapped to the ID ns prefix
-            prefix, localpart = id_parts
+            prefix = id_parts[0]
             ns = doc_nsmap.get(prefix)
 
             if ns not in ex_namespaces:
