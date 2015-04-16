@@ -529,8 +529,8 @@ def idref_timestamp_resolves(root, idref, timestamp, namespaces):
         try:
             return source_ts == node_ts
         except TypeError:
-             # TypeError raised when comparing timestamps with and without
-             # tzinfo. Return False in this case.
+            # TypeError raised when comparing timestamps with and without
+            # tzinfo. Return False in this case.
             return False
 
     root = utils.get_etree_root(root)
