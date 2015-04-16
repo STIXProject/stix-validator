@@ -29,13 +29,14 @@ PREFIX_CYBOX_CORE = 'cybox-core'
 PREFIX_CYBOX_COMMON = 'cybox-common'
 PREFIX_CYBOX_VOCABS = 'cybox-vocabs'
 
-STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1')
+STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1', '1.2')
 
 STIX_TO_CYBOX_VERSIONS = {
     '1.0': '2.0',
     '1.0.1': '2.0.1',
     '1.1': '2.1',
-    '1.1.1': '2.1'
+    '1.1.1': '2.1',
+    '1.2': '2.1'
 }
 
 STIX_COMPONENT_VERSIONS = {
@@ -75,6 +76,7 @@ STIX_COMPONENT_VERSIONS = {
     },
     '1.1': {
         '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:Package'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1',
@@ -92,6 +94,7 @@ STIX_COMPONENT_VERSIONS = {
     },
     '1.1.1': {
         '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Package'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1.1',
@@ -107,10 +110,30 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1.1'
     },
+    '1.2': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Package'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.2',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.2',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Report'.format(PREFIX_STIX_CORE): '1.0'
+    }
 }
 
 STIX_CORE_COMPONENTS = (
     '{0}:STIX_Package'.format(PREFIX_STIX_CORE),
+    '{0}:Package'.format(PREFIX_STIX_CORE),
     '{0}:Campaign'.format(PREFIX_STIX_CORE),
     '{0}:Campaign'.format(PREFIX_STIX_COMMON),
     '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE),
@@ -124,7 +147,8 @@ STIX_CORE_COMPONENTS = (
     '{0}:Threat_Actor'.format(PREFIX_STIX_CORE),
     '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON),
     '{0}:TTP'.format(PREFIX_STIX_CORE),
-    '{0}:TTP'.format(PREFIX_STIX_COMMON)
+    '{0}:TTP'.format(PREFIX_STIX_COMMON),
+    '{0}:Report'.format(PREFIX_STIX_CORE),
 )
 
 CYBOX_CORE_COMPONENTS = (
@@ -179,6 +203,9 @@ STIX_VOCAB_VERSIONS = {
     },
     '1.1.1': {
         'AvailabilityLossTypeVocab': '1.1.1',
+    },
+    '1.2': {
+        'DiscoveryMethodVocab': '2.0'
     }
 }
 
@@ -501,23 +528,6 @@ def check_stix(func):
     return _check_stix
 
 
-def get_document_namespaces(doc):
-    """Returns namespace dictionary for all the namespaces declared in the
-    input `doc`.
-
-    Args:
-        doc: A read()-able XML document or etree node.
-
-    """
-    root = utils.get_etree_root(doc)
-
-    nsmap = {}
-    for element in root.findall(".//*"):
-        nsmap.update(element.nsmap)
-
-    return nsmap
-
-
 def idref_timestamp_resolves(root, idref, timestamp, namespaces):
     """Determines if an `idref` and `timestamp` pair resolve to an XML
     component under `root`.
@@ -539,6 +549,3 @@ def idref_timestamp_resolves(root, idref, timestamp, namespaces):
     nodes = root.xpath(xpath, namespaces=namespaces)
 
     return any(ts_equal(timestamp, node) for node in nodes)
-
-
-

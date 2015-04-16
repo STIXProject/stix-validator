@@ -760,7 +760,7 @@ class STIXBestPracticeValidator(object):
         ex_namespaces = ('http://example.com', 'http://example.com/')
 
         # Get all the namespaces used in the document
-        doc_nsmap = common.get_document_namespaces(root)
+        doc_nsmap = utils.get_document_namespaces(root)
 
         # Element tags to check for example ID presence
         to_check = itertools.chain(
