@@ -252,13 +252,11 @@ def is_idref_content_exception(node):
 
 
 def _get_cybox_vocab_version(name, version):
-    descending = reversed(
-        sorted(CYBOX_VOCAB_VERSIONS.keys(), key=StrictVersion)
-    )
-    keys = tuple(descending)
-    idx = keys.index
+    versions = CYBOX_VOCAB_VERSIONS.iterkeys()
+    descending = sorted(versions, key=StrictVersion, reverse=True)
+    idx = descending.index
 
-    for key in keys[idx(version):]:
+    for key in descending[idx(version):]:
         vocabs = CYBOX_VOCAB_VERSIONS[key]
 
         if name in vocabs:
@@ -270,13 +268,11 @@ def _get_cybox_vocab_version(name, version):
 
 
 def _get_stix_vocab_version(name, version):
-    descending = reversed(
-        sorted(STIX_VOCAB_VERSIONS.keys(), key=StrictVersion)
-    )
-    keys = tuple(descending)
-    idx = keys.index
+    versions = STIX_VOCAB_VERSIONS.iterkeys()
+    descending = sorted(versions, key=StrictVersion, reverse=True)
+    idx = descending.index
 
-    for key in keys[idx(version):]:
+    for key in descending[idx(version):]:
         vocabs = STIX_VOCAB_VERSIONS[key]
 
         if name in vocabs:

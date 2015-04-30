@@ -712,11 +712,19 @@ class STIXBestPracticeValidator(object):
         if len(indicators) == 0:
             return results
 
+        def is_leaf(node):
+            children = node.findall(".//*")
+
+            if len(children) > 0:
+                return False
+
+            return bool(node.text)
+
         def _get_leaves(nodes):
             """Finds and returns all leaf nodes contained within `nodes`."""
             leaves = []
             for node in nodes:
-                leaves.extend(x for x in node.findall(".//*") if x.text)
+                leaves.extend(x for x in node.findall(".//*") if is_leaf(x))
             return leaves
 
         def _get_observables(indicators):
