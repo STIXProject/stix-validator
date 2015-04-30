@@ -10,9 +10,8 @@ from distutils.version import StrictVersion
 from lxml import etree
 
 # internal
-import sdv.errors as errors
-import sdv.utils as utils
-import sdv.xmlconst as xmlconst
+from sdv import errors, utils, xmlconst
+
 
 PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'
@@ -22,6 +21,7 @@ PREFIX_STIX_COA = 'stix-coa'
 PREFIX_STIX_EXPLOIT_TARGET = 'stix-et'
 PREFIX_STIX_INDICATOR = 'stix-indicator'
 PREFIX_STIX_INCIDENT = 'stix-incident'
+PREFIX_STIX_REPORT = "stix-report"
 PREFIX_STIX_THREAT_ACTOR = 'stix-ta'
 PREFIX_STIX_VOCABS = 'stix-vocabs'
 PREFIX_DATA_MARKING = 'stix-marking'
@@ -113,20 +113,20 @@ STIX_COMPONENT_VERSIONS = {
     '1.2': {
         '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.2',
         '{0}:Package'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.2',
-        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.2',
-        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.2',
-        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.2',
-        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.2',
-        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.2',
-        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.2',
-        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.2',
-        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.1.1',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.1.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1.1',
         '{0}:Report'.format(PREFIX_STIX_CORE): '1.0'
     }
 }
@@ -149,6 +149,7 @@ STIX_CORE_COMPONENTS = (
     '{0}:TTP'.format(PREFIX_STIX_CORE),
     '{0}:TTP'.format(PREFIX_STIX_COMMON),
     '{0}:Report'.format(PREFIX_STIX_CORE),
+    '{0}:Report'.format(PREFIX_STIX_COMMON),
 )
 
 CYBOX_CORE_COMPONENTS = (
@@ -429,6 +430,7 @@ def get_stix_namespaces(version):
         PREFIX_STIX_EXPLOIT_TARGET: 'http://stix.mitre.org/ExploitTarget-1',
         PREFIX_STIX_INDICATOR: 'http://stix.mitre.org/Indicator-2',
         PREFIX_STIX_INCIDENT: 'http://stix.mitre.org/Incident-1',
+        PREFIX_STIX_REPORT: 'http://stix.mitre.org/Report-1',
         PREFIX_STIX_THREAT_ACTOR: 'http://stix.mitre.org/ThreatActor-1',
         PREFIX_STIX_VOCABS: 'http://stix.mitre.org/default_vocabularies-1',
         PREFIX_DATA_MARKING: 'http://data-marking.mitre.org/Marking-1',
