@@ -808,7 +808,7 @@ class STIXBestPracticeValidator(object):
         Package top-level collections.
 
         """
-        to_check = (
+        stix = (
             './/{0}:Campaigns/{0}:Campaign',
             './/{0}:Courses_Of_Action/{0}:Course_Of_Action',
             './/{0}:Exploit_Targets/{0}:Exploit_Target',
@@ -819,7 +819,16 @@ class STIXBestPracticeValidator(object):
             './/{0}:Related_Packages/{0}:Related_Package/{0}:Package',
         )
 
-        xpath = " | ".join(x.format(common.PREFIX_STIX_CORE) for x in to_check)
+        cybox = ".//{0}:Observables/{1}:Observable".format(
+            common.PREFIX_STIX_CORE,
+            common.PREFIX_CYBOX_CORE
+        )
+
+        # Combine the STIX and CybOX selectors
+        to_check = [x.format(common.PREFIX_STIX_CORE) for x in stix]
+        to_check.append(cybox)
+
+        xpath = " | ".join(to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
 
         # Create result collection
