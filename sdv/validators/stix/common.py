@@ -23,6 +23,7 @@ PREFIX_STIX_INDICATOR = 'stix-indicator'
 PREFIX_STIX_INCIDENT = 'stix-incident'
 PREFIX_STIX_REPORT = "stix-report"
 PREFIX_STIX_THREAT_ACTOR = 'stix-ta'
+PREFIX_STIX_TTP = 'stix-ttp'
 PREFIX_STIX_VOCABS = 'stix-vocabs'
 PREFIX_DATA_MARKING = 'stix-marking'
 PREFIX_CYBOX_CORE = 'cybox-core'
@@ -432,6 +433,7 @@ def get_stix_namespaces(version):
         PREFIX_STIX_INCIDENT: 'http://stix.mitre.org/Incident-1',
         PREFIX_STIX_REPORT: 'http://stix.mitre.org/Report-1',
         PREFIX_STIX_THREAT_ACTOR: 'http://stix.mitre.org/ThreatActor-1',
+        PREFIX_STIX_TTP: 'http://stix.mitre.org/TTP-1',
         PREFIX_STIX_VOCABS: 'http://stix.mitre.org/default_vocabularies-1',
         PREFIX_DATA_MARKING: 'http://data-marking.mitre.org/Marking-1',
         PREFIX_CYBOX_CORE: 'http://cybox.mitre.org/cybox-2',
