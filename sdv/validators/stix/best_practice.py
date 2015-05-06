@@ -448,8 +448,10 @@ class STIXBestPracticeValidator(object):
         """
         to_check = (
             "{0}:Indicator".format(common.PREFIX_STIX_CORE),
-            "{0}:Indicator".format(common.PREFIX_STIX_COMMON)
+            "{0}:Indicator".format(common.PREFIX_STIX_COMMON),
+            "{0}:Indicator".format(common.PREFIX_STIX_REPORT),
         )
+
         results = BestPracticeWarningCollection("Indicator Suggestions")
         xpath = " | ".join("//%s" % x for x in to_check)
         ns = namespaces[common.PREFIX_STIX_INDICATOR]
@@ -649,7 +651,9 @@ class STIXBestPracticeValidator(object):
             if 'idref' in node.attrib:
                 continue
 
-            if not any(utils.localname(x) == 'Title' for x in node):
+            children = node.xpath("./*")
+
+            if not any(utils.localname(x) == 'Title' for x in children):
                 warning = BestPracticeWarning(node=node)
                 results.append(warning)
 
@@ -700,7 +704,9 @@ class STIXBestPracticeValidator(object):
             '{0}:Threat_Actor'.format(common.PREFIX_STIX_COMMON),
             '{0}:Threat_Actor'.format(common.PREFIX_STIX_CORE),
             '{0}:TTP'.format(common.PREFIX_STIX_CORE),
-            '{0}:TTP'.format(common.PREFIX_STIX_COMMON)
+            '{0}:TTP'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Report/{1}:Header'.format(common.PREFIX_STIX_CORE, common.PREFIX_STIX_REPORT),
+            '{0}:Report/{1}:Header'.format(common.PREFIX_STIX_COMMON, common.PREFIX_STIX_REPORT)
         )
 
         results = self._check_titles(root, namespaces, to_check)
@@ -763,7 +769,8 @@ class STIXBestPracticeValidator(object):
 
         selectors = (
             "//{0}:Indicator".format(common.PREFIX_STIX_CORE),
-            "//{0}:Indicator".format(common.PREFIX_STIX_COMMON)
+            "//{0}:Indicator".format(common.PREFIX_STIX_COMMON),
+            "//{0}:Indicator".format(common.PREFIX_STIX_REPORT)
         )
 
         xpath = " | ".join(selectors)
@@ -867,17 +874,17 @@ class STIXBestPracticeValidator(object):
 
         """
         stix = (
-            './/{0}:Campaigns/{0}:Campaign',
-            './/{0}:Courses_Of_Action/{0}:Course_Of_Action',
-            './/{0}:Exploit_Targets/{0}:Exploit_Target',
-            './/{0}:Incidents/{0}:Incident',
-            './/{0}:Indicators/{0}:Indicator',
-            './/{0}:Threat_Actors/{0}:Threat_Actor',
-            './/{0}:TTPs/{0}:TTP',
-            './/{0}:Related_Packages/{0}:Related_Package/{0}:Package',
+            '//{0}:Campaigns/{0}:Campaign',
+            '//{0}:Courses_Of_Action/{0}:Course_Of_Action',
+            '//{0}:Exploit_Targets/{0}:Exploit_Target',
+            '//{0}:Incidents/{0}:Incident',
+            '//{0}:Indicators/{0}:Indicator',
+            '//{0}:Threat_Actors/{0}:Threat_Actor',
+            '//{0}:TTPs/{0}:TTP',
+            '//{0}:Related_Packages/{0}:Related_Package/{0}:Package',
         )
 
-        cybox = ".//{0}:Observables/{1}:Observable".format(
+        cybox = "//{0}:Observables/{1}:Observable".format(
             common.PREFIX_STIX_CORE,
             common.PREFIX_CYBOX_CORE
         )
