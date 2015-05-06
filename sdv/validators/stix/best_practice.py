@@ -25,7 +25,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
-def rule(version):
+def rule(min, max=None):
     """Decorator that identifies methods as being a STIX best practice checking
     rule.
 
@@ -35,7 +35,8 @@ def rule(version):
     """
     def decorator(func):
         func.is_rule = True
-        func.version = version
+        func.min_version = min
+        func.max_version = max
         return func
     return decorator
 
@@ -52,7 +53,7 @@ class BestPracticeMeta(type):
         rules = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
 
         for rule in rules:
-            result._rules[rule.version].append(rule)  # pylint: disable=W0212
+            result._rules[(rule.min_version, rule.max_version)].append(rule)
 
         return result
 
@@ -547,19 +548,12 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule('1.1')
-    def _check_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
-        """Checks that all major STIX constructs have appropriate
-        timestamp usage.
-
-        Note:
-            This does not check core CybOX constructs because they lack
-            timestamp attributes.
+    def _check_timestamp_usage(self, root, namespaces, selectors):
+        """Inspects each node in `nodes` for correct timestamp use.
 
         """
         results = BestPracticeWarningCollection("Timestamp Use")
-        to_check = common.STIX_CORE_COMPONENTS
-        xpath = " | ".join("//%s" % x for x in to_check)
+        xpath = " | ".join("//%s" % x for x in selectors)
         nodes = root.xpath(xpath, namespaces=namespaces)
 
         for node in nodes:
@@ -614,8 +608,55 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule('1.0')
-    def _check_titles(self, root, namespaces, version):  # noqa
+    @rule(min='1.1', max='1.2')
+    def _check_1_1_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
+        """Checks that all major STIX constructs have appropriate
+        timestamp usage.
+
+        Note:
+            This does not check core CybOX constructs because they lack
+            timestamp attributes.
+
+        """
+        to_check = common.STIX_CORE_COMPONENTS
+        results = self._check_timestamp_usage(root, namespaces, to_check)
+        return results
+
+    @rule(min='1.2')
+    def _check_1_2_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
+        """Checks that all major STIX constructs have appropriate
+        timestamp usage.
+
+        Note:
+            This does not check core CybOX constructs because they lack
+            timestamp attributes.
+
+        """
+        to_check = common.STIX_CORE_COMPONENTS[2:]  # skip STIX Packages
+        results = self._check_timestamp_usage(root, namespaces, to_check)
+        return results
+
+    def _check_titles(self, root, namespaces, selectors):
+        """Checks that each node in `nodes` has a ``Title`` element unless
+        there is an ``@idref`` attribute set.
+
+        """
+        results = BestPracticeWarningCollection("Missing Titles")
+        xpath = " | ".join("//%s" % x for x in selectors)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        for node in nodes:
+            if 'idref' in node.attrib:
+                continue
+
+            if not any(utils.localname(x) == 'Title' for x in node):
+                warning = BestPracticeWarning(node=node)
+                results.append(warning)
+
+        return results
+
+    @rule(min='1.0', max='1.2')
+    def _check_1_0_titles(self, root, namespaces, version):  # noqa
         """Checks that all major STIX constructs have a Title element.
 
         """
@@ -636,18 +677,33 @@ class STIXBestPracticeValidator(object):
             '{0}:TTP'.format(common.PREFIX_STIX_CORE),
             '{0}:TTP'.format(common.PREFIX_STIX_COMMON)
         )
-        results = BestPracticeWarningCollection("Missing Titles")
-        xpath = " | ".join("//%s" % x for x in to_check)
-        nodes = root.xpath(xpath, namespaces=namespaces)
 
-        for node in nodes:
-            if 'idref' in node.attrib:
-                continue
+        results = self._check_titles(root, namespaces, to_check)
+        return results
 
-            if not any(etree.QName(x).localname == 'Title' for x in node):
-                warning = BestPracticeWarning(node=node)
-                results.append(warning)
+    @rule(min='1.2')
+    def _check_1_2_titles(self, root, namespaces, version):  # noqa
+        """Checks that all major STIX constructs have a Title element.
 
+        """
+        to_check = (
+            '{0}:Campaign'.format(common.PREFIX_STIX_CORE),
+            '{0}:Campaign'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Course_Of_Action'.format(common.PREFIX_STIX_CORE),
+            '{0}:Course_Of_Action'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Exploit_Target'.format(common.PREFIX_STIX_CORE),
+            '{0}:Exploit_Target'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Incident'.format(common.PREFIX_STIX_CORE),
+            '{0}:Incident'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Indicator'.format(common.PREFIX_STIX_CORE),
+            '{0}:Indicator'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(common.PREFIX_STIX_CORE),
+            '{0}:TTP'.format(common.PREFIX_STIX_CORE),
+            '{0}:TTP'.format(common.PREFIX_STIX_COMMON)
+        )
+
+        results = self._check_titles(root, namespaces, to_check)
         return results
 
     @rule('1.0')
@@ -961,23 +1017,32 @@ class STIXBestPracticeValidator(object):
 
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
-        to the STIX `version`.
+        to the STIX `ver`sion.
 
         """
-        def is_applicable(func_version, stix_version):
-            if not func_version:
+        def can_run(stix_version, rule_min, rule_max):
+            if not rule_min:
                 return True
 
-            return StrictVersion(func_version) <= StrictVersion(stix_version)
+            doc_ver = StrictVersion(stix_version)
+            min_ver = StrictVersion(rule_min)
+
+            if rule_max:
+                max_ver = StrictVersion(rule_max)
+                return (min_ver <= doc_ver < max_ver)
+
+            return min_ver <= doc_ver
 
         StrictVersion = distutils.version.StrictVersion
-        checks = self._rules.iteritems()  # noqa
+        all_rules = self._rules.iteritems()  # noqa
 
         # Get a generator which yields all best practice methods that are
         # assigned a version number <= the input STIX document version number.
-        rules = itertools.chain.from_iterable(
-            funcs for (x, funcs) in checks if is_applicable(x, version)
-        )
+        rules = []
+
+        for (versions, funcs) in all_rules:
+            min_, max_ = versions
+            rules.extend(f for f in funcs if can_run(version, min_, max_))
 
         return rules
 
