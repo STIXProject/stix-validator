@@ -534,7 +534,7 @@ def idref_timestamp_resolves(root, idref, timestamp, namespaces):
 
     """
     def ts_equal(source_ts, node):
-        node_ts = utils.parse_timestamp(node.get('timestamp'))
+        node_ts = utils.parse_timestamp(node.attrib.get('timestamp'))
 
         try:
             return source_ts == node_ts

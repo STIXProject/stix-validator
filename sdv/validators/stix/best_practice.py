@@ -206,6 +206,9 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         if not value:
             return
 
+        if isinstance(value, etree._Element):  # noqa
+            value = BestPracticeWarning(node=value)
+
         self._warnings.insert(idx, value)
 
     def __getitem__(self, key):
@@ -802,8 +805,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule('1.2')
-    def _check_idref_in_tlo_collections(self, root, namespaces, version):
+    def _get_1_2_tlo_deprecations(self, root, namespaces):
         """Checks for the existence of any idref elements inside the STIX
         Package top-level collections.
 
@@ -832,87 +834,128 @@ class STIXBestPracticeValidator(object):
         nodes = root.xpath(xpath, namespaces=namespaces)
 
         # Create result collection
-        title = 'IDREF Content In Top-level Collection'
-        results = BestPracticeWarningCollection(title)
+        msg = "IDREFs in top-level collections is deprecated."
 
         # Attach warnings to collection
-        warns =  (BestPracticeWarning(x) for x in nodes if 'idref' in x.attrib)
-        results.extend(warns)
+        warns =  []
+        for node in nodes:
+            if 'idref' not in node.attrib:
+                continue
 
-        return results
+            warn = BestPracticeWarning(node=node, message=msg)
+            warns.append(warn)
 
+        return warns
 
-    @rule('1.2')
-    def _check_related_package_refs(self, root, namespaces, version):
+    def _get_1_2_related_package_deprecations(self, root, namespaces):
         """Checks for deprecated use of Related_Packages in STIX component
         instances.
 
         """
-        to_check = (
-            '{0}:Campaign/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_CAMPAIGN
-            ),
-            '{0}:Campaign/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_CAMPAIGN
-            ),
-            '{0}:Course_Of_Action/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_COA
-            ),
-            '{0}:Course_Of_Action/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_COA
-            ),
-            '{0}:Exploit_Target/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_EXPLOIT_TARGET
-            ),
-            '{0}:Exploit_Target/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_EXPLOIT_TARGET
-            ),
-            '{0}:Incident/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_INCIDENT
-            ),
-            '{0}:Incident/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_INCIDENT
-            ),
-            '{0}:Indicator/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_INDICATOR
-            ),
-            '{0}:Indicator/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_INDICATOR
-            ),
-            '{0}:Threat_Actor/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_THREAT_ACTOR
-            ),
-            '{0}:Threat_Actor/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_THREAT_ACTOR
-            ),
-            '{0}:TTP/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_CORE,
-                common.PREFIX_STIX_TTP
-            ),
-            '{0}:TTP/{1}:Related_Packages'.format(
-                common.PREFIX_STIX_COMMON,
-                common.PREFIX_STIX_TTP
-            ),
+        selector = "//{0}:Related_Packages"
+        prefixes = (
+            common.PREFIX_STIX_CAMPAIGN,
+            common.PREFIX_STIX_COA,
+            common.PREFIX_STIX_EXPLOIT_TARGET,
+            common.PREFIX_STIX_INCIDENT,
+            common.PREFIX_STIX_INDICATOR,
+            common.PREFIX_STIX_THREAT_ACTOR,
+            common.PREFIX_STIX_TTP
         )
 
-        xpath = " | ".join("//%s" % x for x in to_check)
+        to_check = (selector.format(prefix) for prefix in prefixes)
+        xpath = " | ".join(to_check)
         nodes = root.xpath(xpath, namespaces=namespaces)
 
-        title = "Deprecated: Related_Packages "
-        results = BestPracticeWarningCollection(title)
-        results.extend(nodes)
+        msg = "Use of Related_Packages is deprecated."
+        warns = [BestPracticeWarning(node=x, message=msg) for x in nodes]
+        return warns
+
+    def _get_1_2_package_deprecations(self, root, namespaces):
+        """Checks for deprecated fields on STIX Package instances.
+
+        """
+        to_check = (
+            "//{0}:STIX_Package".format(common.PREFIX_STIX_CORE),
+            "//{0}:Package".format(common.PREFIX_STIX_CORE)
+        )
+
+        xpath = " | ".join(to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        warns = []
+        for node in nodes:
+            attrib = node.attrib
+
+            if 'idref' in attrib:
+                msg = "@idref is deprecated in STIX Package."
+            elif 'timestamp' in attrib:
+                msg = "@timestamp is deprecated in STIX Package."
+            else:
+                continue
+
+            warn = BestPracticeWarning(node=node, message=msg)
+            warns.append(warn)
+
+        return warns
+
+    def _get_1_2_header_warnings(self, root, namespaces):
+        """Checks for deprecated fields on STIX Header instances.
+
+        """
+        to_check = (
+            "{0}:Title".format(common.PREFIX_STIX_CORE),
+            "{0}:Description".format(common.PREFIX_STIX_CORE),
+            "{0}:Short_Description".format(common.PREFIX_STIX_CORE),
+            "{0}:Package_Intent".format(common.PREFIX_STIX_CORE),
+        )
+
+        header = "//{0}:STIX_Header".format(common.PREFIX_STIX_CORE)
+        xpath = " | ".join("%s/%s" % (header, x) for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+        fmt = "%s is deprecated in STIX Header."
+
+        warns = []
+        for node in nodes:
+            localname = utils.localname(node)
+            msg = fmt % localname
+
+            warn = BestPracticeWarning(node=node, message=msg)
+            warns.append(warn)
+
+        return warns
+
+    @rule('1.2')
+    def _check_1_2_deprecations(self, root, namespaces, version):
+        package_warnings = self._get_1_2_package_deprecations(
+            root=root,
+            namespaces=namespaces
+        )
+
+        header_warnings = self._get_1_2_header_warnings(
+            root=root,
+            namespaces=namespaces
+        )
+
+        tlo_warnings = self._get_1_2_tlo_deprecations(
+            root=root,
+            namespaces=namespaces
+        )
+
+        related_package_warnings= self._get_1_2_related_package_deprecations(
+            root=root,
+            namespaces=namespaces
+        )
+
+        warns = itertools.chain(
+            package_warnings,
+            header_warnings,
+            tlo_warnings,
+            related_package_warnings
+        )
+
+        results = BestPracticeWarningCollection("STIX 1.2 Deprecations")
+        results.extend(warns)
 
         return results
 

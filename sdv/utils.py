@@ -339,3 +339,10 @@ def get_document_namespaces(doc):
         nsmap.update(element.nsmap)
 
     return nsmap
+
+
+def localname(node):
+    """Returns the localname for an etree Element `node`.
+
+    """
+    return etree.QName(node).localname
