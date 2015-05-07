@@ -25,7 +25,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
-def rule(min, max=None):
+def rule(minver, maxver=None):
     """Decorator that identifies methods as being a STIX best practice checking
     rule.
 
@@ -35,8 +35,8 @@ def rule(min, max=None):
     """
     def decorator(func):
         func.is_rule = True
-        func.min_version = min
-        func.max_version = max
+        func.min_version = minver
+        func.max_version = maxver
         return func
     return decorator
 
@@ -47,15 +47,22 @@ class BestPracticeMeta(type):
 
     """
     def __new__(metacls, name, bases, dict_):
-        result = type.__new__(metacls, name, bases, dict_)
+        obj = type.__new__(metacls, name, bases, dict_)
 
-        result._rules = collections.defaultdict(list)  # pylint: disable=W0212
-        rules = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
+        # Initialize a mapping of STIX versions to applicable rule funcs.
+        ruledict = collections.defaultdict(list)
 
-        for rule in rules:
-            result._rules[(rule.min_version, rule.max_version)].append(rule)
+        # Find all @rule marked functions in the class dict_
+        rulefuncs = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
 
-        return result
+        # Build the rule function dict.
+        for rule in rulefuncs:
+            ruledict[(rule.min_version, rule.max_version)].append(rule)  # noqa
+
+        # Attach the rule dictionary to the object instance.
+        obj._rules = ruledict  # noqa
+
+        return obj
 
 
 class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
@@ -610,7 +617,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule(min='1.1', max='1.1.1')
+    @rule(minver='1.1', maxver='1.1.1')
     def _check_1_1_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
         """Checks that all major STIX constructs have appropriate
         timestamp usage.
@@ -624,7 +631,7 @@ class STIXBestPracticeValidator(object):
         results = self._check_timestamp_usage(root, namespaces, to_check)
         return results
 
-    @rule(min='1.2')
+    @rule('1.2')
     def _check_1_2_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
         """Checks that all major STIX constructs have appropriate
         timestamp usage.
@@ -659,7 +666,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule(min='1.0', max='1.1.1')
+    @rule(minver='1.0', maxver='1.1.1')
     def _check_1_0_titles(self, root, namespaces, version):  # noqa
         """Checks that all major STIX constructs have a Title element.
 
@@ -989,7 +996,7 @@ class STIXBestPracticeValidator(object):
         return warns
 
     @rule('1.2')
-    def _check_1_2_deprecations(self, root, namespaces, version):
+    def _check_1_2_deprecations(self, root, namespaces, version):  # noqa
         package_warnings = self._get_1_2_package_deprecations(
             root=root,
             namespaces=namespaces
@@ -1057,7 +1064,7 @@ class STIXBestPracticeValidator(object):
         return warns
 
     @rule('1.2')
-    def _check_description_ordinalities(self, root, namespaces, version):
+    def _check_description_ordinalities(self, root, namespaces, version):  # noqa
         """Checks the input STIX document for correct ordinality usage in
         StructuredText lists.
 
