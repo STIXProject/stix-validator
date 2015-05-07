@@ -1061,6 +1061,9 @@ class STIXBestPracticeValidator(object):
         """Checks the input STIX document for correct ordinality usage in
         StructuredText lists.
 
+        Checks for duplicates and missing ordinality attributes in elements
+        that have lists of StructuredText instances.
+
         """
         xpath_fmt = "//*[count(child::*[local-name()='{0}']) > 1]"
 
