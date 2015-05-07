@@ -346,3 +346,43 @@ def localname(node):
 
     """
     return etree.QName(node).localname
+
+
+def namespace(node):
+    """Returns the namespace for an etree Element `node`.
+
+    """
+    return etree.QName(node).namespace
+
+
+def is_equal_timestamp(ts1, ts2):
+    """Returns ``True`` if the timestamps `ts1` and `ts2` are equal.
+
+    Args:
+        ts1: Timestamp string/datetime or etree Element node with 'timestamp'
+            attribute.
+        ts2: Timestamp string/datetime or etree Element node with 'timestamp'
+            attribute.
+
+    """
+    if isinstance(ts1, etree._Element):
+        ts1 = ts1.attrib.get('timestamp')
+
+    if isinstance(ts2, etree._Element):
+        ts2 = ts2.attrib.get('timestamp')
+
+    try:
+        return parse_timestamp(ts1) == parse_timestamp(ts2)
+    except TypeError:
+        # TypeError raised when comparing timestamps with and without
+        # tzinfo. Return False in this case.
+        return False
+
+
+def remove_all(list_, items):
+    """Removes all `items` from the `list_`.
+
+    """
+    for item in items:
+        with ignored(ValueError):
+            list_.remove(item)

@@ -354,9 +354,11 @@ class STIXBestPracticeValidator(object):
         nodes = root.xpath(xpath, namespaces=namespaces)
 
         for node in nodes:
-            if not any(x in node.attrib for x in ('id', 'idref')):
-                warning = BestPracticeWarning(node=node)
-                results.append(warning)
+            if any(x in node.attrib for x in ('id', 'idref')):
+                continue
+
+            warning = BestPracticeWarning(node=node)
+            results.append(warning)
 
         return results
 
@@ -388,8 +390,66 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule('1.0')
-    def _check_duplicate_ids(self, root, namespaces, version):  # noqa
+    def _get_id_timestamp_conflicts(self, nodes):
+        """Returns a list of BestPracticeWarnings for all nodes in `nodes`
+        that have duplicate (id, timestamp) pairs.
+
+        """
+        warns = []
+
+        def _equal_timestamps(nodeset):
+            return [x for x in nodeset if utils.is_equal_timestamp(node, x)]
+
+        while len(nodes) > 1:
+            node = nodes.pop()
+            ts_equal = _equal_timestamps(nodes)
+
+            if not ts_equal:
+                continue
+
+            conflicts = itertools.chain(ts_equal, (node,))
+
+            for c in conflicts:
+                warning = BestPracticeWarning(node=c)
+                warning['timestamp'] = c.attrib.get('timestamp')
+                warns.append(warning)
+
+            utils.remove_all(nodes, ts_equal)
+
+        return warns
+
+    @rule('1.2')
+    def _check_1_2_duplicate_ids(self, root, namespaces, version):  # noqa
+        """STIX 1.2 dropped the schematic enforcement of id uniqueness to
+        support versioning of components.
+
+        This checks for duplicate (id, timestamp) pairs.
+
+        """
+        results = BestPracticeWarningCollection('Duplicate IDs')
+        nlist = namespaces.values()
+
+        # Find all nodes with IDs in the STIX/CybOX namespace
+        nodes = root.xpath("//*[@id]")
+        filtered = [x for x in nodes if utils.namespace(x) in nlist]
+
+        # Build a mapping of IDs to nodes
+        idnodes = collections.defaultdict(list)
+        for node in filtered:
+            idnodes[node.attrib.get('id')].append(node)
+
+        # Find all nodes that have duplicate IDs
+        dups = [x for x in idnodes.itervalues() if len(x) > 1]
+
+        # Build warnings for all nodes that have conflicting id/timestamp pairs.
+        for nodeset in dups:
+            warns = self._get_id_timestamp_conflicts(nodeset)
+            results.extend(warns)
+
+        return results
+
+    @rule(minver='1.0', maxver='1.1.1')
+    def _check_1_0_duplicate_ids(self, root, namespaces, version):  # noqa
         """Checks for duplicate ids in the document.
 
         """
@@ -1081,7 +1141,7 @@ class STIXBestPracticeValidator(object):
             "Business_Function_Or_Role"
         )
 
-        title = "StructuredText @ordinaliity Use"
+        title = "StructuredText @ordinality Use"
         results = BestPracticeWarningCollection(title)
         nslist = namespaces.values()
 
@@ -1099,7 +1159,7 @@ class STIXBestPracticeValidator(object):
 
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
-        to the STIX `ver`sion.
+        to the STIX `version`.
 
         """
         def can_run(stix_version, rule_min, rule_max):
