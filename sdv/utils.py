@@ -355,6 +355,13 @@ def namespace(node):
     return etree.QName(node).namespace
 
 
+def is_element(node):
+    """Returns ``True`` if `node` is an etree._Element instance.
+
+    """
+    return isinstance(node, etree._Element)  # noqa
+
+
 def is_equal_timestamp(ts1, ts2):
     """Returns ``True`` if the timestamps `ts1` and `ts2` are equal.
 
@@ -365,10 +372,10 @@ def is_equal_timestamp(ts1, ts2):
             attribute.
 
     """
-    if isinstance(ts1, etree._Element):
+    if is_element(ts1):
         ts1 = ts1.attrib.get('timestamp')
 
-    if isinstance(ts2, etree._Element):
+    if is_element(ts2):
         ts2 = ts2.attrib.get('timestamp')
 
     try:
