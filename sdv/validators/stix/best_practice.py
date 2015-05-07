@@ -610,7 +610,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule(min='1.1', max='1.2')
+    @rule(min='1.1', max='1.1.1')
     def _check_1_1_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
         """Checks that all major STIX constructs have appropriate
         timestamp usage.
@@ -659,7 +659,7 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule(min='1.0', max='1.2')
+    @rule(min='1.0', max='1.1.1')
     def _check_1_0_titles(self, root, namespaces, version):  # noqa
         """Checks that all major STIX constructs have a Title element.
 
@@ -685,7 +685,7 @@ class STIXBestPracticeValidator(object):
         results = self._check_titles(root, namespaces, to_check)
         return results
 
-    @rule(min='1.2')
+    @rule('1.2')
     def _check_1_2_titles(self, root, namespaces, version):  # noqa
         """Checks that all major STIX constructs have a Title element.
 
@@ -1022,6 +1022,71 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    def _get_bad_ordinalities(self, nodes, tag, namespaces):
+        """Returns a set of warnings for nodes in `nodes` that do not comply
+        with @ordinality use of descriptive elements.
+
+        """
+        def can_inspect(x):
+            qname = etree.QName(x)
+            return (qname.localname == tag) and (qname.namespace in namespaces)
+
+        filtered = []
+        for node in nodes:
+            filtered.extend(x for x in node.xpath('./*') if can_inspect(x))
+
+        warns = []
+        seen = set()
+        for node in filtered:
+            o = node.attrib.get('ordinality')
+
+            if o is None:
+                msg = "@ordinality missing in list."
+                warns.append(BestPracticeWarning(node=node, message=msg))
+                continue
+
+            o = int(o)  # @ordinality is a xs:positiveInteger type.
+
+            if o in seen:
+                msg = "@ordinality is duplicate: '{0}'".format(o)
+                warns.append(BestPracticeWarning(node=node, message=msg))
+                continue
+
+            seen.add(o)
+
+        return warns
+
+    @rule('1.2')
+    def _check_description_ordinalities(self, root, namespaces, version):
+        """Checks the input STIX document for correct ordinality usage in
+        StructuredText lists.
+
+        """
+        xpath_fmt = "//*[count(child::*[local-name()='{0}']) > 1]"
+
+        tags = (
+            "Description",
+            "Short_Description",
+            "Description_Of_Effect",
+            "Business_Function_Or_Role"
+        )
+
+        title = "StructuredText @ordinaliity Use"
+        results = BestPracticeWarningCollection(title)
+        nslist = namespaces.values()
+
+        for tag in tags:
+            xpath = xpath_fmt.format(tag)
+            nodes = root.xpath(xpath, namespaces=namespaces)
+
+            if len(nodes) == 0:
+                continue
+
+            warns = self._get_bad_ordinalities(nodes, tag, nslist)
+            results.extend(warns)
+
+        return results
+
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
         to the STIX `ver`sion.
@@ -1036,7 +1101,7 @@ class STIXBestPracticeValidator(object):
 
             if rule_max:
                 max_ver = StrictVersion(rule_max)
-                return (min_ver <= doc_ver < max_ver)
+                return (min_ver <= doc_ver <= max_ver)
 
             return min_ver <= doc_ver
 

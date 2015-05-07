@@ -85,5 +85,11 @@
 		<stix:Indicator xsi:type="indicator:IndicatorType" idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2c9" version="2.2">
 			<!-- Testing if best practice validation says that an XML comment is "content" for idref-with-content checks -->
 		</stix:Indicator>
+		<stix:Indicator xsi:type="indicator:IndicatorType" id="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2d1" version="2.2">
+			<indicator:Description>Missing ordinality</indicator:Description>
+			<indicator:Description>Missing ordinality</indicator:Description>
+			<indicator:Description ordinality='1'>Duplicate ordinality</indicator:Description>
+			<indicator:Description ordinality='1'>Duplicate ordinality</indicator:Description>
+		</stix:Indicator>
 	</stix:Indicators>
 </stix:STIX_Package>
