@@ -307,6 +307,13 @@ def strip_whitespace(string):
     return ''.join(string.split())
 
 
+def is_leaf(node):
+    """Returns ``True`` if `node` has no element children.
+
+    """
+    return len(children(node)) == 0
+
+
 def has_content(node):
     """Returns ``True`` if the `node` has children or text nodes.
 
@@ -317,7 +324,7 @@ def has_content(node):
     if node is None:
         return False
 
-    if len(node.findall('*')) > 0:
+    if not is_leaf(node):
         return True
 
     stripped = strip_whitespace(node.text)
@@ -335,7 +342,7 @@ def get_document_namespaces(doc):
     root = get_etree_root(doc)
 
     nsmap = {}
-    for element in root.findall(".//*"):
+    for element in descendants(root):
         nsmap.update(element.nsmap)
 
     return nsmap
@@ -384,6 +391,30 @@ def is_equal_timestamp(ts1, ts2):
         # TypeError raised when comparing timestamps with and without
         # tzinfo. Return False in this case.
         return False
+
+
+def children(node):
+    """Returns an iterable collection of etree Element nodes that are direct
+    children of `node`.
+
+    """
+    return node.xpath(xmlconst.XPATH_RELATIVE_CHILDREN)
+
+
+def descendants(node):
+    """Returns an iterable collection of etree Element nodes that are
+    descendants of `node`.
+
+    """
+    return node.xpath(xmlconst.XPATH_RELATIVE_DESCENDANTS)
+
+
+def leaves(tree):
+    """Returns an iterable collection of leaf nodes under `tree`.
+
+    """
+    xpath = ".//*[count(child::*) = 0]"
+    return tree.xpath(xpath)
 
 
 def remove_all(list_, items):

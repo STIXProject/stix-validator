@@ -718,7 +718,7 @@ class STIXBestPracticeValidator(object):
             if 'idref' in node.attrib:
                 continue
 
-            children = node.xpath("./*")
+            children = utils.children(node)
 
             if not any(utils.localname(x) == 'Title' for x in children):
                 warning = BestPracticeWarning(node=node)
@@ -846,19 +846,11 @@ class STIXBestPracticeValidator(object):
         if len(indicators) == 0:
             return results
 
-        def is_leaf(node):
-            children = node.findall(".//*")
-
-            if len(children) > 0:
-                return False
-
-            return bool(node.text)
-
         def _get_leaves(nodes):
             """Finds and returns all leaf nodes contained within `nodes`."""
             leaves = []
-            for node in nodes:
-                leaves.extend(x for x in node.findall(".//*") if is_leaf(x))
+            for n in nodes:
+                leaves.extend(x for x in utils.leaves(n) if utils.has_content(x))
             return leaves
 
         def _get_observables(indicators):
@@ -871,7 +863,9 @@ class STIXBestPracticeValidator(object):
             """
             for indicator in indicators:
                 observables = common.get_indicator_observables(
-                    root, indicator, namespaces
+                    root=root,
+                    indicator=indicator,
+                    namespaces=namespaces
                 )
                 yield (indicator, observables)
 
@@ -1100,7 +1094,7 @@ class STIXBestPracticeValidator(object):
 
         filtered = []
         for node in nodes:
-            filtered.extend(x for x in node.xpath('./*') if can_inspect(x))
+            filtered.extend(x for x in utils.children(node) if can_inspect(x))
 
         warns = []
         seen = set()
