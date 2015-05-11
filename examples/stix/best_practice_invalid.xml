@@ -110,6 +110,9 @@
 			<indicator:Description ordinality='1'>Duplicate ordinality</indicator:Description>
 			<indicator:Description ordinality='1'>Duplicate ordinality</indicator:Description>
 		</stix:Indicator>
+        <stix:Indicator xsi:type="indicator:IndicatorType" id="bad-id-format" timestamp="2014-02-20T11:00:00+01:00" version="2.2">
+			<indicator:Title>Testing ID format checks.</indicator:Title>
+		</stix:Indicator>
 	</stix:Indicators>
     <stix:Campaigns>
         <stix:Campaign xsi:type="campaign:CampaignType" version="1.2">

@@ -377,15 +377,12 @@ class STIXBestPracticeValidator(object):
 
         regex = re.compile(r'\w+:\w+-')
         results = BestPracticeWarningCollection('ID Format')
-        xpath = " | ".join("//%s" % x for x in to_check)
+        msg = "ID should be formatted as [ns prefix]:[construct type]-[GUID]"
+        xpath = " | ".join("//%s[@id]" % x for x in to_check)
 
         for node in root.xpath(xpath, namespaces=namespaces):
-            if 'id' not in node.attrib:
-                continue
-
-            id_ = node.attrib['id']
-            if not regex.match(id_):
-                result = BestPracticeWarning(node=node)
+            if not regex.match(node.attrib['id']):
+                result = BestPracticeWarning(node=node, message=msg)
                 results.append(result)
 
         return results
