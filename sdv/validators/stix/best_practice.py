@@ -1102,14 +1102,16 @@ class STIXBestPracticeValidator(object):
             o = node.attrib.get('ordinality')
 
             if o is None:
-                msg = "@ordinality missing in list."
+                fmt = "@ordinality missing in '{0}' list."
+                msg = fmt.format(tag)
                 warns.append(BestPracticeWarning(node=node, message=msg))
                 continue
 
             o = int(o)  # @ordinality is a xs:positiveInteger type.
 
             if o in seen:
-                msg = "@ordinality is duplicate: '{0}'".format(o)
+                fmt = "@ordinality is duplicate in '{0}' list: '{1}'"
+                msg = fmt.format(tag, o)
                 warns.append(BestPracticeWarning(node=node, message=msg))
                 continue
 
@@ -1118,7 +1120,7 @@ class STIXBestPracticeValidator(object):
         return warns
 
     @rule('1.2')
-    def _check_description_ordinalities(self, root, namespaces, version):  # noqa
+    def _check_structured_text_ordinalities(self, root, namespaces, version):  # noqa
         """Checks the input STIX document for correct ordinality usage in
         StructuredText lists.
 
