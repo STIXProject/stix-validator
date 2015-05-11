@@ -342,7 +342,7 @@ def get_document_namespaces(doc):
     root = get_etree_root(doc)
 
     nsmap = {}
-    for element in root.iter():
+    for element in root.iter('*'):
         nsmap.update(element.nsmap)
 
     return nsmap
