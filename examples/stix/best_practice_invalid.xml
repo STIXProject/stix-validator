@@ -3,6 +3,7 @@
 	xmlns:stix="http://stix.mitre.org/stix-1"
 	xmlns:stixCommon="http://stix.mitre.org/common-1"
 	xmlns:indicator="http://stix.mitre.org/Indicator-2"
+    xmlns:campaign="http://stix.mitre.org/Campaign-1"
 	xmlns:ttp="http://stix.mitre.org/TTP-1"
 	xmlns:stixVocabs="http://stix.mitre.org/default_vocabularies-1"
 	xmlns:cybox="http://cybox.mitre.org/cybox-2"
@@ -110,4 +111,14 @@
 			<indicator:Description ordinality='1'>Duplicate ordinality</indicator:Description>
 		</stix:Indicator>
 	</stix:Indicators>
+    <stix:Campaigns>
+        <stix:Campaign xsi:type="campaign:CampaignType" version="1.2">
+            <campaign:Title>Testing for Related_Indicators deprecation detection.</campaign:Title>
+            <campaign:Related_Indicators>
+                <campaign:Related_Indicator>
+                    <stixCommon:Indicator idref="example:Indicator-2e20c5b2-56fa-46cd-9662-8f199c69d2d0"/>
+                </campaign:Related_Indicator>
+            </campaign:Related_Indicators>
+        </stix:Campaign>
+    </stix:Campaigns>
 </stix:STIX_Package>

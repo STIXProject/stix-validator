@@ -1051,6 +1051,10 @@ class STIXBestPracticeValidator(object):
 
     @rule('1.2')
     def _check_1_2_deprecations(self, root, namespaces, version):  # noqa
+        """Checks the input document `root` for fields that were deprecated
+        in STIX v1.2.
+
+        """
         package_warnings = self._get_1_2_package_deprecations(
             root=root,
             namespaces=namespaces
@@ -1082,6 +1086,26 @@ class STIXBestPracticeValidator(object):
         results.extend(warns)
 
         return results
+
+    def _get_campaign_related_indicators(self, root, namespaces):
+        xpath = ".//{0}:Related_Indicators".format(common.PREFIX_STIX_CAMPAIGN)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+        msg = "Related_Indicators has been deprecated in Campaign."
+        return [BestPracticeWarning(node=n, message=msg) for n in nodes]
+
+
+    @rule('1.1')
+    def _check_1_1_deprecations(self, root, namespaces, version):  # noqa
+        """Checks the input document `root` for fields that were deprecated
+        in STIX v1.1.
+
+        """
+        results = BestPracticeWarningCollection("STIX 1.1 Deprecations")
+        warns = self._get_campaign_related_indicators(root, namespaces)
+        results.extend(warns)
+
+        return results
+
 
     def _get_bad_ordinalities(self, nodes, tag, namespaces):
         """Returns a set of warnings for nodes in `nodes` that do not comply
