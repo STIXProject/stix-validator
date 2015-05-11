@@ -207,7 +207,8 @@ STIX_VOCAB_VERSIONS = {
         'AvailabilityLossTypeVocab': '1.1.1',
     },
     '1.2': {
-        'DiscoveryMethodVocab': '2.0'
+        'DiscoveryMethodVocab': '2.0',
+        'ReportIntentVocab': '1.0'
     }
 }
 

@@ -342,7 +342,7 @@ def get_document_namespaces(doc):
     root = get_etree_root(doc)
 
     nsmap = {}
-    for element in descendants(root):
+    for element in root.iter():
         nsmap.update(element.nsmap)
 
     return nsmap
@@ -393,20 +393,33 @@ def is_equal_timestamp(ts1, ts2):
         return False
 
 
+def iterchildren(node):
+    """Returns an iterator which yields direct child elements of `node`.
+
+    """
+    return node.iterchildren('*')
+
+
 def children(node):
     """Returns an iterable collection of etree Element nodes that are direct
     children of `node`.
 
     """
-    return node.xpath(xmlconst.XPATH_RELATIVE_CHILDREN)
+    return list(iterchildren(node))
+
+
+def iterdescendants(node):
+    """Returns an iterator which yields descendant elements of `node`.
+
+    """
+    return node.iterdescendants('*')
 
 
 def descendants(node):
-    """Returns an iterable collection of etree Element nodes that are
-    descendants of `node`.
+    """Returns a list of etree Element nodes that are descendants of `node`.
 
     """
-    return node.xpath(xmlconst.XPATH_RELATIVE_DESCENDANTS)
+    return list(iterdescendants(node))
 
 
 def leaves(tree):
@@ -424,3 +437,13 @@ def remove_all(list_, items):
     for item in items:
         with ignored(ValueError):
             list_.remove(item)
+
+
+def is_iterable(x):
+    """Returns ``True`` if `x` is an iterable collection.
+
+    Note:
+        This will return ``False`` if `x` is a string type.
+
+    """
+    return hasattr(x, "__iter__")

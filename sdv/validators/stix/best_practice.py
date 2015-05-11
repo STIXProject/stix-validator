@@ -474,10 +474,8 @@ class STIXBestPracticeValidator(object):
             return x.attrib['idref']
 
         results = BestPracticeWarningCollection("Unresolved IDREFs")
-        warnings = [
-            BestPracticeWarning(x) for x in idrefs if idref(x) not in ids
-        ]
-        results.extend(warnings)
+        warns = (BestPracticeWarning(x) for x in idrefs if idref(x) not in ids)
+        results.extend(warns)
 
         return results
 
@@ -497,7 +495,7 @@ class STIXBestPracticeValidator(object):
             return utils.has_content(node)
 
         nodes = root.xpath("//*[@idref]")
-        warnings = [BestPracticeWarning(x) for x in nodes if is_invalid(x)]
+        warnings = (BestPracticeWarning(x) for x in nodes if is_invalid(x))
 
         results = BestPracticeWarningCollection("IDREF with Content")
         results.extend(warnings)
@@ -715,9 +713,7 @@ class STIXBestPracticeValidator(object):
             if 'idref' in node.attrib:
                 continue
 
-            children = utils.children(node)
-
-            if not any(utils.localname(x) == 'Title' for x in children):
+            if not any(utils.localname(x) == 'Title' for x in utils.iterchildren(node)):
                 warning = BestPracticeWarning(node=node)
                 results.append(warning)
 
@@ -793,13 +789,16 @@ class STIXBestPracticeValidator(object):
             * The xpath selects at least one node in the document
 
             """
+            selector = node.text
+
             try:
-                xpath = node.text
-                nodes = node.xpath(xpath, namespaces=root.nsmap)
-                if len(nodes) == 0:
-                    return "Control XPath does not return any results"
+                nodes = node.xpath(selector, namespaces=root.nsmap, smart_strings=False)
+
+                if not nodes:
+                    return "Control XPath does not return any results: %s" % selector
+
             except etree.XPathEvalError:
-                return "Invalid XPath supplied"
+                return "Invalid XPath supplied: %s" % selector
 
         for elem in root.xpath(xpath, namespaces=namespaces):
             if not elem.text:
@@ -1115,7 +1114,7 @@ class STIXBestPracticeValidator(object):
 
         filtered = []
         for node in nodes:
-            filtered.extend(x for x in utils.children(node) if can_inspect(x))
+            filtered.extend(x for x in utils.iterchildren(node) if can_inspect(x))
 
         warns = []
         seen = set()

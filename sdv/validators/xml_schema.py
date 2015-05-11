@@ -54,7 +54,7 @@ class XmlSchemaError(base.ValidationError):
             * ``'message'``: The error message
             * ``'line'``: The line number associated with the error
         """
-        return dict(message=self.message, line=self.line)
+        return {'message':self.message, 'line': self.line}
 
     def __unicode__(self):
         return unicode(self.message)
@@ -89,7 +89,7 @@ class XmlValidationResults(base.ValidationResults):
     def errors(self, value):
         if not value:
             self._errors = []
-        elif hasattr(value, '__getitem__'):
+        elif utils.is_iterable(value):
             self._errors = [XmlSchemaError(x) for x in value]
         else:
             self._errors = [XmlSchemaError(value)]
@@ -162,7 +162,7 @@ class XmlSchemaValidator(object):
 
         includes = []
         for include in xs_includes:
-            loc = include.attrib['schemaLocation']
+            loc = include.attrib['schemaLocation']  # NOT xsi:schemaLocation!
 
             # If the path is relative, get the absolute path
             if os.path.isabs(loc):
@@ -236,9 +236,8 @@ class XmlSchemaValidator(object):
             if has_children and not has_ancestors:
                 return fp
 
-        raise errors.XMLSchemaIncludeError(
-            "Unable to determine base schema for %s" % ns
-        )
+        msg = "Unable to determine base schema for %s" % ns
+        raise errors.XMLSchemaIncludeError(msg)
 
     def _process_includes(self, imports):
         """Attempts to resolve cases where multiple schemas declare the same
@@ -353,15 +352,14 @@ class XmlSchemaValidator(object):
                 ``xsi:schemaLocation`` attribute.
 
         """
-        try:
+        if xmlconst.TAG_SCHEMALOCATION in root.attrib:
             imports = utils.get_schemaloc_pairs(root)
             return dict(imports)
-        except KeyError:
-            raise errors.XMLSchemaImportError(
-                "Cannot validate using xsi:schemaLocation. The "
-                "xsi:schemaLocation attribute was not found on the input "
-                "document"
-            )
+
+        msg = ("Cannot validate using xsi:schemaLocation. The "
+               "xsi:schemaLocation attribute was not found on the input "
+               "document")
+        raise errors.XMLSchemaImportError(msg)
 
     def _get_required_schemas(self, root):
         """Retrieve all the namespaces and schemalocations needed to validate
@@ -376,10 +374,12 @@ class XmlSchemaValidator(object):
         """
         def _get_schemalocs(node):
             schemalocs = {}
+
             for ns in node.nsmap.itervalues():
-                # Ignore ns lookup failures. Should this raise an Exception?
-                with utils.ignored(KeyError):
-                    schemalocs[ns] = self._schemalocs[ns]
+                if ns not in self._schemalocs:
+                    continue
+
+                schemalocs[ns] = self._schemalocs[ns]
             return schemalocs
 
         imports = {}
@@ -435,7 +435,7 @@ class XmlSchemaValidator(object):
 
         for ns, loc in imports.iteritems():
             loc = loc.replace("\\", "/")
-            attrib = dict(namespace=ns, schemaLocation=loc)
+            attrib = {'namespace': ns, 'schemaLocation':loc}
             import_ = etree.Element(xmlconst.TAG_XS_IMPORT, attrib=attrib)
             xsd.append(import_)
 
@@ -465,7 +465,7 @@ class XmlSchemaValidator(object):
                 ``xs:include`` directives.
 
         """
-        if not any((schemaloc, self._schemalocs)):
+        if not (schemaloc or self._schemalocs):
             raise errors.ValidationError(
                 "No schemas to validate against! Try instantiating "
                 "XmlValidator with use_schemaloc=True or setting the "
