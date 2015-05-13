@@ -1009,13 +1009,13 @@ class STIXBestPracticeValidator(object):
 
             if 'idref' in attrib:
                 msg = "@idref is deprecated in STIX Package."
-            elif 'timestamp' in attrib:
-                msg = "@timestamp is deprecated in STIX Package."
-            else:
-                continue
+                warn = BestPracticeWarning(node=node, message=msg)
+                warns.append(warn)
 
-            warn = BestPracticeWarning(node=node, message=msg)
-            warns.append(warn)
+            if 'timestamp' in attrib:
+                msg = "@timestamp is deprecated in STIX Package."
+                warn = BestPracticeWarning(node=node, message=msg)
+                warns.append(warn)
 
         return warns
 
