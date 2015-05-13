@@ -781,30 +781,11 @@ class STIXBestPracticeValidator(object):
         results = BestPracticeWarningCollection("Data Marking Control XPath")
         xpath = "//%s:Controlled_Structure" % common.PREFIX_DATA_MARKING
 
-        def _test_xpath(node):
-            """Checks that the xpath found on `node` meets the following
-            requirements:
-
-            * The xpath compiles (is a valid XPath)
-            * The xpath selects at least one node in the document
-
-            """
-            selector = node.text
-
-            try:
-                nodes = node.xpath(selector, namespaces=root.nsmap, smart_strings=False)
-
-                if not nodes:
-                    return "Control XPath does not return any results: %s" % selector
-
-            except etree.XPathEvalError:
-                return "Invalid XPath supplied: %s" % selector
-
         for elem in root.xpath(xpath, namespaces=namespaces):
             if not elem.text:
                 message = "Empty Control XPath"
             else:
-                message = _test_xpath(elem)
+                message = common.test_xpath(elem)
 
             if message:
                 result = BestPracticeWarning(node=elem, message=message)

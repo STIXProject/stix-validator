@@ -12,6 +12,11 @@ from lxml import etree
 # internal
 from sdv import errors, utils, xmlconst
 
+# Helps speed up data marking best practice checks.
+_GLOBAL_SELECTOR = "//node() | //@*"
+_COMPONENT_SELECTOR = "../../../descendant-or-self::node()  | ../../../descendant-or-self::node()/@*"
+_GLOBAL_SELECTOR_PARTS = frozenset(_GLOBAL_SELECTOR.split())
+_COMPONENT_SELECTOR_PARTS = frozenset(_COMPONENT_SELECTOR.split())
 
 PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'
@@ -540,3 +545,71 @@ def idref_timestamp_resolves(root, idref, timestamp, namespaces):
     nodes = root.xpath(xpath, namespaces=namespaces)
 
     return any(utils.is_equal_timestamp(timestamp, node) for node in nodes)
+
+
+def is_global_xpath(selector):
+    """Method that attempts to determine if `selector` selects all nodes
+    and attributes in a document.
+
+    The xpath checked for is ``//node() || //@*``, which can be expensive to
+    evaluate against large documents.
+
+    Returns:
+        ``True`` if `selector` is a "global" xpath.
+
+    """
+    s = set(selector.split())
+    return s == _GLOBAL_SELECTOR_PARTS
+
+
+def is_component_xpath(selector):
+    """Method that attempts to determine if `selector` is a STIX component
+    selector (i.e., it addresses every node and attribute within a STIX
+    component instance, such as an Indicator).
+
+    This is done because the evaluation of the xpath can be very expensive
+    for large components or documents with many data markings.
+
+    Returns:
+        ``True`` if `selector` is a "component" xpath.
+
+    """
+    s = set(selector.split())
+    return  s == _COMPONENT_SELECTOR_PARTS
+
+
+def test_xpath(node):
+    """Checks that the xpath found on `node` meets the following
+    requirements:
+
+    * The xpath compiles (is a valid XPath)
+    * The xpath selects at least one node in the document
+
+    Returns:
+        An error message if the xpath defined by `node` is invalid or
+        evaluates to an empty nodeset.
+
+    """
+    xpath = node.text
+
+    # Check if the xpath is a global selector
+    if is_global_xpath(xpath):
+        return
+
+    # Check if the xpath is a component selector
+    if is_component_xpath(xpath):
+        return
+
+    try:
+        nodes = node.xpath(
+            xpath,
+            namespaces=node.nsmap,
+            smart_strings=False
+        )
+
+        if not nodes:
+            fmt  = "Control XPath does not return any results: %s"
+            return fmt % xpath
+
+    except etree.XPathEvalError:
+        return "Invalid XPath supplied: %s" % xpath
