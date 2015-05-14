@@ -1088,13 +1088,25 @@ class STIXBestPracticeValidator(object):
         """Returns a set of warnings for nodes in `nodes` that do not comply
         with @ordinality use of descriptive elements.
 
+        Args:
+            nodes: A set of nodes that have more than one instance of `tag`
+                children.
+            tag: The localname of the nodes to inspect for ordinalities.
+            namespaces: A list of STIX namespaces.
+
         """
-        def can_inspect(x):
-            qname = etree.QName(x)
+        def can_inspect(node):
+            """Only check nodes that are in the STIX namespace and have a
+            localname that matches the tag (e.g., 'Description').
+
+            """
+            qname = etree.QName(node)
             return (qname.localname == tag) and (qname.namespace in namespaces)
+
 
         filtered = []
         for node in nodes:
+            # Filter out fields that belong to non-STIX namespaces
             filtered.extend(x for x in utils.iterchildren(node) if can_inspect(x))
 
         warns = []
@@ -1130,6 +1142,9 @@ class STIXBestPracticeValidator(object):
         that have lists of StructuredText instances.
 
         """
+
+        # Selects nodes that have more than one instance of a specific
+        # StructuredTextType child (i.e., more than one Description child).
         xpath_fmt = "//*[count(child::*[local-name()='{0}']) > 1]"
 
         tags = (
