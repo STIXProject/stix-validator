@@ -144,6 +144,13 @@ def get_schemaloc_pairs(node):
     return pairs
 
 
+def is_xml(fn):
+    """Returns ``True`` if the input filename `fn` ends with an XML extension.
+
+    """
+    return os.path.isfile(fn) and fn.lower().endswith('.xml')
+
+
 def list_xml_files(directory, recursive=False):
     """Returns a list of file paths for XML files contained within `dir_`.
 
@@ -156,22 +163,19 @@ def list_xml_files(directory, recursive=False):
         A list of XML file paths directly under `dir_`.
 
     """
-    files, dirs = [], []
+    xml_files = []
 
-    for fn in os.listdir(directory):
-        fp = os.path.join(directory, fn)
+    for top, _, files in os.walk(directory):
+        # Get paths to each file in `files`
+        paths = (os.path.join(top, f) for f in files)
 
-        if fn.endswith('.xml'):
-            files.append(fp)
-        elif os.path.isdir(fp):
-            dirs.append(fp)
-        else:
-            continue
+        # Add all the .xml files to our return collection
+        xml_files.extend(x for x in paths if is_xml(x))
 
-    if recursive and dirs:
-        files.extend(get_xml_files(dirs, recursive))
+        if not recursive:
+            break
 
-    return files
+    return xml_files
 
 
 def get_xml_files(files, recursive=False):
@@ -188,16 +192,19 @@ def get_xml_files(files, recursive=False):
         A list of file paths to validate.
 
     """
-    if not files:
-        return []
-
     xml_files = []
+
+    if not files:
+        return xml_files
+
     for fn in files:
         if os.path.isdir(fn):
             children = list_xml_files(fn, recursive)
             xml_files.extend(children)
-        else:
+        elif is_xml(fn):
             xml_files.append(fn)
+        else:
+            continue
 
     return xml_files
 
