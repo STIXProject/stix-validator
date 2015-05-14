@@ -1099,6 +1099,7 @@ class STIXBestPracticeValidator(object):
 
         warns = []
         seen = set()
+        
         for node in filtered:
             o = node.attrib.get('ordinality')
 
