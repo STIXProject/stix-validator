@@ -317,7 +317,9 @@ def is_leaf(node):
     """Returns ``True`` if `node` has no element children.
 
     """
-    return len(children(node)) == 0
+    child = next(iterchildren(node), None)
+    return child is not None
+
 
 
 def has_content(node):
