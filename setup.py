@@ -39,6 +39,12 @@ install_requires = [
     'python-dateutil'
 ]
 
+# Python 2.6 does not come with argparse
+try:
+    import argparse
+except ImportError:
+    install_requires.append('argparse')
+
 extras_require = {
     'docs': [
         'Sphinx==1.2.1',
