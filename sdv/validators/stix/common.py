@@ -10,9 +10,13 @@ from distutils.version import StrictVersion
 from lxml import etree
 
 # internal
-import sdv.errors as errors
-import sdv.utils as utils
-import sdv.xmlconst as xmlconst
+from sdv import errors, utils, xmlconst
+
+# Helps speed up data marking best practice checks.
+_GLOBAL_SELECTOR = "//node() | //@*"
+_COMPONENT_SELECTOR = "../../../descendant-or-self::node()  | ../../../descendant-or-self::node()/@*"
+_GLOBAL_SELECTOR_PARTS = frozenset(_GLOBAL_SELECTOR.split())
+_COMPONENT_SELECTOR_PARTS = frozenset(_COMPONENT_SELECTOR.split())
 
 PREFIX_XSI = 'xsi'
 PREFIX_STIX_CORE = 'stix-core'
@@ -22,20 +26,23 @@ PREFIX_STIX_COA = 'stix-coa'
 PREFIX_STIX_EXPLOIT_TARGET = 'stix-et'
 PREFIX_STIX_INDICATOR = 'stix-indicator'
 PREFIX_STIX_INCIDENT = 'stix-incident'
+PREFIX_STIX_REPORT = "stix-report"
 PREFIX_STIX_THREAT_ACTOR = 'stix-ta'
+PREFIX_STIX_TTP = 'stix-ttp'
 PREFIX_STIX_VOCABS = 'stix-vocabs'
 PREFIX_DATA_MARKING = 'stix-marking'
 PREFIX_CYBOX_CORE = 'cybox-core'
 PREFIX_CYBOX_COMMON = 'cybox-common'
 PREFIX_CYBOX_VOCABS = 'cybox-vocabs'
 
-STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1')
+STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1', '1.2')
 
 STIX_TO_CYBOX_VERSIONS = {
     '1.0': '2.0',
     '1.0.1': '2.0.1',
     '1.1': '2.1',
-    '1.1.1': '2.1'
+    '1.1.1': '2.1',
+    '1.2': '2.1'
 }
 
 STIX_COMPONENT_VERSIONS = {
@@ -75,6 +82,7 @@ STIX_COMPONENT_VERSIONS = {
     },
     '1.1': {
         '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.1',
+        '{0}:Package'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1',
@@ -92,6 +100,7 @@ STIX_COMPONENT_VERSIONS = {
     },
     '1.1.1': {
         '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.1.1',
+        '{0}:Package'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.1.1',
         '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.1.1',
@@ -107,10 +116,30 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.1.1',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.1.1'
     },
+    '1.2': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Package'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): '2.2',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): '2.2',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): '1.2',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.2',
+        '{0}:Report'.format(PREFIX_STIX_CORE): '1.0'
+    }
 }
 
 STIX_CORE_COMPONENTS = (
     '{0}:STIX_Package'.format(PREFIX_STIX_CORE),
+    '{0}:Package'.format(PREFIX_STIX_CORE),
     '{0}:Campaign'.format(PREFIX_STIX_CORE),
     '{0}:Campaign'.format(PREFIX_STIX_COMMON),
     '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE),
@@ -124,7 +153,9 @@ STIX_CORE_COMPONENTS = (
     '{0}:Threat_Actor'.format(PREFIX_STIX_CORE),
     '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON),
     '{0}:TTP'.format(PREFIX_STIX_CORE),
-    '{0}:TTP'.format(PREFIX_STIX_COMMON)
+    '{0}:TTP'.format(PREFIX_STIX_COMMON),
+    '{0}:Report'.format(PREFIX_STIX_CORE),
+    '{0}:Report'.format(PREFIX_STIX_COMMON),
 )
 
 CYBOX_CORE_COMPONENTS = (
@@ -179,6 +210,10 @@ STIX_VOCAB_VERSIONS = {
     },
     '1.1.1': {
         'AvailabilityLossTypeVocab': '1.1.1',
+    },
+    '1.2': {
+        'DiscoveryMethodVocab': '2.0',
+        'ReportIntentVocab': '1.0'
     }
 }
 
@@ -402,7 +437,9 @@ def get_stix_namespaces(version):
         PREFIX_STIX_EXPLOIT_TARGET: 'http://stix.mitre.org/ExploitTarget-1',
         PREFIX_STIX_INDICATOR: 'http://stix.mitre.org/Indicator-2',
         PREFIX_STIX_INCIDENT: 'http://stix.mitre.org/Incident-1',
+        PREFIX_STIX_REPORT: 'http://stix.mitre.org/Report-1',
         PREFIX_STIX_THREAT_ACTOR: 'http://stix.mitre.org/ThreatActor-1',
+        PREFIX_STIX_TTP: 'http://stix.mitre.org/TTP-1',
         PREFIX_STIX_VOCABS: 'http://stix.mitre.org/default_vocabularies-1',
         PREFIX_DATA_MARKING: 'http://data-marking.mitre.org/Marking-1',
         PREFIX_CYBOX_CORE: 'http://cybox.mitre.org/cybox-2',
@@ -497,44 +534,82 @@ def check_stix(func):
     return _check_stix
 
 
-def get_document_namespaces(doc):
-    """Returns namespace dictionary for all the namespaces declared in the
-    input `doc`.
-
-    Args:
-        doc: A read()-able XML document or etree node.
-
-    """
-    root = utils.get_etree_root(doc)
-
-    nsmap = {}
-    for element in root.findall(".//*"):
-        nsmap.update(element.nsmap)
-
-    return nsmap
-
-
 def idref_timestamp_resolves(root, idref, timestamp, namespaces):
     """Determines if an `idref` and `timestamp` pair resolve to an XML
     component under `root`.
 
     """
-    def ts_equal(source_ts, node):
-        node_ts = utils.parse_timestamp(node.get('timestamp'))
-
-        try:
-            return source_ts == node_ts
-        except TypeError:
-            # TypeError raised when comparing timestamps with and without
-            # tzinfo. Return False in this case.
-            return False
-
     root = utils.get_etree_root(root)
     timestamp = utils.parse_timestamp(timestamp)
     xpath = "//*[@id='{0}']".format(idref)
     nodes = root.xpath(xpath, namespaces=namespaces)
 
-    return any(ts_equal(timestamp, node) for node in nodes)
+    return any(utils.is_equal_timestamp(timestamp, node) for node in nodes)
 
 
+def is_global_xpath(selector):
+    """Method that attempts to determine if `selector` selects all nodes
+    and attributes in a document.
 
+    The xpath checked for is ``//node() || //@*``, which can be expensive to
+    evaluate against large documents.
+
+    Returns:
+        ``True`` if `selector` is a "global" xpath.
+
+    """
+    s = set(selector.split())
+    return s == _GLOBAL_SELECTOR_PARTS
+
+
+def is_component_xpath(selector):
+    """Method that attempts to determine if `selector` is a STIX component
+    selector (i.e., it addresses every node and attribute within a STIX
+    component instance, such as an Indicator).
+
+    This is done because the evaluation of the xpath can be very expensive
+    for large components or documents with many data markings.
+
+    Returns:
+        ``True`` if `selector` is a "component" xpath.
+
+    """
+    s = set(selector.split())
+    return  s == _COMPONENT_SELECTOR_PARTS
+
+
+def test_xpath(node):
+    """Checks that the xpath found on `node` meets the following
+    requirements:
+
+    * The xpath compiles (is a valid XPath)
+    * The xpath selects at least one node in the document
+
+    Returns:
+        An error message if the xpath defined by `node` is invalid or
+        evaluates to an empty nodeset.
+
+    """
+    xpath = node.text
+
+    # Check if the xpath is a global selector
+    if is_global_xpath(xpath):
+        return
+
+    # Check if the xpath is a component selector
+    if is_component_xpath(xpath):
+        return
+
+    try:
+        nodes = node.xpath(
+            xpath,
+            namespaces=node.nsmap,
+            smart_strings=False
+        )
+
+        if not nodes:
+            fmt  = "Control XPath does not return any results: %s"
+            return fmt % xpath
+
+    except etree.XPathEvalError:
+        return "Invalid XPath supplied: %s" % xpath

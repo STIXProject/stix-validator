@@ -126,8 +126,8 @@ a version for the STIX/CybOX document via the ``version`` parameter:
     import sdv
 
     # Validate the 'stix-content.xml'.
-    # Declare that the STIX content is STIX v1.1.1
-    results = sdv.validate_xml('stix-content.xml', version='1.1.1')
+    # Declare that the STIX content is STIX v1.2
+    results = sdv.validate_xml('stix-content.xml', version='1.2')
 
     # Print the result!
     print results.is_valid

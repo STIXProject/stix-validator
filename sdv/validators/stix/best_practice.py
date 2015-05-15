@@ -25,7 +25,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
-def rule(version):
+def rule(minver, maxver=None):
     """Decorator that identifies methods as being a STIX best practice checking
     rule.
 
@@ -35,7 +35,8 @@ def rule(version):
     """
     def decorator(func):
         func.is_rule = True
-        func.version = version
+        func.min_version = minver
+        func.max_version = maxver
         return func
     return decorator
 
@@ -46,15 +47,22 @@ class BestPracticeMeta(type):
 
     """
     def __new__(metacls, name, bases, dict_):
-        result = type.__new__(metacls, name, bases, dict_)
+        obj = type.__new__(metacls, name, bases, dict_)
 
-        result._rules = collections.defaultdict(list)  # pylint: disable=W0212
-        rules = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
+        # Initialize a mapping of STIX versions to applicable rule funcs.
+        ruledict = collections.defaultdict(list)
 
-        for rule in rules:
-            result._rules[rule.version].append(rule)  # pylint: disable=W0212
+        # Find all @rule marked functions in the class dict_
+        rulefuncs = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
 
-        return result
+        # Build the rule function dict.
+        for rule in rulefuncs:
+            ruledict[(rule.min_version, rule.max_version)].append(rule)  # noqa
+
+        # Attach the rule dictionary to the object instance.
+        obj._rules = ruledict  # noqa
+
+        return obj
 
 
 class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
@@ -206,6 +214,9 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         if not value:
             return
 
+        if isinstance(value, etree._Element):  # noqa
+            value = BestPracticeWarning(node=value)
+
         self._warnings.insert(idx, value)
 
     def __getitem__(self, key):
@@ -343,9 +354,11 @@ class STIXBestPracticeValidator(object):
         nodes = root.xpath(xpath, namespaces=namespaces)
 
         for node in nodes:
-            if not any(x in node.attrib for x in ('id', 'idref')):
-                warning = BestPracticeWarning(node=node)
-                results.append(warning)
+            if any(x in node.attrib for x in ('id', 'idref')):
+                continue
+
+            warning = BestPracticeWarning(node=node)
+            results.append(warning)
 
         return results
 
@@ -364,21 +377,76 @@ class STIXBestPracticeValidator(object):
 
         regex = re.compile(r'\w+:\w+-')
         results = BestPracticeWarningCollection('ID Format')
-        xpath = " | ".join("//%s" % x for x in to_check)
+        msg = "ID should be formatted as [ns prefix]:[construct type]-[GUID]"
+        xpath = " | ".join("//%s[@id]" % x for x in to_check)
 
         for node in root.xpath(xpath, namespaces=namespaces):
-            if 'id' not in node.attrib:
-                continue
-
-            id_ = node.attrib['id']
-            if not regex.match(id_):
-                result = BestPracticeWarning(node=node)
+            if not regex.match(node.attrib['id']):
+                result = BestPracticeWarning(node=node, message=msg)
                 results.append(result)
 
         return results
 
-    @rule('1.0')
-    def _check_duplicate_ids(self, root, namespaces, version):  # noqa
+    def _get_id_timestamp_conflicts(self, nodes):
+        """Returns a list of BestPracticeWarnings for all nodes in `nodes`
+        that have duplicate (id, timestamp) pairs.
+
+        """
+        warns = []
+
+        def _equal_timestamps(nodeset):
+            return [x for x in nodeset if utils.is_equal_timestamp(node, x)]
+
+        while len(nodes) > 1:
+            node = nodes.pop()
+            ts_equal = _equal_timestamps(nodes)
+
+            if not ts_equal:
+                continue
+
+            conflicts = itertools.chain(ts_equal, (node,))
+
+            for c in conflicts:
+                warning = BestPracticeWarning(node=c)
+                warning['timestamp'] = c.attrib.get('timestamp')
+                warns.append(warning)
+
+            utils.remove_all(nodes, ts_equal)
+
+        return warns
+
+    @rule('1.2')
+    def _check_1_2_duplicate_ids(self, root, namespaces, version):  # noqa
+        """STIX 1.2 dropped the schematic enforcement of id uniqueness to
+        support versioning of components.
+
+        This checks for duplicate (id, timestamp) pairs.
+
+        """
+        results = BestPracticeWarningCollection('Duplicate IDs')
+        nlist = namespaces.values()
+
+        # Find all nodes with IDs in the STIX/CybOX namespace
+        nodes = root.xpath("//*[@id]")
+        filtered = [x for x in nodes if utils.namespace(x) in nlist]
+
+        # Build a mapping of IDs to nodes
+        idnodes = collections.defaultdict(list)
+        for node in filtered:
+            idnodes[node.attrib.get('id')].append(node)
+
+        # Find all nodes that have duplicate IDs
+        dups = [x for x in idnodes.itervalues() if len(x) > 1]
+
+        # Build warnings for all nodes that have conflicting id/timestamp pairs.
+        for nodeset in dups:
+            warns = self._get_id_timestamp_conflicts(nodeset)
+            results.extend(warns)
+
+        return results
+
+    @rule(minver='1.0', maxver='1.1.1')
+    def _check_1_0_duplicate_ids(self, root, namespaces, version):  # noqa
         """Checks for duplicate ids in the document.
 
         """
@@ -406,10 +474,8 @@ class STIXBestPracticeValidator(object):
             return x.attrib['idref']
 
         results = BestPracticeWarningCollection("Unresolved IDREFs")
-        warnings = [
-            BestPracticeWarning(x) for x in idrefs if idref(x) not in ids
-        ]
-        results.extend(warnings)
+        warns = (BestPracticeWarning(x) for x in idrefs if idref(x) not in ids)
+        results.extend(warns)
 
         return results
 
@@ -429,7 +495,7 @@ class STIXBestPracticeValidator(object):
             return utils.has_content(node)
 
         nodes = root.xpath("//*[@idref]")
-        warnings = [BestPracticeWarning(x) for x in nodes if is_invalid(x)]
+        warnings = (BestPracticeWarning(x) for x in nodes if is_invalid(x))
 
         results = BestPracticeWarningCollection("IDREF with Content")
         results.extend(warnings)
@@ -444,8 +510,10 @@ class STIXBestPracticeValidator(object):
         """
         to_check = (
             "{0}:Indicator".format(common.PREFIX_STIX_CORE),
-            "{0}:Indicator".format(common.PREFIX_STIX_COMMON)
+            "{0}:Indicator".format(common.PREFIX_STIX_COMMON),
+            "{0}:Indicator".format(common.PREFIX_STIX_REPORT),
         )
+
         results = BestPracticeWarningCollection("Indicator Suggestions")
         xpath = " | ".join("//%s" % x for x in to_check)
         ns = namespaces[common.PREFIX_STIX_INDICATOR]
@@ -544,19 +612,12 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule('1.1')
-    def _check_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
-        """Checks that all major STIX constructs have appropriate
-        timestamp usage.
-
-        Note:
-            This does not check core CybOX constructs because they lack
-            timestamp attributes.
+    def _check_timestamp_usage(self, root, namespaces, selectors):
+        """Inspects each node in `nodes` for correct timestamp use.
 
         """
         results = BestPracticeWarningCollection("Timestamp Use")
-        to_check = common.STIX_CORE_COMPONENTS
-        xpath = " | ".join("//%s" % x for x in to_check)
+        xpath = " | ".join("//%s" % x for x in selectors)
         nodes = root.xpath(xpath, namespaces=namespaces)
 
         for node in nodes:
@@ -611,8 +672,55 @@ class STIXBestPracticeValidator(object):
 
         return results
 
-    @rule('1.0')
-    def _check_titles(self, root, namespaces, version):  # noqa
+    @rule(minver='1.1', maxver='1.1.1')
+    def _check_1_1_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
+        """Checks that all major STIX constructs have appropriate
+        timestamp usage.
+
+        Note:
+            This does not check core CybOX constructs because they lack
+            timestamp attributes.
+
+        """
+        to_check = common.STIX_CORE_COMPONENTS
+        results = self._check_timestamp_usage(root, namespaces, to_check)
+        return results
+
+    @rule('1.2')
+    def _check_1_2_timestamp_usage(self, root, namespaces, **kwargs):  # noqa
+        """Checks that all major STIX constructs have appropriate
+        timestamp usage.
+
+        Note:
+            This does not check core CybOX constructs because they lack
+            timestamp attributes.
+
+        """
+        to_check = common.STIX_CORE_COMPONENTS[2:]  # skip STIX Packages
+        results = self._check_timestamp_usage(root, namespaces, to_check)
+        return results
+
+    def _check_titles(self, root, namespaces, selectors):
+        """Checks that each node in `nodes` has a ``Title`` element unless
+        there is an ``@idref`` attribute set.
+
+        """
+        results = BestPracticeWarningCollection("Missing Titles")
+        xpath = " | ".join("//%s" % x for x in selectors)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        for node in nodes:
+            if 'idref' in node.attrib:
+                continue
+
+            if not any(utils.localname(x) == 'Title' for x in utils.iterchildren(node)):
+                warning = BestPracticeWarning(node=node)
+                results.append(warning)
+
+        return results
+
+    @rule(minver='1.0', maxver='1.1.1')
+    def _check_1_0_titles(self, root, namespaces, version):  # noqa
         """Checks that all major STIX constructs have a Title element.
 
         """
@@ -629,21 +737,39 @@ class STIXBestPracticeValidator(object):
             '{0}:Indicator'.format(common.PREFIX_STIX_CORE),
             '{0}:Indicator'.format(common.PREFIX_STIX_COMMON),
             '{0}:Threat_Actor'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(common.PREFIX_STIX_CORE),
             '{0}:TTP'.format(common.PREFIX_STIX_CORE),
             '{0}:TTP'.format(common.PREFIX_STIX_COMMON)
         )
-        results = BestPracticeWarningCollection("Missing Titles")
-        xpath = " | ".join("//%s" % x for x in to_check)
-        nodes = root.xpath(xpath, namespaces=namespaces)
 
-        for node in nodes:
-            if 'idref' in node.attrib:
-                continue
+        results = self._check_titles(root, namespaces, to_check)
+        return results
 
-            if not any(etree.QName(x).localname == 'Title' for x in node):
-                warning = BestPracticeWarning(node=node)
-                results.append(warning)
+    @rule('1.2')
+    def _check_1_2_titles(self, root, namespaces, version):  # noqa
+        """Checks that all major STIX constructs have a Title element.
 
+        """
+        to_check = (
+            '{0}:Campaign'.format(common.PREFIX_STIX_CORE),
+            '{0}:Campaign'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Course_Of_Action'.format(common.PREFIX_STIX_CORE),
+            '{0}:Course_Of_Action'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Exploit_Target'.format(common.PREFIX_STIX_CORE),
+            '{0}:Exploit_Target'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Incident'.format(common.PREFIX_STIX_CORE),
+            '{0}:Incident'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Indicator'.format(common.PREFIX_STIX_CORE),
+            '{0}:Indicator'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Threat_Actor'.format(common.PREFIX_STIX_CORE),
+            '{0}:TTP'.format(common.PREFIX_STIX_CORE),
+            '{0}:TTP'.format(common.PREFIX_STIX_COMMON),
+            '{0}:Report/{1}:Header'.format(common.PREFIX_STIX_CORE, common.PREFIX_STIX_REPORT),
+            '{0}:Report/{1}:Header'.format(common.PREFIX_STIX_COMMON, common.PREFIX_STIX_REPORT)
+        )
+
+        results = self._check_titles(root, namespaces, to_check)
         return results
 
     @rule('1.0')
@@ -655,27 +781,11 @@ class STIXBestPracticeValidator(object):
         results = BestPracticeWarningCollection("Data Marking Control XPath")
         xpath = "//%s:Controlled_Structure" % common.PREFIX_DATA_MARKING
 
-        def _test_xpath(node):
-            """Checks that the xpath found on `node` meets the following
-            requirements:
-
-            * The xpath compiles (is a valid XPath)
-            * The xpath selects at least one node in the document
-
-            """
-            try:
-                xpath = node.text
-                nodes = node.xpath(xpath, namespaces=root.nsmap)
-                if len(nodes) == 0:
-                    return "Control XPath does not return any results"
-            except etree.XPathEvalError:
-                return "Invalid XPath supplied"
-
         for elem in root.xpath(xpath, namespaces=namespaces):
             if not elem.text:
                 message = "Empty Control XPath"
             else:
-                message = _test_xpath(elem)
+                message = common.test_xpath(elem)
 
             if message:
                 result = BestPracticeWarning(node=elem, message=message)
@@ -703,7 +813,8 @@ class STIXBestPracticeValidator(object):
 
         selectors = (
             "//{0}:Indicator".format(common.PREFIX_STIX_CORE),
-            "//{0}:Indicator".format(common.PREFIX_STIX_COMMON)
+            "//{0}:Indicator".format(common.PREFIX_STIX_COMMON),
+            "//{0}:Indicator".format(common.PREFIX_STIX_REPORT)
         )
 
         xpath = " | ".join(selectors)
@@ -712,19 +823,11 @@ class STIXBestPracticeValidator(object):
         if len(indicators) == 0:
             return results
 
-        def is_leaf(node):
-            children = node.findall(".//*")
-
-            if len(children) > 0:
-                return False
-
-            return bool(node.text)
-
         def _get_leaves(nodes):
             """Finds and returns all leaf nodes contained within `nodes`."""
             leaves = []
-            for node in nodes:
-                leaves.extend(x for x in node.findall(".//*") if is_leaf(x))
+            for n in nodes:
+                leaves.extend(x for x in utils.leaves(n) if utils.has_content(x))
             return leaves
 
         def _get_observables(indicators):
@@ -737,7 +840,9 @@ class STIXBestPracticeValidator(object):
             """
             for indicator in indicators:
                 observables = common.get_indicator_observables(
-                    root, indicator, namespaces
+                    root=root,
+                    indicator=indicator,
+                    namespaces=namespaces
                 )
                 yield (indicator, observables)
 
@@ -768,7 +873,7 @@ class STIXBestPracticeValidator(object):
         ex_namespaces = ('http://example.com', 'http://example.com/')
 
         # Get all the namespaces used in the document
-        doc_nsmap = common.get_document_namespaces(root)
+        doc_nsmap = utils.get_document_namespaces(root)
 
         # Element tags to check for example ID presence
         to_check = itertools.chain(
@@ -801,26 +906,298 @@ class STIXBestPracticeValidator(object):
 
         return results
 
+    def _get_1_2_tlo_deprecations(self, root, namespaces):
+        """Checks for the existence of any idref elements inside the STIX
+        Package top-level collections.
+
+        """
+        stix = (
+            '//{0}:Campaigns/{0}:Campaign',
+            '//{0}:Courses_Of_Action/{0}:Course_Of_Action',
+            '//{0}:Exploit_Targets/{0}:Exploit_Target',
+            '//{0}:Incidents/{0}:Incident',
+            '//{0}:Indicators/{0}:Indicator',
+            '//{0}:Threat_Actors/{0}:Threat_Actor',
+            '//{0}:TTPs/{0}:TTP',
+            '//{0}:Related_Packages/{0}:Related_Package/{0}:Package',
+        )
+
+        cybox = "//{0}:Observables/{1}:Observable".format(
+            common.PREFIX_STIX_CORE,
+            common.PREFIX_CYBOX_CORE
+        )
+
+        # Combine the STIX and CybOX selectors
+        to_check = [x.format(common.PREFIX_STIX_CORE) for x in stix]
+        to_check.append(cybox)
+
+        xpath = " | ".join(to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        # Create result collection
+        msg = "IDREFs in top-level collections is deprecated."
+
+        # Attach warnings to collection
+        warns =  []
+        for node in nodes:
+            if 'idref' not in node.attrib:
+                continue
+
+            warn = BestPracticeWarning(node=node, message=msg)
+            warns.append(warn)
+
+        return warns
+
+    def _get_1_2_related_package_deprecations(self, root, namespaces):
+        """Checks for deprecated use of Related_Packages in STIX component
+        instances.
+
+        """
+        selector = "//{0}:Related_Packages"
+        prefixes = (
+            common.PREFIX_STIX_CAMPAIGN,
+            common.PREFIX_STIX_COA,
+            common.PREFIX_STIX_EXPLOIT_TARGET,
+            common.PREFIX_STIX_INCIDENT,
+            common.PREFIX_STIX_INDICATOR,
+            common.PREFIX_STIX_THREAT_ACTOR,
+            common.PREFIX_STIX_TTP
+        )
+
+        to_check = (selector.format(prefix) for prefix in prefixes)
+        xpath = " | ".join(to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        msg = "Use of Related_Packages is deprecated."
+        warns = [BestPracticeWarning(node=x, message=msg) for x in nodes]
+        return warns
+
+    def _get_1_2_package_deprecations(self, root, namespaces):
+        """Checks for deprecated fields on STIX Package instances.
+
+        """
+        to_check = (
+            "//{0}:STIX_Package".format(common.PREFIX_STIX_CORE),
+            "//{0}:Package".format(common.PREFIX_STIX_CORE)
+        )
+
+        xpath = " | ".join(to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+
+        warns = []
+        for node in nodes:
+            attrib = node.attrib
+
+            if 'idref' in attrib:
+                msg = "@idref is deprecated in STIX Package."
+                warn = BestPracticeWarning(node=node, message=msg)
+                warns.append(warn)
+
+            if 'timestamp' in attrib:
+                msg = "@timestamp is deprecated in STIX Package."
+                warn = BestPracticeWarning(node=node, message=msg)
+                warns.append(warn)
+
+        return warns
+
+    def _get_1_2_header_warnings(self, root, namespaces):
+        """Checks for deprecated fields on STIX Header instances.
+
+        """
+        to_check = (
+            "{0}:Title".format(common.PREFIX_STIX_CORE),
+            "{0}:Description".format(common.PREFIX_STIX_CORE),
+            "{0}:Short_Description".format(common.PREFIX_STIX_CORE),
+            "{0}:Package_Intent".format(common.PREFIX_STIX_CORE),
+        )
+
+        header = "//{0}:STIX_Header".format(common.PREFIX_STIX_CORE)
+        xpath = " | ".join("%s/%s" % (header, x) for x in to_check)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+        fmt = "%s is deprecated in STIX Header."
+
+        warns = []
+        for node in nodes:
+            localname = utils.localname(node)
+            msg = fmt % localname
+
+            warn = BestPracticeWarning(node=node, message=msg)
+            warns.append(warn)
+
+        return warns
+
+    @rule('1.2')
+    def _check_1_2_deprecations(self, root, namespaces, version):  # noqa
+        """Checks the input document `root` for fields that were deprecated
+        in STIX v1.2.
+
+        """
+        package_warnings = self._get_1_2_package_deprecations(
+            root=root,
+            namespaces=namespaces
+        )
+
+        header_warnings = self._get_1_2_header_warnings(
+            root=root,
+            namespaces=namespaces
+        )
+
+        tlo_warnings = self._get_1_2_tlo_deprecations(
+            root=root,
+            namespaces=namespaces
+        )
+
+        related_package_warnings= self._get_1_2_related_package_deprecations(
+            root=root,
+            namespaces=namespaces
+        )
+
+        warns = itertools.chain(
+            package_warnings,
+            header_warnings,
+            tlo_warnings,
+            related_package_warnings
+        )
+
+        results = BestPracticeWarningCollection("STIX 1.2 Deprecations")
+        results.extend(warns)
+
+        return results
+
+    def _get_campaign_related_indicators(self, root, namespaces):
+        xpath = ".//{0}:Related_Indicators".format(common.PREFIX_STIX_CAMPAIGN)
+        nodes = root.xpath(xpath, namespaces=namespaces)
+        msg = "Related_Indicators has been deprecated in Campaign."
+        return [BestPracticeWarning(node=n, message=msg) for n in nodes]
+
+
+    @rule('1.1')
+    def _check_1_1_deprecations(self, root, namespaces, version):  # noqa
+        """Checks the input document `root` for fields that were deprecated
+        in STIX v1.1.
+
+        """
+        results = BestPracticeWarningCollection("STIX 1.1 Deprecations")
+        warns = self._get_campaign_related_indicators(root, namespaces)
+        results.extend(warns)
+
+        return results
+
+
+    def _get_bad_ordinalities(self, nodes, tag, namespaces):
+        """Returns a set of warnings for nodes in `nodes` that do not comply
+        with @ordinality use of descriptive elements.
+
+        Args:
+            nodes: A set of nodes that have more than one instance of `tag`
+                children.
+            tag: The localname of the nodes to inspect for ordinalities.
+            namespaces: A list of STIX namespaces.
+
+        """
+        def can_inspect(node):
+            """Only check nodes that are in the STIX namespace and have a
+            localname that matches the tag (e.g., 'Description').
+
+            """
+            qname = etree.QName(node)
+            return (qname.localname == tag) and (qname.namespace in namespaces)
+
+
+        filtered = []
+        for node in nodes:
+            # Filter out fields that belong to non-STIX namespaces
+            filtered.extend(x for x in utils.iterchildren(node) if can_inspect(x))
+
+        warns = []
+        seen = set()
+        
+        for node in filtered:
+            o = node.attrib.get('ordinality')
+
+            if o is None:
+                fmt = "@ordinality missing in '{0}' list."
+                msg = fmt.format(tag)
+                warns.append(BestPracticeWarning(node=node, message=msg))
+                continue
+
+            o = int(o)  # @ordinality is a xs:positiveInteger type.
+
+            if o in seen:
+                fmt = "@ordinality is duplicate in '{0}' list: '{1}'"
+                msg = fmt.format(tag, o)
+                warns.append(BestPracticeWarning(node=node, message=msg))
+                continue
+
+            seen.add(o)
+
+        return warns
+
+    @rule('1.2')
+    def _check_structured_text_ordinalities(self, root, namespaces, version):  # noqa
+        """Checks the input STIX document for correct ordinality usage in
+        StructuredText lists.
+
+        Checks for duplicates and missing ordinality attributes in elements
+        that have lists of StructuredText instances.
+
+        """
+
+        # Selects nodes that have more than one instance of a specific
+        # StructuredTextType child (i.e., more than one Description child).
+        xpath_fmt = "//*[count(child::*[local-name()='{0}']) > 1]"
+
+        tags = (
+            "Description",
+            "Short_Description",
+            "Description_Of_Effect",
+            "Business_Function_Or_Role"
+        )
+
+        title = "StructuredText @ordinality Use"
+        results = BestPracticeWarningCollection(title)
+        nslist = namespaces.values()
+
+        for tag in tags:
+            xpath = xpath_fmt.format(tag)
+            nodes = root.xpath(xpath, namespaces=namespaces)
+
+            if len(nodes) == 0:
+                continue
+
+            warns = self._get_bad_ordinalities(nodes, tag, nslist)
+            results.extend(warns)
+
+        return results
+
     def _get_rules(self, version):
         """Returns a list of best practice check functions that are applicable
         to the STIX `version`.
 
         """
-        def is_applicable(func_version, stix_version):
-            if not func_version:
+        def can_run(stix_version, rule_min, rule_max):
+            if not rule_min:
                 return True
 
-            return StrictVersion(func_version) <= StrictVersion(stix_version)
+            doc_ver = StrictVersion(stix_version)
+            min_ver = StrictVersion(rule_min)
 
+            if rule_max:
+                max_ver = StrictVersion(rule_max)
+                return (min_ver <= doc_ver <= max_ver)
+
+            return min_ver <= doc_ver
 
         StrictVersion = distutils.version.StrictVersion
-        checks = self._rules.iteritems()  # pylint: disable=E1101
+        all_rules = self._rules.iteritems()  # noqa
 
         # Get a generator which yields all best practice methods that are
         # assigned a version number <= the input STIX document version number.
-        rules = itertools.chain.from_iterable(
-            funcs for (x, funcs) in checks if is_applicable(x, version)
-        )
+        rules = []
+
+        for (versions, funcs) in all_rules:
+            min_, max_ = versions
+            rules.extend(f for f in funcs if can_run(version, min_, max_))
 
         return rules
 

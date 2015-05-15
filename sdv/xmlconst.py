@@ -15,3 +15,7 @@ TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
 TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
 TAG_XSI_TYPE = "{%s}type" % (NS_XSI)
 TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
+
+# Common XPaths
+XPATH_RELATIVE_CHILDREN = "./*"
+XPATH_RELATIVE_DESCENDANTS = ".//*"
