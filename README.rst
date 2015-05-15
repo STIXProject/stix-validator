@@ -193,7 +193,7 @@ All STIX and CybOX Documents?
 -----------------------------
 
 The **STIX Document Validator** bundles XML schemas with it, which
-includes all STIX (v1.0 through v1.1.1) and CybOX (2.0 through v2.1) schema
+includes all STIX (v1.0 through v1.2) and CybOX (2.0 through v2.1) schema
 files. If a document includes instances of schematic constructs defined
 outside of the STIX or CybOX languages, a user must point the
 **STIX Document Validator** scripts at those schemas in order to validate.
