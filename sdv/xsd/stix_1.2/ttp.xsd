@@ -3,7 +3,6 @@
 	<xs:annotation>
 		<xs:documentation>This schema was originally developed by The MITRE Corporation. The STIX XML Schema implementation is maintained by The MITRE Corporation and developed by the open STIX Community. For more information, including how to get involved in the effort and how to submit change requests, please visit the STIX website at http://stix.mitre.org. </xs:documentation>
 		<xs:appinfo>
-			<notice>This file is part of a STIX RELEASE CANDIDATE (1.2 RC1) and is NOT INTENDED FOR PRODUCTION USE.</notice>
 			<schema>STIX TTP</schema>
 			<version>1.2</version>
 			<date>05/15/2015 9:00:00 AM</date>
@@ -188,7 +187,7 @@
 			<xs:element name="Name" type="stixCommon:ControlledVocabularyStringType" minOccurs="0" maxOccurs="unbounded">
 				<xs:annotation>
 					<xs:documentation>The Name field specifies a name associated with this MalwareInstance.</xs:documentation>
-					<xs:documentation>This field is implemented through the xsi:type controlled vocabulary extension mechanism. No default vocabulary type has been defined for STIX 1.1.1. Users may either define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use this as a free string field.</xs:documentation>
+					<xs:documentation>This field is implemented through the xsi:type controlled vocabulary extension mechanism. No default vocabulary type has been defined for STIX 1.2. Users may either define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use this as a free string field.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
 			<xs:element name="Title" type="xs:string" minOccurs="0">
