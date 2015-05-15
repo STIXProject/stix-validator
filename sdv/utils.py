@@ -225,9 +225,8 @@ def get_type_ns(doc, typename):
     try:
         return root.nsmap[prefix]
     except KeyError:
-        raise errors.ValidationError(
-            "xsi:type '%s' contains unresolvable namespace prefix." % typename
-        )
+        msg = "xsi:type '%s' contains unresolvable namespace prefix." % typename
+        raise errors.ValidationError(msg)
 
 
 def get_namespace(node):
