@@ -318,7 +318,7 @@ def is_leaf(node):
 
     """
     child = next(iterchildren(node), None)
-    return child is not None
+    return child is None
 
 
 

@@ -92,3 +92,35 @@ class UtilsTests(unittest.TestCase):
         for ts in hastz:
             tz_set = utils.has_tzinfo(ts)
             self.assertEqual(True, tz_set)
+
+    def test_has_content(self):
+        a = etree.Element('a')
+        b = etree.Element('b')
+        c = etree.Element('c')
+        c.text = 'Test'
+
+        b.append(c)
+        a.append(b)
+
+        self.assertTrue(utils.has_content(c))
+        self.assertTrue(utils.has_content(b))
+        self.assertTrue(utils.has_content(a))
+
+        no_content = etree.Element('nocontent')
+        self.assertEqual(False, utils.has_content(no_content))
+
+        only_comment = etree.XML(
+            "<node>"
+            "   <!-- a Comment -->"
+            "</node>"
+        )
+
+        self.assertEqual(False, utils.has_content(only_comment))
+
+    def test_is_leaf(self):
+        a = etree.Element('a')
+        b = etree.Element('b')
+        a.append(b)
+
+        self.assertTrue(utils.is_leaf(b))
+        self.assertEqual(False, utils.is_leaf(a))
