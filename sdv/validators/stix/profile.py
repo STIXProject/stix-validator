@@ -741,8 +741,13 @@ class STIXProfileValidator(schematron.SchematronValidator):
         if not field.startswith("@"):
             # Elements must have a namespace alias attached which maps to
             # the defining namespace for the underlying data type of the
-            # instance selector.
-            fieldname = "%s:%s" % (ns_alias, field)
+            # instance selector. Sometimes the profile will include the
+            # alias and if so use that, but if it isn't included, use
+            # the passed alias (from the parent type).
+            if ":" in field:
+                fieldname = field
+            else:
+                fieldname = "%s:%s" % (ns_alias, field)
         else:
             fieldname = field
 
