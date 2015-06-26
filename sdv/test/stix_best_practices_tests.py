@@ -1,8 +1,9 @@
 # Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
-import unittest
 import json
+import unittest
 from StringIO import StringIO
+
 from lxml import etree
 
 import sdv
@@ -318,6 +319,28 @@ class BestPracticeTimestampTests(unittest.TestCase):
 
         self.assertTrue(zulu_resolves)
         self.assertTrue(offset_resolves)
+
+    def test_id_pattern(self):
+        pattern = bp.ID_PATTERN
+
+        valid = [
+            "sdv:foo-bar",
+            "sdv:foo-123",
+            "stix-validator:foo-123",
+            "XYZ-AB:Package-01f2aa71-61a7-4829-9087-8ffa8202e60c"
+        ]
+
+        invalid = [
+            "sdv:foobar",
+            "sdv:foo/bar",
+            "foo//bar",
+        ]
+
+        for s in valid:
+            self.assertTrue(pattern.match(s))
+
+        for s in invalid:
+            self.assertEqual(None, pattern.match(s))
 
 
 if __name__ == '__main__':

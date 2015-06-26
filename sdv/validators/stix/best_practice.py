@@ -25,6 +25,12 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
+# STIX ID Format: [ns prefix]:[construct type]-[GUID]
+# Note: This will validate invalid QNames, so this should be used with a
+# QName format check.
+ID_PATTERN = re.compile(r"[\w\-]+:\w+-.+", re.UNICODE)
+
+
 def rule(minver, maxver=None):
     """Decorator that identifies methods as being a STIX best practice checking
     rule.
@@ -334,9 +340,6 @@ class STIXBestPracticeValidator(object):
 
     __metaclass__ = BestPracticeMeta
 
-    def __init__(self):
-        pass
-
     @rule('1.0')
     def _check_id_presence(self, root, namespaces, version):  # noqa
         """Checks that all major STIX/CybOX constructs have id attributes set.
@@ -365,9 +368,15 @@ class STIXBestPracticeValidator(object):
     @rule('1.0')
     def _check_id_format(self, root, namespaces, version):  # noqa
         """Checks that the core STIX/CybOX constructs in the STIX instance
-        document have ids and that each id is formatted as follows:
+        document have ids and that each id is a valid QName, formatted as
+        follows:
 
         ``[ns_prefix]:[object-type]-[GUID].``
+
+        Note:
+            This only checks for STIX ID best practices and does not verify
+            that the ID is a valid QName. QName conformance verification is
+            done during XML Schema validation.
 
         """
         to_check = itertools.chain(
@@ -375,15 +384,18 @@ class STIXBestPracticeValidator(object):
             common.CYBOX_CORE_COMPONENTS
         )
 
-        regex = re.compile(r'\w+:\w+-')
         results = BestPracticeWarningCollection('ID Format')
         msg = "ID should be formatted as [ns prefix]:[construct type]-[GUID]"
         xpath = " | ".join("//%s[@id]" % x for x in to_check)
 
         for node in root.xpath(xpath, namespaces=namespaces):
-            if not regex.match(node.attrib['id']):
-                result = BestPracticeWarning(node=node, message=msg)
-                results.append(result)
+            id_ = node.attrib['id']
+
+            if ID_PATTERN.match(id_):
+                continue
+
+            result = BestPracticeWarning(node=node, message=msg)
+            results.append(result)
 
         return results
 

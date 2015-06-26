@@ -124,3 +124,26 @@ class UtilsTests(unittest.TestCase):
 
         self.assertTrue(utils.is_leaf(b))
         self.assertEqual(False, utils.is_leaf(a))
+
+    def test_is_qname(self):
+        valid = [
+            "foo:bar",
+            "foobar",  # No namespace prefix
+            "_foo:bar",
+            "foo:bar1",
+            "foo:bar_-123",
+            "foo-bar:foobar",
+            "foo:bar.foo"
+        ]
+
+        invalid = [
+            "0foo:bar",
+            "-foo:bar",
+            ":foobar"
+        ]
+
+        for s in valid:
+            self.assertTrue(utils.is_qname(s))
+
+        for s in invalid:
+            self.assertEqual(False, utils.is_qname(s), msg=s)
