@@ -205,8 +205,8 @@ class SchematronValidator(object):
 
         """
         root = utils.get_etree_root(doc)
-        is_valid = self.schematron.validate(root)
-        svrl_report = self.schematron.validation_report
+        is_valid = self._schematron.validate(root)
+        svrl_report = self._schematron.validation_report
 
         return SchematronValidationResults(
             is_valid=is_valid,
