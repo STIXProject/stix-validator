@@ -489,16 +489,15 @@ class AllowedValuesRule(_BaseProfileRule):
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        if self.is_attr and self.is_required:
-            return self._context
+        if self.is_attr:
+            return "%s[%s]" % (self._context, self.field)
         else:
             return self.path
 
     @_BaseProfileRule.message.getter
     def message(self):
-        return "The allowed values for {0} are {1}".format(
-            self.path, self.values
-        )
+        msg = "The allowed values for {0} are {1}."
+        return msg.format(self.path, self.values)
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -511,17 +510,13 @@ class AllowedValuesRule(_BaseProfileRule):
 
         If the resulting ``<assert>`` applies to an attribute, this assumes
         that the ``<rule>`` context will point to a parent element.
-
         """
-        name = self.field
-        allowed = self.values
-
-        if self.is_attr and self.is_required:
-            test = " or ".join("%s='%s'" % (name, x) for x in allowed)
+        if self.is_attr:
+            fieldname = self.field
         else:
-            test = " or ".join(".='%s'" % (x) for x in allowed)
+            fieldname = "."
 
-        return test
+        return " or ".join("%s='%s'" % (fieldname, x) for x in self.values)
 
 
 class AllowedImplsRule(_BaseProfileRule):
@@ -571,8 +566,7 @@ class AllowedImplsRule(_BaseProfileRule):
     @_BaseProfileRule.message.getter
     def message(self):
         msg = "The allowed implementations for {0} are {1}"
-        msg = msg.format(self.path, self.impls)
-        return msg
+        return msg.format(self.path, self.impls)
 
     @_BaseProfileRule.test.getter
     def test(self):
