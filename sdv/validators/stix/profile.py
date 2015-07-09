@@ -60,7 +60,7 @@ ALLOWED_OCCURRENCES         = tuple(
 )
 
 # Used by profile schematron for reporting error line numbers.
-SAXON_LINENO = '[<value-of select="saxon:line-number()"/>]'
+SAXON_LINENO = '[<value-of select="saxon:line-number(node())"/>]'
 
 
 class InstanceMapping(object):
@@ -100,10 +100,8 @@ class InstanceMapping(object):
         if not value:
             self._selectors = []
         elif isinstance(value, basestring):
-            self._selectors = [
-                x.strip().replace('"', "'") for x in value.split(",")
-            ]
-        elif hasattr(value, "__getitem__"):
+            self._selectors = [x.strip().replace('"', "'") for x in value.split(",")]
+        elif hasattr(value, "__iter__"):
             self._selectors = [str(x) for x in value]
         else:
             self._selectors = [value]
@@ -166,7 +164,7 @@ class InstanceMapping(object):
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
         self.id = "STIX_Schematron_Profile"
-        self._rules = []
+        self._rules = [RootRule()]
         self._namespaces = namespaces
 
     def insert(self, idx, value):
@@ -245,26 +243,6 @@ class Profile(collections.MutableSequence):
 
         return rules
 
-    def _get_root_rule(self):
-        """Returns a Schematron rule which checks that the root element of
-        the XML instance document is a ``STIX_Package``
-
-        """
-
-        ns_stix = "http://stix.mitre.org/stix-1"
-        text = "The root element must be a STIX_Package instance"
-        test = "%s:STIX_Package" % self._namespaces.get(ns_stix, 'stix')
-
-        rule = self._create_rule("/")
-        assertion = etree.XML(
-            '<assert xmlns="%s" test="%s" role="error">%s %s</assert> ' %
-            (xmlconst.NS_SCHEMATRON, test, text, SAXON_LINENO)
-        )
-
-        rule.append(assertion)
-        pattern = self._pattern(rule)
-        return pattern
-
     def _get_schema_node(self):
         return etree.Element(
             "{%s}schema" % xmlconst.NS_SCHEMATRON,
@@ -295,7 +273,6 @@ class Profile(collections.MutableSequence):
     def as_etree(self):
         """Returns an etree Schematron document for this ``Profile``."""
         patterns = []
-        patterns.append(self._get_root_rule())
         patterns.extend(self.rules)
 
         schema = self._get_schema_node()
@@ -440,11 +417,11 @@ class ProhibitedRule(_BaseProfileRule):
 
     @_BaseProfileRule.test.getter
     def test(self):
-        return self.field
+        return "//{path}".format(path=self.path)
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        return self._context
+        return "/"
 
     @_BaseProfileRule.message.getter
     def message(self):
@@ -546,27 +523,26 @@ class AllowedImplsRule(_BaseProfileRule):
 
         Args:
             value: An allowed implementation value, list of allowed
-            implementations, or a comma-delimited string of allowed
-            implementations.
-
+                implementations, or a comma-delimited string of allowed
+                implementations.
         """
         if not value:
             self._impls = []
         elif isinstance(value, basestring):
             self._impls = [x.strip() for x in value.split(',')]
-        elif hasattr(value, "__getitem__"):
+        elif hasattr(value, "__iter__"):
             self._impls = [str(x) for x in value]
         else:
             self._impls = [value]
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        return self.path
+        return "{path}[@xsi:type]".format(path=self.path)
 
     @_BaseProfileRule.message.getter
     def message(self):
-        msg = "The allowed implementations for {0} are {1}"
-        return msg.format(self.path, self.impls)
+        msg = "The allowed implementations for {path} are {types}"
+        return msg.format(path=self.path, types=self.impls)
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -579,6 +555,23 @@ class AllowedImplsRule(_BaseProfileRule):
 
         """
         return " or ".join("@xsi:type='%s'" % (x,) for x in self.impls)
+
+
+class RootRule(RequiredRule):
+    def __init__(self):
+        super(RootRule, self).__init__("/", "stix:STIX_Package")
+
+    @_BaseProfileRule.test.getter
+    def test(self):
+        return self.field
+
+    @_BaseProfileRule.context_selector.getter
+    def context_selector(self):
+        return self._context
+
+    @_BaseProfileRule.message.getter
+    def message(self):
+        return "The root element must be a STIX_Package instance"
 
 
 class ProfileError(schematron.SchematronError):
@@ -747,7 +740,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         rules = []
         for context in selectors:
-            is_required = False
+            is_required    = False
 
             if occurrence in OCCURRENCE_REQUIRED:
                 is_required = True

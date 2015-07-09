@@ -300,7 +300,8 @@ def print_profile_results(results, level):
         errors_[e.message].append(e.line)
 
     for msg, lines in errors_.iteritems():
-        print_level("[!] %s [%s]", level+1, msg, ', '.join(lines))
+        lines = ', '.join(str(x) for x in lines)
+        print_level("[!] %s [%s]", level+1, msg, lines)
 
 
 def print_json_results(results):
