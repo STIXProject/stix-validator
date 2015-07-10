@@ -464,7 +464,7 @@ def best_practice_validate(fn, options):
     info("Performing best practice validation on %s" % fn)
 
     results = sdv.validate_best_practices(
-        fn,
+        doc=fn,
         version=options.lang_version
     )
 
@@ -504,21 +504,14 @@ def validate_file(fn, options):
     except SchemaInvalidError as ex:
         results.schema_results = ex.results
         if options.profile_validate or options.best_practice_validate:
-            msg = (
-                "File '{0}' was schema-invalid. No further validation will be "
-                "performed."
-            )
-            msg = msg.format(fn)
-            info(msg)
-
+            msg = ("File '{fn}' was schema-invalid. No further validation will "
+                   "be performed.")
+            info(msg.format(fn=fn))
     except Exception as ex:
         results.fatal = ValidationErrorResults(ex)
-        msg = (
-            "Unexpected error occurred with file '{0}'. No further validation "
-            "will be performed: {1}"
-        )
-        msg = msg.format(fn, str(ex))
-        info(msg)
+        msg = ("Unexpected error occurred with file '{fn}'. No further "
+               "validation will be performed: {error}")
+        info(msg.format(fn=fn, error=str(ex)))
 
     return results
 
