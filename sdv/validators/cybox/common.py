@@ -80,7 +80,7 @@ def check_root(doc):
 def check_cybox(func):
     """Decorator which checks that the input document is a CybOX document."""
     @functools.wraps(func)
-    def _check_cybox(*args, **kwargs):
+    def inner(*args, **kwargs):
         try:
             doc = args[1]
         except IndexError:
@@ -94,4 +94,4 @@ def check_cybox(func):
 
         return func(*args, **kwargs)
 
-    return _check_cybox
+    return inner

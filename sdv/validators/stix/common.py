@@ -517,7 +517,7 @@ def check_stix(func):
     """Decorator which checks that the input document is a STIX document."""
 
     @functools.wraps(func)
-    def _check_stix(*args, **kwargs):
+    def inner(*args, **kwargs):
         try:
             doc = args[1]
         except IndexError:
@@ -531,7 +531,7 @@ def check_stix(func):
 
         return func(*args, **kwargs)
 
-    return _check_stix
+    return inner
 
 
 def idref_timestamp_resolves(root, idref, timestamp, namespaces):

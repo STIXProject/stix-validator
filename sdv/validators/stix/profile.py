@@ -291,8 +291,8 @@ class _BaseProfileRule(object):
             applies.
 
     """
-    _TYPE_REPORT  = "report"
-    _TYPE_ASSERT  = "assert"
+    TYPE_REPORT  = "report"
+    TYPE_ASSERT  = "assert"
 
     def __init__(self, context, field):
         self._type = None
@@ -380,7 +380,7 @@ class RequiredRule(_BaseProfileRule):
     """
     def __init__(self, context, field):
         super(RequiredRule, self).__init__(context, field)
-        self._type = self._TYPE_ASSERT
+        self._type = self.TYPE_ASSERT
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -406,7 +406,7 @@ class ProhibitedRule(_BaseProfileRule):
     """
     def __init__(self, context, field):
         super(ProhibitedRule, self).__init__(context, field)
-        self._type = self._TYPE_REPORT
+        self._type = self.TYPE_REPORT
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -431,7 +431,7 @@ class AllowedValuesRule(_BaseProfileRule):
     """
     def __init__(self, context, field, required=True, values=None):
         super(AllowedValuesRule, self).__init__(context, field)
-        self._type = self._TYPE_ASSERT
+        self._type = self.TYPE_ASSERT
         self.is_required = required
         self.values = values
 
@@ -489,7 +489,7 @@ class AllowedValuesRule(_BaseProfileRule):
 class AllowedImplsRule(_BaseProfileRule):
     def __init__(self, context, field, required=True, impls=None):
         super(AllowedImplsRule, self).__init__(context, field)
-        self._type = self._TYPE_ASSERT
+        self._type = self.TYPE_ASSERT
         self.is_required = required
         self.impls = impls
 
@@ -834,23 +834,24 @@ class STIXProfileValidator(schematron.SchematronValidator):
         dictionary.
 
         """
-        value = functools.partial(self._get_value, worksheet)
-        is_empty_row = functools.partial(self._is_empty_row, worksheet)
-        nsmap = {xmlconst.NS_SAXON: 'saxon'}
+        value    = functools.partial(self._get_value, worksheet)
+        is_empty = functools.partial(self._is_empty_row, worksheet)
+        nsmap    = {xmlconst.NS_SAXON: 'saxon'}
 
         def check_namespace(ns, alias):
-            if not all((ns, alias)):
-                raise errors.ProfileParseError(
-                    "Missing namespace or alias: unable to parse Namespaces "
-                    "worksheet"
-                )
+            if ns and alias:
+                return
 
-        for i in xrange(1, worksheet.nrows):  # skip the first row
-            if is_empty_row(i):
+            err = ("Missing namespace or alias: unable to parse Namespaces "
+                   "worksheet")
+            raise errors.ProfileParseError(err)
+
+        for row in xrange(1, worksheet.nrows):  # skip the first row
+            if is_empty(row):
                 continue
 
-            ns = value(i, COL_NAMESPACE)
-            alias = value(i, COL_ALIAS)
+            ns = value(row, COL_NAMESPACE)
+            alias = value(row, COL_ALIAS)
             check_namespace(ns, alias)
             nsmap[ns] = alias
 
@@ -870,8 +871,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
             value is an instance of the :class:`InstanceMapping`.
 
         """
-        value = functools.partial(self._get_value, worksheet)
-        is_empty_row = functools.partial(self._is_empty_row, worksheet)
+        value        = functools.partial(self._get_value, worksheet)
+        is_empty     = functools.partial(self._is_empty_row, worksheet)
         instance_map = {}
 
         def check_label(label):
@@ -879,22 +880,24 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 err = "Found empty type label in Instance Mapping worksheet"
                 raise errors.ProfileParseError(err)
 
-            if label in instance_map:
-                err = ("Found duplicate type label in Instance Mapping "
-                       "worksheet: '{label}'")
-                raise errors.ProfileParseError(err.format(label=label))
+            if label not in instance_map:
+                return
 
-        for i in xrange(1, worksheet.nrows):
-            if is_empty_row(i):
+            err = ("Found duplicate type label in Instance Mapping worksheet: "
+                   "'{label}'")
+            raise errors.ProfileParseError(err.format(label=label))
+
+        for row in xrange(1, worksheet.nrows):
+            if is_empty(row):
                 continue
 
-            label = value(i, COL_LABEL)
+            label = value(row, COL_LABEL)
             check_label(label)
 
             mapping = InstanceMapping(nsmap)
             mapping.label = label
-            mapping.namespace = value(i, COL_TYPE_NAMESPACE)
-            mapping.selectors = value(i, COL_SELECTORS)
+            mapping.namespace = value(row, COL_TYPE_NAMESPACE)
+            mapping.selectors = value(row, COL_SELECTORS)
             mapping.validate()
 
             instance_map[label] = mapping
@@ -974,9 +977,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
         in any columns.
 
         """
-        return not any(
-            self._get_value(worksheet, row, x) for x in xrange(worksheet.ncols)
-        )
+        cols = xrange(worksheet.ncols)
+        return not any(self._get_value(worksheet, row, col) for col in cols)
 
     def _get_value(self, worksheet, row, col):
         """Returns the worksheet cell value found at (row,col)."""
@@ -991,10 +993,8 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         """
         if not filename.lower().endswith(".xlsx"):
-            raise errors.ProfileParseError(
-                "Profile must have .XLSX extension. Filename provided: '%s'" %
-                filename
-            )
+            err = "Profile must have .XLSX extension. Filename provided: '{fn}'"
+            raise errors.ProfileParseError(err.format(fn=filename))
 
         if not os.path.exists(filename):
             err = "The profile document '{fn}' does not exist"
@@ -1029,18 +1029,9 @@ class STIXProfileValidator(schematron.SchematronValidator):
             return None
 
         s = etree.tostring(self._schematron.validator_xslt)
-        s = s.replace(
-            ' [<axsl:text/>'
-            '<axsl:value-of select="saxon:line-number()"/>'
-            '<axsl:text/>]',
-            ''
-        )
+        s = s.replace(' [<axsl:text/><axsl:value-of select="saxon:line-number()"/><axsl:text/>]', '')
         s = s.replace('xmlns:saxon="http://icl.com/saxon"', '')
-        s = s.replace(
-            '<svrl:ns-prefix-in-attribute-values '
-            'uri="http://icl.com/saxon" prefix="saxon"/>',
-            ''
-        )
+        s = s.replace('<svrl:ns-prefix-in-attribute-values uri="http://icl.com/saxon" prefix="saxon"/>', '')
 
         parser = utils.get_xml_parser()
         return etree.parse(StringIO.StringIO(s), parser=parser)
