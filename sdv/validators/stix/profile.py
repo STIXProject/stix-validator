@@ -60,8 +60,10 @@ ALLOWED_OCCURRENCES         = tuple(
 )
 
 # Used by profile schematron for reporting error line numbers.
-SAXON_LINENO = '[<value-of select="saxon:line-number(node())"/>]'
+SAXON_LINENO = '[<value-of select="saxon:line-number()"/>]'
 
+# Used to get the name of the context node.
+NAME = '<value-of select="name()"/>'
 
 class InstanceMapping(object):
     """Contains information about an entry in the Instance Mapping worksheet
@@ -144,21 +146,17 @@ class InstanceMapping(object):
 
         """
         if not self.label:
-            raise errors.ProfileParseError(
-                "Missing type label in Instance Mapping"
-            )
+            err = "Missing type label in Instance Mapping"
+            raise errors.ProfileParseError(err)
 
         if not self.namespace:
-            raise errors.ProfileParseError(
-                "Missing namespace for '%s' in Instance Mapping "
-                "worksheet" % self.label
-            )
+            err = "Missing namespace for '{label}'' in Instance Mapping worksheet"
+            raise errors.ProfileParseError(err.format(label=self.label))
 
         if not (self.selectors and all(self.selectors)):
-            raise errors.ProfileParseError(
-                "Empty selector for '%s' in Instance Mapping "
-                "worksheet. Look for extra commas in field." % self.label
-            )
+            err = ("Empty selector for '{label}' in Instance Mapping worksheet. "
+                   "Look for extra commas in field.")
+            raise errors.ProfileParseError(err.format(label=self.label))
 
 
 class Profile(collections.MutableSequence):
@@ -188,6 +186,10 @@ class Profile(collections.MutableSequence):
     def __nonzero__(self):
         return bool(self._rules)
 
+    def _create_rule(self, ctx):
+        xml = '<rule xmlns="{ns}" context="{context}"/>'
+        return etree.XML(xml.format(ns=xmlconst.NS_SCHEMATRON, context=ctx))
+
     def _collect_rules(self):
         """Builds and returns a dictionary of ``BaseProfileRule``
         implementations from the internal storage. The key is the Rule context
@@ -197,35 +199,29 @@ class Profile(collections.MutableSequence):
         following properties of the rule:
 
         * If the rule is a Prohibits or Requires occurrence check, the
-            context is pulled directly from the _BaseProfileRule instance's
-            ``context`` property. This value is derived from the context
-            label associated with the rule entry in the profile worksheet.
+          context is pulled directly from the _BaseProfileRule instance's
+          ``context`` property. This value is derived from the context
+          label associated with the rule entry in the profile worksheet.
         * If the rule checks for allowed values or implementations of an
-            element the context will be a selector pointing directly to the
-            element. This is done to cut down on validation noise (otherwise a
-            missing element would raise errors for a required element being
-            missing AND the element not containing an allowed value because it
-            wasn't found at all).
+          element the context will be a selector pointing directly to the
+          element. This is done to cut down on validation noise (otherwise a
+          missing element would raise errors for a required element being
+          missing AND the element not containing an allowed value because it
+          wasn't found at all).
         * If the rule checks for allowed values of an attribute, the rule
-            context will pulled directly from the _BaseProfileRule instance's
-            ``context`` property. This should probably follow the rules
-            described above, but doesn't for no good reason.
+          context will pulled directly from the _BaseProfileRule instance's
+          ``context`` property. This should probably follow the rules
+          described above, but doesn't for no good reason.
 
         Returns:
             A dictionary of lists of rules associated by ``<rule>`` context.
-
         """
         collected = collections.defaultdict(list)
 
-        for test in self:
-            collected[test.context_selector].append(test)
+        for rule in self:
+            collected[rule.context_selector].append(rule)
 
         return collected
-
-    def _create_rule(self, ctx):
-        return etree.XML(
-            '<rule xmlns="%s" context="%s"/>' % (xmlconst.NS_SCHEMATRON, ctx)
-        )
 
     @property
     def rules(self):
@@ -235,23 +231,20 @@ class Profile(collections.MutableSequence):
         """
         rules = []
         collected = self._collect_rules()
-
-        for ctx, tests in collected.iteritems():
+        for ctx, profile_rules in collected.iteritems():
             rule = self._create_rule(ctx)
-            rule.extend([test.as_etree() for test in tests])
+            rule.extend(x.as_etree() for x in profile_rules)
             rules.append(self._pattern(rule))
 
         return rules
 
     def _get_schema_node(self):
-        return etree.Element(
-            "{%s}schema" % xmlconst.NS_SCHEMATRON,
-            nsmap={None: xmlconst.NS_SCHEMATRON}
-        )
+        tag = "{{{ns}}}schema".format(ns=xmlconst.NS_SCHEMATRON)
+        return etree.Element(tag, nsmap={None: xmlconst.NS_SCHEMATRON})
 
     def _pattern(self, rule):
-        ns = xmlconst.NS_SCHEMATRON
-        pattern = etree.XML("<pattern xmlns='{0}'/>".format(ns))
+        xml = "<pattern xmlns='{ns}'/>".format(ns=xmlconst.NS_SCHEMATRON)
+        pattern = etree.XML(xml)
         pattern.append(rule)
         return pattern
 
@@ -361,17 +354,17 @@ class _BaseProfileRule(object):
         profile rule.
 
         """
-        args = (
-            self.type,                   # 'assert' or 'report'
-            xmlconst.NS_SCHEMATRON,      # schematron namespace
-            self.test,                   # test selector
-            self.role,                   # "error"
-            self.message,                # error message
-            SAXON_LINENO                 # line number function
-        )
+        kwargs = {
+            'type': self.type,              # 'assert' or 'report'
+            'ns': xmlconst.NS_SCHEMATRON,   # schematron namespace
+            'test': self.test,              # test selector
+            'role': self.role,              # "error"
+            'message': self.message,        # error message
+            'line': SAXON_LINENO            # line number function
+        }
 
-        xml = '<{0} xmlns="{1}" test="{2}" role="{3}">{4} {5}</{0}>'
-        rule = etree.XML(xml.format(*args))
+        xml = '<{type} xmlns="{ns}" test="{test}" role="{role}">{message} {line}</{type}>'
+        rule = etree.XML(xml.format(**kwargs))
 
         return rule
 
@@ -417,15 +410,16 @@ class ProhibitedRule(_BaseProfileRule):
 
     @_BaseProfileRule.test.getter
     def test(self):
-        return "//{path}".format(path=self.path)
+        return self.field
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        return "/"
+        return self._context
 
     @_BaseProfileRule.message.getter
     def message(self):
-        return "{0} is prohibited by this profile.".format(self.path)
+        msg = "{parent}/{field} is prohibited by this profile."
+        return msg.format(parent=NAME, field=self.field)
 
 
 class AllowedValuesRule(_BaseProfileRule):
@@ -466,15 +460,12 @@ class AllowedValuesRule(_BaseProfileRule):
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        if self.is_attr:
-            return "%s[%s]" % (self._context, self.field)
-        else:
-            return self.path
+        return self._context
 
     @_BaseProfileRule.message.getter
     def message(self):
-        msg = "The allowed values for {0} are {1}."
-        return msg.format(self.path, self.values)
+        msg = "The allowed values for {parent}/{field} are {values}."
+        return msg.format(parent=NAME, field=self.field, values=self.values)
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -488,13 +479,12 @@ class AllowedValuesRule(_BaseProfileRule):
         If the resulting ``<assert>`` applies to an attribute, this assumes
         that the ``<rule>`` context will point to a parent element.
         """
-        if self.is_attr:
-            fieldname = self.field
-        else:
-            fieldname = "."
+        test = " or ".join("%s='%s'" % (self.field, x) for x in self.values)
 
-        return " or ".join("%s='%s'" % (fieldname, x) for x in self.values)
+        if not self.is_required:
+            test = "not({field}) or {values}".format(field=self.field, values=test)
 
+        return test
 
 class AllowedImplsRule(_BaseProfileRule):
     def __init__(self, context, field, required=True, impls=None):
@@ -537,12 +527,12 @@ class AllowedImplsRule(_BaseProfileRule):
 
     @_BaseProfileRule.context_selector.getter
     def context_selector(self):
-        return "{path}[@xsi:type]".format(path=self.path)
+        return self._context
 
     @_BaseProfileRule.message.getter
     def message(self):
-        msg = "The allowed implementations for {path} are {types}"
-        return msg.format(path=self.path, types=self.impls)
+        msg = "The allowed implementations for {parent}/{field} are {types}"
+        return msg.format(parent=NAME, field=self.field, types=self.impls)
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -552,10 +542,15 @@ class AllowedImplsRule(_BaseProfileRule):
         This expects the ``<assert>`` directive to be places within a rule
         where the selector is the field name if this rule applies to an
         element name.
-
         """
-        return " or ".join("@xsi:type='%s'" % (x,) for x in self.impls)
+        notype = "not({field}/@xsi:type)".format(field=self.field)
+        types  = " or ".join("%s/@xsi:type='%s'" % (self.field, x) for x in self.impls)
+        test   = "{notype} or {types}".format(notype=notype, types=types)
 
+        if not self.is_required:
+            test = "not({field}) or {impls}".format(field=self.field, impls=test)
+
+        return test
 
 class RootRule(RequiredRule):
     def __init__(self):
@@ -710,20 +705,22 @@ class STIXProfileValidator(schematron.SchematronValidator):
         Entries marked as ``Required`` may also have ``Allowed Value`` and
         ``Implementation Types`` tests applied to the field as well.
 
+        Entries marked as ``Optional`` or ``Suggested`` are skipped unless
+        there are associated allowed values/fields. Generated rules will
+        validate values/implementations if the fields are found in the document.
+
         Entries marked as ``Prohibited`` are only checked for presence. Any
         values found in the ``Implementation Types` or ``Allowed Values``
         fields will be ignored.
 
         Returns:
             A list of ``_BaseProfileRule`` implementations for the given
-            rule parameters.  Because a ``Context Label`` can be mapped to
-            multiple instance selectors, this method returns a list of rules
-            for each selector. If a ``Context Label`` maps to only one
-            selector, a list containing one element will be returned.
-
+            rule parameters.
         """
-        selectors = info.selectors
-        ns_alias = info.ns_alias
+        ns_alias    = info.ns_alias
+        is_required = False
+        rules       = []
+        context     = " | ".join(x.strip() for x in info.selectors)
 
         if not field.startswith("@"):
             # Elements must have a namespace alias attached which maps to
@@ -738,30 +735,29 @@ class STIXProfileValidator(schematron.SchematronValidator):
         else:
             fieldname = field
 
-        rules = []
-        for context in selectors:
-            is_required    = False
+        if occurrence in OCCURRENCE_REQUIRED:
+            is_required = True
+        elif occurrence in OCCURRENCE_PROHIBITED:
+            rule = ProhibitedRule(context, fieldname)
+            rules.append(rule)
+        elif occurrence in ALL_OPTIONAL_OCCURRENCES:
+            pass
+        else:
+            return rules
 
-            if occurrence in OCCURRENCE_REQUIRED:
-                is_required = True
-                rule = RequiredRule(context, fieldname)
-                rules.append(rule)
-            elif occurrence in OCCURRENCE_PROHIBITED:
-                rule = ProhibitedRule(context, fieldname)
-                rules.append(rule)
-                continue  # Cannot set prohibited values or impls
-            elif occurrence in ALL_OPTIONAL_OCCURRENCES:
-                pass
-            else:
-                continue
+        if types:
+            rule = AllowedImplsRule(context, fieldname, is_required, types)
+            rules.append(rule)
 
-            if types:
-                rule = AllowedImplsRule(context, fieldname, is_required, types)
-                rules.append(rule)
+        if values:
+            rule = AllowedValuesRule(context, fieldname, is_required, values)
+            rules.append(rule)
 
-            if values:
-                rule = AllowedValuesRule(context, fieldname, is_required, values)
-                rules.append(rule)
+        # Allowed value/impl rules will check for existence if the field is
+        # required, so we don't need an explicit existence check as well.
+        if is_required and not(types or values):
+            rule = RequiredRule(context, fieldname)
+            rules.append(rule)
 
         return rules
 
@@ -880,16 +876,13 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         def check_label(label):
             if not label:
-                raise errors.ProfileParseError(
-                    "Found empty type label in Instance Mapping worksheet"
-                )
+                err = "Found empty type label in Instance Mapping worksheet"
+                raise errors.ProfileParseError(err)
 
             if label in instance_map:
-                err = (
-                    "Found duplicate type label in Instance Mapping "
-                    "worksheet: '{0}'"
-                )
-                raise errors.ProfileParseError(err.format(label))
+                err = ("Found duplicate type label in Instance Mapping "
+                       "worksheet: '{label}'")
+                raise errors.ProfileParseError(err.format(label=label))
 
         for i in xrange(1, worksheet.nrows):
             if is_empty_row(i):
@@ -957,10 +950,11 @@ class STIXProfileValidator(schematron.SchematronValidator):
         try:
             namespaces = self._parse_namespace_worksheet(ws("Namespaces"))
             instance_mapping = self._parse_instance_mapping_worksheet(
-                ws("Instance Mapping"), namespaces
+                worksheet=ws("Instance Mapping"),
+                nsmap=namespaces
             )
-            rules = self._parse_workbook_rules(workbook, instance_mapping)
 
+            rules = self._parse_workbook_rules(workbook, instance_mapping)
             profile = Profile(namespaces)
             profile.extend(rules)
             yield profile.as_etree()
@@ -1003,17 +997,15 @@ class STIXProfileValidator(schematron.SchematronValidator):
             )
 
         if not os.path.exists(filename):
-            raise errors.ProfileParseError(
-                "The profile document '%s' does not exist" % filename
-            )
+            err = "The profile document '{fn}' does not exist"
+            raise errors.ProfileParseError(err.format(fn=filename))
 
         try:
             return xlrd.open_workbook(filename)
         except:
-            raise errors.ProfileParseError(
-                "Error occurred while opening '%s'. File may be an invalid or "
-                "corrupted XSLX document."
-            )
+            err = ("Error occurred while opening '{fn}'. File may be an invalid "
+                   "or corrupted XSLX document.")
+            raise errors.ProfileParseError(err.format(fn=filename))
 
     @schematron.SchematronValidator.xslt.getter
     def xslt(self):
