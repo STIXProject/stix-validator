@@ -14,12 +14,16 @@ from sdv import utils, xmlconst
 from .  import base
 
 
+# SVRL error tags
 ERROR_TAGS = (
     xmlconst.TAG_SVRL_FAILED_ASSERT,
     xmlconst.TAG_SVRL_SUCCESSFUL_REPORT
 )
 
 
+# Tuple for recording schematron validation errors.
+# 'node" is the etree failed-assert or successful-report node.
+# 'context' is the associated schematron rule context for the error.
 SVRLError = collections.namedtuple(
     typename="SVRLError",
     field_names=["context", "node"]
@@ -124,6 +128,14 @@ class SchematronValidationResults(base.ValidationResults):
         self.errors = self._parse_errors(svrl_report)
 
     def _get_errors(self, svrl_report):
+        """Parses errors from the SVRL report document.
+
+        Args:
+            svrl_report: An etree SVRL document.
+
+        Returns:
+            A list of :class:`SVRLError` objects.
+        """
         errors = []
 
         if not svrl_report:
