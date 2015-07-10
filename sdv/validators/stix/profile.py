@@ -579,12 +579,10 @@ class ProfileError(schematron.SchematronError):
 
     Attributes:
         message: The STIX Profile validation error message.
-
     """
-
     def __init__(self, doc, error):
         super(ProfileError, self).__init__(doc, error)
-        self._line = self._parse_line(error)
+        self._line = self._parse_line(error.node)
 
     def _parse_line(self, error):
         """Errors are reported as ``<error msg> [line number]``.
@@ -654,13 +652,7 @@ class ProfileValidationResults(schematron.SchematronValidationResults):
         )
 
     def _parse_errors(self, svrl_report):
-        if not svrl_report:
-            return None
-
-        xpath = "//svrl:failed-assert | //svrl:successful-report"
-        nsmap = {'svrl': xmlconst.NS_SVRL}
-        errors = svrl_report.xpath(xpath, namespaces=nsmap)
-
+        errors = self._get_errors(svrl_report)
         return [ProfileError(self._doc, x) for x in errors]
 
 
@@ -1082,7 +1074,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
         root = utils.get_etree_root(doc)
         is_valid = self._schematron.validate(root)
         svrl_report = self._schematron.validation_report
-
         return ProfileValidationResults(is_valid, root, svrl_report)
 
 

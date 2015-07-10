@@ -15,6 +15,10 @@ TAG_XS_INCLUDE = "{%s}include" % (NS_XML_SCHEMA)
 TAG_XS_IMPORT = "{%s}import" % (NS_XML_SCHEMA)
 TAG_XSI_TYPE = "{%s}type" % (NS_XSI)
 TAG_SCHEMALOCATION = "{%s}schemaLocation" % NS_XSI
+TAG_SVRL_FIRED_RULE = "{%s}fired-rule" % NS_SVRL
+TAG_SVRL_FAILED_ASSERT = "{%s}failed-assert" % NS_SVRL
+TAG_SVRL_SUCCESSFUL_REPORT = "{%s}successful-report" % NS_SVRL
+
 
 # Common XPaths
 XPATH_RELATIVE_CHILDREN = "./*"

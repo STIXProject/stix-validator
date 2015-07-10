@@ -1,6 +1,9 @@
 # Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+# builtin
+import collections
+
 # external
 import lxml.isoschematron
 
@@ -9,6 +12,19 @@ from sdv import utils, xmlconst
 
 # relative
 from .  import base
+
+
+ERROR_TAGS = (
+    xmlconst.TAG_SVRL_FAILED_ASSERT,
+    xmlconst.TAG_SVRL_SUCCESSFUL_REPORT
+)
+
+
+SVRLError = collections.namedtuple(
+    typename="SVRLError",
+    field_names=["context", "node"]
+)
+
 
 class SchematronError(base.ValidationError):
     """Represents an error found in a SVRL report.
@@ -24,13 +40,15 @@ class SchematronError(base.ValidationError):
     """
     def __init__(self, doc, error):
         super(SchematronError, self).__init__()
+        node = error.node
 
         self._doc = doc
-        self._error = error
-        self._xpath_location = error.attrib.get('location')
-        self._test = error.attrib.get('test')
+        self._error = node
+        self._xpath_location = node.attrib.get('location')
+        self._test = node.attrib.get('test')
         self._line = None
-        self.message = self._parse_message(error)
+        self.context = error.context
+        self.message = self._parse_message(node)
 
     def __unicode__(self):
         return unicode(self.message)
@@ -105,14 +123,29 @@ class SchematronValidationResults(base.ValidationResults):
         self._doc = doc
         self.errors = self._parse_errors(svrl_report)
 
-    def _parse_errors(self, svrl_report):
+    def _get_errors(self, svrl_report):
+        errors = []
+
         if not svrl_report:
-            return []
+            return errors
 
-        xpath = "//svrl:failed-assert | //svrl:successful-report"
-        nsmap = {'svrl': xmlconst.NS_SVRL}
-        errors = svrl_report.xpath(xpath, namespaces=nsmap)
+        root = svrl_report.getroot()
 
+        for element in utils.descendants(root):
+            if element.tag == xmlconst.TAG_SVRL_FIRED_RULE:
+                context = element.attrib['context']
+                continue
+
+            if element.tag not in ERROR_TAGS:
+                continue
+
+            error = SVRLError(context=context, node=element)
+            errors.append(error)
+
+        return errors
+
+    def _parse_errors(self, svrl_report):
+        errors = self._get_errors(svrl_report)
         return [SchematronError(self._doc, x) for x in errors]
 
     def as_dict(self):
