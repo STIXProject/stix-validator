@@ -65,6 +65,7 @@ SAXON_LINENO = '[<value-of select="saxon:line-number()"/>]'
 # Used to get the name of the context node.
 NAME = '<value-of select="name()"/>'
 
+
 class InstanceMapping(object):
     """Contains information about an entry in the Instance Mapping worksheet
     of a Profile.
@@ -124,14 +125,12 @@ class InstanceMapping(object):
         if not value:
             self._namespace = None
             self._ns_alias = None
-        else:
-            if value not in self._nsmap:
-                raise errors.ProfileParseError(
-                    "Unable to map namespace '%s' to namespace alias" % value
-                )
-
+        elif value in self._nsmap:
             self._namespace = value
             self._ns_alias = self._nsmap[value]
+        else:
+            err = "Unable to map namespace '{ns}' to namespace alias"
+            raise errors.ProfileParseError(err.format(ns=value))
 
     @property
     def ns_alias(self):
@@ -186,10 +185,6 @@ class Profile(collections.MutableSequence):
     def __nonzero__(self):
         return bool(self._rules)
 
-    def _create_rule(self, ctx):
-        xml = '<rule xmlns="{ns}" context="{context}"/>'
-        return etree.XML(xml.format(ns=xmlconst.NS_SCHEMATRON, context=ctx))
-
     def _collect_rules(self):
         """Builds and returns a dictionary of ``BaseProfileRule``
         implementations from the internal storage. The key is the Rule context
@@ -232,23 +227,22 @@ class Profile(collections.MutableSequence):
         rules = []
         collected = self._collect_rules()
         for ctx, profile_rules in collected.iteritems():
-            rule = self._create_rule(ctx)
+            # Create a schematron rule for our set of profile rules under
+            # a given context.
+            rule = schematron.make_rule(ctx)
             rule.extend(x.as_etree() for x in profile_rules)
-            rules.append(self._pattern(rule))
+
+            # Wrap the rule in a pattern so it always fires.
+            pattern = schematron.make_pattern()
+            pattern.append(rule)
+
+            # Add the pattern to the return list.
+            rules.append(pattern)
 
         return rules
 
-    def _get_schema_node(self):
-        tag = "{{{ns}}}schema".format(ns=xmlconst.NS_SCHEMATRON)
-        return etree.Element(tag, nsmap={None: xmlconst.NS_SCHEMATRON})
-
-    def _pattern(self, rule):
-        xml = "<pattern xmlns='{ns}'/>".format(ns=xmlconst.NS_SCHEMATRON)
-        pattern = etree.XML(xml)
-        pattern.append(rule)
-        return pattern
-
-    def _get_namespaces(self):
+    @property
+    def namespaces(self):
         """Returns a list of etree Elements that represent Schematron
         ``<ns prefix='foo' uri='bar'>`` elements.
 
@@ -256,24 +250,18 @@ class Profile(collections.MutableSequence):
         namespaces = []
 
         for ns, prefix in self._namespaces.iteritems():
-            namespace = etree.Element("{%s}ns" % xmlconst.NS_SCHEMATRON)
-            namespace.set("prefix", prefix)
-            namespace.set("uri", ns)
-            namespaces.append(namespace)
+            ns = schematron.make_ns(prefix, ns)
+            namespaces.append(ns)
 
         return namespaces
 
     def as_etree(self):
         """Returns an etree Schematron document for this ``Profile``."""
-        patterns = []
-        patterns.extend(self.rules)
-
-        schema = self._get_schema_node()
-        schema.extend(self._get_namespaces())
-        schema.extend(patterns)
+        schema = schematron.make_schema()
+        schema.extend(self.namespaces)
+        schema.extend(self.rules)
 
         return schema
-
 
 class _BaseProfileRule(object):
     """Base class for profile rules.
@@ -352,7 +340,6 @@ class _BaseProfileRule(object):
     def as_etree(self):
         """Returns a Schematron ``<assert>`` or ``<report>`` for this
         profile rule.
-
         """
         kwargs = {
             'type': self.type,              # 'assert' or 'report'
@@ -365,7 +352,6 @@ class _BaseProfileRule(object):
 
         xml = '<{type} xmlns="{ns}" test="{test}" role="{role}">{message} {line}</{type}>'
         rule = etree.XML(xml.format(**kwargs))
-
         return rule
 
 

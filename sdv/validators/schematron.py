@@ -5,6 +5,7 @@
 import collections
 
 # external
+import lxml.etree
 import lxml.isoschematron
 
 # internal
@@ -28,6 +29,31 @@ SVRLError = collections.namedtuple(
     typename="SVRLError",
     field_names=["context", "node"]
 )
+
+
+def make_rule(ctx):
+    name    = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "rule")
+    attrib  = {"context": ctx}
+    element = lxml.etree.Element(name, attrib=attrib)
+    return element
+
+
+def make_pattern():
+    name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "pattern")
+    return lxml.etree.Element(name)
+
+
+def make_schema():
+    name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "schema")
+    return lxml.etree.Element(name, nsmap={None:xmlconst.NS_SCHEMATRON})
+
+
+def make_ns(prefix, uri):
+    name    = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "ns")
+    attrib  = {"prefix": prefix, "uri": uri}
+    element = lxml.etree.Element(name, attrib=attrib)
+
+    return element
 
 
 class SchematronError(base.ValidationError):
