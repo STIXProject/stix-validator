@@ -34,26 +34,56 @@ SVRLError = collections.namedtuple(
 def make_rule(ctx):
     name    = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "rule")
     attrib  = {"context": ctx}
-    element = lxml.etree.Element(name, attrib=attrib)
+    nsmap = {None: xmlconst.NS_SCHEMATRON}
+    element = lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
     return element
 
 
-def make_pattern():
+def make_pattern(id=None):
+    attrib = {}
+
+    if id:
+        attrib["id"] = id
+
     name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "pattern")
-    return lxml.etree.Element(name)
+    nsmap = {None: xmlconst.NS_SCHEMATRON}
+    return lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
 
 
 def make_schema():
     name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "schema")
-    return lxml.etree.Element(name, nsmap={None:xmlconst.NS_SCHEMATRON})
+    attrib = {"defaultPhase": "#ALL"}
+    nsmap = {None:xmlconst.NS_SCHEMATRON}
+    return lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
 
 
 def make_ns(prefix, uri):
     name    = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "ns")
     attrib  = {"prefix": prefix, "uri": uri}
-    element = lxml.etree.Element(name, attrib=attrib)
-
+    nsmap = {None: xmlconst.NS_SCHEMATRON}
+    element = lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
     return element
+
+
+def make_active(pattern_id):
+    name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "active")
+    nsmap = {None: xmlconst.NS_SCHEMATRON}
+    attrib = {"pattern": pattern_id}
+    element = lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
+    return element
+
+
+def make_phase(id, pattern_ids=()):
+    name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "phase")
+    nsmap = {None: xmlconst.NS_SCHEMATRON}
+    attrib = {"id": id}
+    phase = lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
+
+    for id_ in pattern_ids:
+        active = make_active(id_)
+        phase.append(active)
+
+    return phase
 
 
 class SchematronError(base.ValidationError):
@@ -219,7 +249,7 @@ class SchematronValidator(object):
     def __init__(self, schematron):
         self._schematron = self._build_schematron(schematron)
 
-    def _build_schematron(self, sch):
+    def _build_schematron(self, sch, phase="#ALL"):
         """Attempts to build an ``lxml.isoschematron.Schematron`` instance
         from `sch`.
 
@@ -239,7 +269,8 @@ class SchematronValidator(object):
             root,
             store_report=True,
             store_xslt=True,
-            store_schematron=True
+            store_schematron=True,
+            phase=phase
         )
 
         return schematron

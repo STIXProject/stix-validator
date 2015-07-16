@@ -161,8 +161,9 @@ class InstanceMapping(object):
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
         self.id = "STIX_Schematron_Profile"
-        self._rules = [RootRule()]
         self._namespaces = namespaces
+        self._rules = []
+        self.append(RootRule())
 
     def insert(self, idx, value):
         if not value:
@@ -218,6 +219,29 @@ class Profile(collections.MutableSequence):
 
         return collected
 
+    def _pattern_id(self, rule):
+         return "rule.%d" % id(rule)
+
+    def _phase_id(self, ns):
+        return "phase.%s" % utils.md5sum(ns)
+
+    @property
+    def phases(self):
+        by_namespace = collections.defaultdict(list)
+
+        for rule in self:
+            by_namespace[rule.typens].append(rule)
+
+        phases = []
+
+        for typens, rules in by_namespace.iteritems():
+            phase_id = self._phase_id(typens)
+            rule_ids = [self._pattern_id(x) for x in rules]
+            phase = schematron.make_phase(phase_id, rule_ids)
+            phases.append(phase)
+
+        return phases
+
     @property
     def rules(self):
         """Builds and returns a dictionary of ``BaseProfileRule``
@@ -229,15 +253,17 @@ class Profile(collections.MutableSequence):
         for ctx, profile_rules in collected.iteritems():
             # Create a schematron rule for our set of profile rules under
             # a given context.
-            rule = schematron.make_rule(ctx)
-            rule.extend(x.as_etree() for x in profile_rules)
+            for rule in profile_rules:
+                pid = self._pattern_id(rule)
+                schrule = schematron.make_rule(ctx)
+                schrule.append(rule.as_etree())
 
-            # Wrap the rule in a pattern so it always fires.
-            pattern = schematron.make_pattern()
-            pattern.append(rule)
+                # Wrap the rule in a pattern so it always fires.
+                pattern = schematron.make_pattern(id=pid)
+                pattern.append(schrule)
 
-            # Add the pattern to the return list.
-            rules.append(pattern)
+                # Add the pattern to the return list.
+                rules.append(pattern)
 
         return rules
 
@@ -259,7 +285,10 @@ class Profile(collections.MutableSequence):
         """Returns an etree Schematron document for this ``Profile``."""
         schema = schematron.make_schema()
         schema.extend(self.namespaces)
+        schema.extend(self.phases)
         schema.extend(self.rules)
+
+        print etree.tostring(schema, pretty_print=True)
 
         return schema
 
@@ -282,10 +311,11 @@ class _BaseProfileRule(object):
     TYPE_REPORT  = "report"
     TYPE_ASSERT  = "assert"
 
-    def __init__(self, context, field):
+    def __init__(self, field, instance_mapping):
+        self._instance_mapping = instance_mapping
         self._type = None
         self._role = "error"
-        self._context = context
+        self._context = utils.union(instance_mapping.selectors)
         self.field = field
         self._validate()
 
@@ -294,9 +324,27 @@ class _BaseProfileRule(object):
         pass
 
     @property
+    def field(self):
+        return self._field
+
+    @field.setter
+    def field(self, value):
+        if value.startswith("@"):
+            self._field = value
+        elif ":" in value:
+            self._field = value
+        else:
+            prefix = self._instance_mapping.ns_alias
+            self._field = "%s:%s" % (prefix, value)
+
+    @property
     def role(self):
         """Returns the Schematron assertion role for this rule."""
         return self._role
+
+    @property
+    def typens(self):
+        return self._instance_mapping.namespace
 
     @property
     def type(self):
@@ -364,8 +412,8 @@ class RequiredRule(_BaseProfileRule):
     document.
 
     """
-    def __init__(self, context, field):
-        super(RequiredRule, self).__init__(context, field)
+    def __init__(self, field, instance_mapping):
+        super(RequiredRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_ASSERT
 
     @_BaseProfileRule.test.getter
@@ -390,8 +438,8 @@ class ProhibitedRule(_BaseProfileRule):
     document.
 
     """
-    def __init__(self, context, field):
-        super(ProhibitedRule, self).__init__(context, field)
+    def __init__(self, field, instance_mapping):
+        super(ProhibitedRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_REPORT
 
     @_BaseProfileRule.test.getter
@@ -415,8 +463,8 @@ class AllowedValuesRule(_BaseProfileRule):
     This serializes to a schematron ``<assert>`` directive.
 
     """
-    def __init__(self, context, field, required=True, values=None):
-        super(AllowedValuesRule, self).__init__(context, field)
+    def __init__(self, field, instance_mapping, required=True, values=None):
+        super(AllowedValuesRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_ASSERT
         self.is_required = required
         self.values = values
@@ -472,9 +520,10 @@ class AllowedValuesRule(_BaseProfileRule):
 
         return test
 
+
 class AllowedImplsRule(_BaseProfileRule):
-    def __init__(self, context, field, required=True, impls=None):
-        super(AllowedImplsRule, self).__init__(context, field)
+    def __init__(self, field, instance_mapping, required=True, impls=None):
+        super(AllowedImplsRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_ASSERT
         self.is_required = required
         self.impls = impls
@@ -538,9 +587,17 @@ class AllowedImplsRule(_BaseProfileRule):
 
         return test
 
+
 class RootRule(RequiredRule):
     def __init__(self):
-        super(RootRule, self).__init__("/", "stix:STIX_Package")
+        mapping = InstanceMapping(nsmap={"http://stix.mitre.org/stix-1": "stix"})
+        mapping.selectors = "/"
+        mapping.namespace = "http://stix.mitre.org/stix-1"
+
+        super(RootRule, self).__init__(
+            field="stix:STIX_Package",
+            instance_mapping=mapping
+        )
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -695,28 +752,14 @@ class STIXProfileValidator(schematron.SchematronValidator):
             A list of ``_BaseProfileRule`` implementations for the given
             rule parameters.
         """
-        ns_alias    = info.ns_alias
         is_required = False
         rules       = []
-        context     = " | ".join(x.strip() for x in info.selectors)
 
-        if not field.startswith("@"):
-            # Elements must have a namespace alias attached which maps to
-            # the defining namespace for the underlying data type of the
-            # instance selector. Sometimes the profile will include the
-            # alias and if so use that, but if it isn't included, use
-            # the passed alias (from the parent type).
-            if ":" in field:
-                fieldname = field
-            else:
-                fieldname = "%s:%s" % (ns_alias, field)
-        else:
-            fieldname = field
 
         if occurrence in OCCURRENCE_REQUIRED:
             is_required = True
         elif occurrence in OCCURRENCE_PROHIBITED:
-            rule = ProhibitedRule(context, fieldname)
+            rule = ProhibitedRule(field, info)
             rules.append(rule)
         elif occurrence in ALL_OPTIONAL_OCCURRENCES:
             pass
@@ -724,17 +767,17 @@ class STIXProfileValidator(schematron.SchematronValidator):
             return rules
 
         if types:
-            rule = AllowedImplsRule(context, fieldname, is_required, types)
+            rule = AllowedImplsRule(field, info, is_required, types)
             rules.append(rule)
 
         if values:
-            rule = AllowedValuesRule(context, fieldname, is_required, values)
+            rule = AllowedValuesRule(field, info, is_required, values)
             rules.append(rule)
 
         # Allowed value/impl rules will check for existence if the field is
         # required, so we don't need an explicit existence check as well.
         if is_required and not(types or values):
-            rule = RequiredRule(context, fieldname)
+            rule = RequiredRule(field, info)
             rules.append(rule)
 
         return rules

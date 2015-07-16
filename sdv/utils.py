@@ -5,6 +5,7 @@
 import os
 import contextlib
 import datetime
+import hashlib
 from distutils.version import StrictVersion
 
 # external
@@ -473,3 +474,13 @@ def is_qname(string):
         return False
 
     return True
+
+
+def union(selectors):
+    return " | ".join(x.strip() for x in selectors)
+
+
+def md5sum(string):
+    m = hashlib.md5()
+    m.update(string)
+    return m.hexdigest()
