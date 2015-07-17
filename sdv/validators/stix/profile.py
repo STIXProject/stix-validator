@@ -219,8 +219,8 @@ class Profile(collections.MutableSequence):
 
         return collected
 
-    def _pattern_id(self, rule):
-         return "rule.%d" % id(rule)
+    def _pattern_id(self, context):
+         return "rule.%s" % utils.md5sum(context)
 
     def _phase_id(self, ns):
         return "phase.%s" % utils.md5sum(ns)
@@ -241,18 +241,34 @@ class Profile(collections.MutableSequence):
 
     @property
     def phases(self):
-        by_namespace = collections.defaultdict(list)
+        phases = []
+        ns_to_patterns = collections.defaultdict(set)
 
         for rule in self:
-            by_namespace[rule.typens].append(rule)
+            pattern_id = self._pattern_id(rule.context_selector)
+            ns_to_patterns[rule.typens].add(pattern_id)
 
-        phases = []
-
-        for typens, rules in by_namespace.iteritems():
-            phase_id = self._phase_id(typens)
-            rule_ids = [self._pattern_id(x) for x in rules]
-            phase = schematron.make_phase(phase_id, rule_ids)
+        for ns, pattern_ids in ns_to_patterns.iteritems():
+            phase_id = self._phase_id(ns)
+            phase = schematron.make_phase(phase_id, pattern_ids)
             phases.append(phase)
+
+        # by_namespace = collections.defaultdict(list)
+        #
+        # for rule in self:
+        #     by_namespace[rule.typens].append(rule)
+        #
+        # phases = []
+        # ns_to_ctx = collections.defaultdict(set)
+        #
+        # for rule
+        #
+        #
+        # for typens, rules in by_namespace.iteritems():
+        #     phase_id = self._phase_id(typens)
+        #     rule_ids = [self._pattern_id(x) for x in rules]
+        #     phase = schematron.make_phase(phase_id, rule_ids)
+        #     phases.append(phase)
 
         return phases
 
@@ -267,17 +283,16 @@ class Profile(collections.MutableSequence):
         for ctx, profile_rules in collected.iteritems():
             # Create a schematron rule for our set of profile rules under
             # a given context.
-            for rule in profile_rules:
-                pid = self._pattern_id(rule)
-                schrule = schematron.make_rule(ctx)
-                schrule.append(rule.as_etree())
+            rule = schematron.make_rule(ctx)
+            rule.extend(x.as_etree() for x in profile_rules)
 
-                # Wrap the rule in a pattern so it always fires.
-                pattern = schematron.make_pattern(id=pid)
-                pattern.append(schrule)
+            # Wrap the rule in a pattern so it always fires.
+            pid = self._pattern_id(ctx)
+            pattern = schematron.make_pattern(id=pid)
+            pattern.append(rule)
 
-                # Add the pattern to the return list.
-                rules.append(pattern)
+            # Add the pattern to the return list.
+            rules.append(pattern)
 
         return rules
 
