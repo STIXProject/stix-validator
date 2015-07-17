@@ -161,7 +161,7 @@ class InstanceMapping(object):
 class Profile(collections.MutableSequence):
     def __init__(self, namespaces):
         self.id = "STIX_Schematron_Profile"
-        self._rules = [RootRule()]
+        self._rules = [RootRule(namespaces)]
         self._namespaces = namespaces
 
     def insert(self, idx, value):
@@ -260,7 +260,6 @@ class Profile(collections.MutableSequence):
         schema = schematron.make_schema()
         schema.extend(self.namespaces)
         schema.extend(self.rules)
-
         return schema
 
 class _BaseProfileRule(object):
@@ -282,16 +281,33 @@ class _BaseProfileRule(object):
     TYPE_REPORT  = "report"
     TYPE_ASSERT  = "assert"
 
-    def __init__(self, context, field):
+    def __init__(self, field, instance_mapping):
+        self._instance_mapping = instance_mapping
         self._type = None
         self._role = "error"
-        self._context = context
+        self._context = utils.union(instance_mapping.selectors)
         self.field = field
-        self._validate()
 
     def _validate(self):
         """Perform validation/sanity checks on the input values."""
         pass
+
+    @property
+    def field(self):
+        return self._field
+
+    @field.setter
+    def field(self, value):
+        if value.startswith("@"):
+            self._field = value
+        elif ":" in value:
+            self._field = value
+        else:
+            prefix = self._instance_mapping.ns_alias
+            self._field = "%s:%s" % (prefix, value)
+
+    def typens(self):
+        return self._instance_mapping.namespace
 
     @property
     def role(self):
@@ -362,10 +378,10 @@ class RequiredRule(_BaseProfileRule):
     This serializes to a Schematron ``<assert>`` directive as
     it will raise an error if the field is **not** found in the instance
     document.
-
     """
-    def __init__(self, context, field):
-        super(RequiredRule, self).__init__(context, field)
+
+    def __init__(self, field, instance_mapping):
+        super(RequiredRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_ASSERT
 
     @_BaseProfileRule.test.getter
@@ -390,8 +406,9 @@ class ProhibitedRule(_BaseProfileRule):
     document.
 
     """
-    def __init__(self, context, field):
-        super(ProhibitedRule, self).__init__(context, field)
+
+    def __init__(self, field, instance_mapping):
+        super(ProhibitedRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_REPORT
 
     @_BaseProfileRule.test.getter
@@ -415,8 +432,9 @@ class AllowedValuesRule(_BaseProfileRule):
     This serializes to a schematron ``<assert>`` directive.
 
     """
-    def __init__(self, context, field, required=True, values=None):
-        super(AllowedValuesRule, self).__init__(context, field)
+
+    def __init__(self, field, instance_mapping, required=True, values=None):
+        super(AllowedValuesRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_ASSERT
         self.is_required = required
         self.values = values
@@ -473,8 +491,8 @@ class AllowedValuesRule(_BaseProfileRule):
         return test
 
 class AllowedImplsRule(_BaseProfileRule):
-    def __init__(self, context, field, required=True, impls=None):
-        super(AllowedImplsRule, self).__init__(context, field)
+    def __init__(self, field, instance_mapping, required=True, impls=None):
+        super(AllowedImplsRule, self).__init__(field, instance_mapping)
         self._type = self.TYPE_ASSERT
         self.is_required = required
         self.impls = impls
@@ -483,10 +501,9 @@ class AllowedImplsRule(_BaseProfileRule):
         if not self.is_attr:
             return
 
-        raise errors.ProfileParseError(
-            "Implementation rules cannot be applied to attribute fields: "
-            "{0}".format(self.path)
-        )
+        err = ("Implementation rules cannot be applied to attribute fields: "
+               "{0}".format(self.path))
+        raise errors.ProfileParseError(err)
 
     @property
     def impls(self):
@@ -539,8 +556,15 @@ class AllowedImplsRule(_BaseProfileRule):
         return test
 
 class RootRule(RequiredRule):
-    def __init__(self):
-        super(RootRule, self).__init__("/", "stix:STIX_Package")
+    def __init__(self, nsmap):
+        mapping = InstanceMapping(nsmap=nsmap)
+        mapping.selectors = "/"
+        mapping.namespace = "http://stix.mitre.org/stix-1"
+
+        super(RootRule, self).__init__(
+            field="stix:STIX_Package",
+            instance_mapping=mapping
+        )
 
     @_BaseProfileRule.test.getter
     def test(self):
@@ -647,13 +671,11 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
     Args:
         profile_fn: The filename of a ``.xlsx`` STIX Profile document.
-
     """
-    def __init__(self, profile_fn):
-        self._schematron = None  # silence pylint
 
-        with self._parse_profile(profile_fn) as profile:
-            super(STIXProfileValidator, self).__init__(schematron=profile)
+    def __init__(self, profile_fn):
+        profile = self._parse_profile(profile_fn)
+        super(STIXProfileValidator, self).__init__(schematron=profile.as_etree())
 
     def _build_rules(self, info, field, occurrence, types, values):
         """Builds a ``_BaseProfileRule`` implementation list for the rule
@@ -695,28 +717,13 @@ class STIXProfileValidator(schematron.SchematronValidator):
             A list of ``_BaseProfileRule`` implementations for the given
             rule parameters.
         """
-        ns_alias    = info.ns_alias
         is_required = False
         rules       = []
-        context     = " | ".join(x.strip() for x in info.selectors)
-
-        if not field.startswith("@"):
-            # Elements must have a namespace alias attached which maps to
-            # the defining namespace for the underlying data type of the
-            # instance selector. Sometimes the profile will include the
-            # alias and if so use that, but if it isn't included, use
-            # the passed alias (from the parent type).
-            if ":" in field:
-                fieldname = field
-            else:
-                fieldname = "%s:%s" % (ns_alias, field)
-        else:
-            fieldname = field
 
         if occurrence in OCCURRENCE_REQUIRED:
             is_required = True
         elif occurrence in OCCURRENCE_PROHIBITED:
-            rule = ProhibitedRule(context, fieldname)
+            rule = ProhibitedRule(field, info)
             rules.append(rule)
         elif occurrence in ALL_OPTIONAL_OCCURRENCES:
             pass
@@ -724,17 +731,17 @@ class STIXProfileValidator(schematron.SchematronValidator):
             return rules
 
         if types:
-            rule = AllowedImplsRule(context, fieldname, is_required, types)
+            rule = AllowedImplsRule(field, info, is_required, types)
             rules.append(rule)
 
         if values:
-            rule = AllowedValuesRule(context, fieldname, is_required, values)
+            rule = AllowedValuesRule(field, info, is_required, values)
             rules.append(rule)
 
         # Allowed value/impl rules will check for existence if the field is
         # required, so we don't need an explicit existence check as well.
         if is_required and not(types or values):
-            rule = RequiredRule(context, fieldname)
+            rule = RequiredRule(field, info)
             rules.append(rule)
 
         return rules
@@ -909,7 +916,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return rules
 
-    @contextlib.contextmanager
     def _parse_profile(self, profile_fn):
         """Converts the supplied STIX profile into a Schematron representation.
          The Schematron schema is returned as a etree._Element instance.
@@ -938,7 +944,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             rules = self._parse_workbook_rules(workbook, instance_mapping)
             profile = Profile(namespaces)
             profile.extend(rules)
-            yield profile.as_etree()
+            return profile
         except xlrd.XLRDError as ex:
             err = "Error occurred while parsing STIX Profile: %s" % str(ex)
             raise errors.ProfileParseError(err)

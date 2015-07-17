@@ -473,3 +473,15 @@ def is_qname(string):
         return False
 
     return True
+
+
+def union(selectors):
+    """Returns a selector which is a union of the input selectors.
+
+    Args:
+        selectors: A list of XSLT/XPath selectors.
+
+    Returns:
+        A new selector string.
+    """
+    return " | ".join(x.strip() for x in selectors)
