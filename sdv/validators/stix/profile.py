@@ -226,6 +226,20 @@ class Profile(collections.MutableSequence):
         return "phase.%s" % utils.md5sum(ns)
 
     @property
+    def namespace_to_phase_id(self):
+        mapping = {}
+
+        for rule in self:
+            typens = rule.typens
+
+            if typens in mapping:
+                continue
+
+            mapping[typens] = self._phase_id(typens)
+
+        return mapping
+
+    @property
     def phases(self):
         by_namespace = collections.defaultdict(list)
 
@@ -287,9 +301,6 @@ class Profile(collections.MutableSequence):
         schema.extend(self.namespaces)
         schema.extend(self.phases)
         schema.extend(self.rules)
-
-        print etree.tostring(schema, pretty_print=True)
-
         return schema
 
 class _BaseProfileRule(object):
@@ -699,7 +710,7 @@ class ProfileValidationResults(schematron.SchematronValidationResults):
         return [ProfileError(self._doc, x) for x in errors]
 
 
-class STIXProfileValidator(schematron.SchematronValidator):
+class STIXProfileValidator(object):
     """Performs STIX Profile validation.
 
     Args:
@@ -707,10 +718,33 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
     """
     def __init__(self, profile_fn):
-        self._schematron = None  # silence pylint
+        self._profile = self._parse_profile(profile_fn)
+        self._schematron = self._profile.as_etree()
+        self._validators = self._make_validators()
 
-        with self._parse_profile(profile_fn) as profile:
-            super(STIXProfileValidator, self).__init__(schematron=profile)
+    def _make_validators(self):
+        ns_to_phase = self._profile.namespace_to_phase_id
+        validators = {}
+
+        for phase_id in ns_to_phase.itervalues():
+            v = schematron.SchematronValidator(self._schematron, phase_id)
+            validators[phase_id] = v
+
+        return validators
+
+    def _get_validators(self, namespaces):
+        ns_to_phase = self._profile.namespace_to_phase_id
+        validators = []
+
+        for ns in namespaces:
+            phase_id = ns_to_phase.get(ns)
+
+            if not phase_id:
+                continue
+
+            validators.append(self._validators[phase_id])
+
+        return validators
 
     def _build_rules(self, info, field, occurrence, types, values):
         """Builds a ``_BaseProfileRule`` implementation list for the rule
@@ -952,7 +986,6 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         return rules
 
-    @contextlib.contextmanager
     def _parse_profile(self, profile_fn):
         """Converts the supplied STIX profile into a Schematron representation.
          The Schematron schema is returned as a etree._Element instance.
@@ -981,7 +1014,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
             rules = self._parse_workbook_rules(workbook, instance_mapping)
             profile = Profile(namespaces)
             profile.extend(rules)
-            yield profile.as_etree()
+            return profile
         except xlrd.XLRDError as ex:
             err = "Error occurred while parsing STIX Profile: %s" % str(ex)
             raise errors.ProfileParseError(err)
@@ -1101,9 +1134,31 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         """
         root = utils.get_etree_root(doc)
-        is_valid = self._schematron.validate(root)
-        svrl_report = self._schematron.validation_report
-        return ProfileValidationResults(is_valid, root, svrl_report)
+        namespaces = utils.get_document_namespaces(root).itervalues()
+        validators = self._get_validators(namespaces)
+        results = []
+
+        tree = etree.ElementTree(self._schematron)
+        tree.write("out.sch", pretty_print=True,
+            xml_declaration=True,
+            encoding="UTF-8"
+        )
+
+        for v in validators:
+            print v.phase_id
+            result = v.validate(root)
+            results.append(result)
+            
+        print "valid:", all(x.is_valid for x in results)
+
+
+
+        import sys
+        sys.exit(1337)
+
+        # is_valid = self._schematron.validate(root)
+        # svrl_report = self._schematron.validation_report
+        # return ProfileValidationResults(is_valid, root, svrl_report)
 
 
 __all__ = [

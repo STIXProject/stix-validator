@@ -52,9 +52,9 @@ def make_pattern(id=None):
 
 def make_schema():
     name = lxml.etree.QName(xmlconst.NS_SCHEMATRON, "schema")
-    attrib = {"defaultPhase": "#ALL"}
+    #attrib = {"defaultPhase": "#ALL"}
     nsmap = {None:xmlconst.NS_SCHEMATRON}
-    return lxml.etree.Element(name, attrib=attrib, nsmap=nsmap)
+    return lxml.etree.Element(name, nsmap=nsmap)
 
 
 def make_ns(prefix, uri):
@@ -246,10 +246,15 @@ class SchematronValidator(object):
             object, ``etree._Element``, or ``etree._ElementTree`` instance.
 
     """
-    def __init__(self, schematron):
-        self._schematron = self._build_schematron(schematron)
+    def __init__(self, schematron, phase=None):
+        self._schematron = self._build_schematron(schematron, phase)
+        self._phase_id = phase
 
-    def _build_schematron(self, sch, phase="#ALL"):
+    @property
+    def phase_id(self):
+        return self._phase_id
+
+    def _build_schematron(self, sch, phase=None):
         """Attempts to build an ``lxml.isoschematron.Schematron`` instance
         from `sch`.
 
