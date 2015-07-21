@@ -5,7 +5,6 @@
 import os
 import itertools
 import collections
-import contextlib
 import functools
 import StringIO
 
@@ -224,20 +223,19 @@ class Profile(collections.MutableSequence):
         implementations. The key is the Rule context.
 
         """
-        rules = []
+        notype  = schematron.make_pattern("no-type")
+        typed   = schematron.make_pattern("xsi-typed")
+        rules   = [notype, typed]
+
         collected = self._collect_rules()
         for ctx, profile_rules in collected.iteritems():
-            # Create a schematron rule for our set of profile rules under
-            # a given context.
             rule = schematron.make_rule(ctx)
             rule.extend(x.as_etree() for x in profile_rules)
 
-            # Wrap the rule in a pattern so it always fires.
-            pattern = schematron.make_pattern()
-            pattern.append(rule)
-
-            # Add the pattern to the return list.
-            rules.append(pattern)
+            if "@xsi:type=" in ctx:
+                typed.append(rule)
+            else:
+                notype.append(rule)
 
         return rules
 
@@ -1061,13 +1059,12 @@ class STIXProfileValidator(schematron.SchematronValidator):
 
         Raises:
             .ValidationError: If there are any issues parsing `doc`.
-
         """
         root = utils.get_etree_root(doc)
         is_valid = self._schematron.validate(root)
         svrl_report = self._schematron.validation_report
-        return ProfileValidationResults(is_valid, root, svrl_report)
-
+        results = ProfileValidationResults(is_valid, root, svrl_report)
+        return results
 
 __all__ = [
     'STIXProfileValidator',
