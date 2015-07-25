@@ -5,8 +5,8 @@
 import os
 
 # internal
-import sdv
-import sdv.errors as errors
+from sdv import errors
+from sdv.resources import XSD_ROOT
 
 # relative
 from . import common
@@ -15,9 +15,9 @@ from .. import xml_schema, base
 
 class CyboxSchemaValidator(base.BaseSchemaValidator):
     _SCHEMAS = {
-        '2.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1', 'cybox'),
-        '2.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1', 'cybox'),
-        '2.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0', 'cybox')
+        '2.1': os.path.join(XSD_ROOT, 'stix_1.1.1', 'cybox'),
+        '2.0.1': os.path.join(XSD_ROOT, 'stix_1.0.1', 'cybox'),
+        '2.0': os.path.join(XSD_ROOT, 'stix_1.0', 'cybox')
     }
 
     def __init__(self, schema_dir=None):

@@ -2,16 +2,11 @@
 # See LICENSE.txt for complete terms.
 
 # builtin
-import os
 import collections
 
 # relative
+from . import validators
 from .version import __version__  # noqa
-
-
-# constants
-_PKG_DIR = os.path.dirname(__file__)
-XSD_ROOT = os.path.abspath(os.path.join(_PKG_DIR, 'xsd'))
 
 # A cache of STIX and CybOX XML validators that speeds up consecutive calls to
 # validate_xml() against non-bundled schema directories.
@@ -67,13 +62,10 @@ def validate_xml(doc, version=None, schemas=None, schemaloc=False, klass=None):
             the schemas required for validation.
         .XMLSchemaIncludeError: If an error occurs while
             processing ``xs:include`` directives.
-
     """
-    import sdv.validators
-
     # Get the validator class required to validate `doc`. I.e., STIX or CybOX?
     if not klass:
-        klass = sdv.validators.get_xml_validator_class(doc)
+        klass = validators.get_xml_validator_class(doc)
 
     try:
         validator = __xml_validators[klass][schemas]
@@ -112,8 +104,7 @@ def validate_best_practices(doc, version=None):
             in `doc` contains an invalid STIX version number.
 
     """
-    import sdv.validators
-    validator = sdv.validators.STIXBestPracticeValidator()
+    validator = validators.STIXBestPracticeValidator()
     return validator.validate(doc, version=version)
 
 
@@ -141,14 +132,11 @@ def validate_profile(doc, profile):
             document.
         .ProfileParseError: If an error occurred while attempting to
             parse the `profile`.
-
     """
-    import sdv.validators
-
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = sdv.validators.STIXProfileValidator(profile)
+        validator = validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.validate(doc)
@@ -170,12 +158,10 @@ def profile_to_xslt(profile):
             parse the `profile`.
 
     """
-    import sdv.validators
-
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = sdv.validators.STIXProfileValidator(profile)
+        validator = validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.xslt
@@ -197,12 +183,10 @@ def profile_to_schematron(profile):
             parse the `profile`.
 
     """
-    import sdv.validators
-
     try:
         validator = __profile_validators[profile]
     except KeyError:
-        validator = sdv.validators.STIXProfileValidator(profile)
+        validator = validators.STIXProfileValidator(profile)
         __profile_validators[profile] = validator
 
     return validator.schematron

@@ -5,8 +5,8 @@
 import os
 
 # internal
-import sdv
-import sdv.errors as errors
+from sdv import errors
+from sdv.resources import XSD_ROOT
 
 # relative
 from . import common
@@ -27,18 +27,18 @@ class _XmlSchemaValidator(xml_schema.XmlSchemaValidator):
     """
     OVERRIDE_SCHEMALOC = {
         'http://cpe.mitre.org/language/2.0': os.path.join(
-            sdv.XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
+            XSD_ROOT, 'stix_1.1.1', 'cybox', 'external', 'cpe_2.3', 'cpe-language_2.3.xsd'
         )
     }
 
 
 class STIXSchemaValidator(base.BaseSchemaValidator):
     _SCHEMAS = {
-        '1.2': os.path.join(sdv.XSD_ROOT, 'stix_1.2'),
-        '1.1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1.1'),
-        '1.1': os.path.join(sdv.XSD_ROOT, 'stix_1.1'),
-        '1.0.1': os.path.join(sdv.XSD_ROOT, 'stix_1.0.1'),
-        '1.0': os.path.join(sdv.XSD_ROOT, 'stix_1.0')
+        '1.2': os.path.join(XSD_ROOT, 'stix_1.2'),
+        '1.1.1': os.path.join(XSD_ROOT, 'stix_1.1.1'),
+        '1.1': os.path.join(XSD_ROOT, 'stix_1.1'),
+        '1.0.1': os.path.join(XSD_ROOT, 'stix_1.0.1'),
+        '1.0': os.path.join(XSD_ROOT, 'stix_1.0')
     }
 
     def __init__(self, schema_dir=None):
