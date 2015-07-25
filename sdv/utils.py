@@ -461,14 +461,14 @@ def is_qname(string):
     """Returns ``True`` if `string` is a valid QName."""
 
     if ":" in string:
-        prefix, localpart = string.split(":", 1)
+        prefix, _ = string.split(":", 1)
         xmlns = "xmlns:%s='http://example.com'" % prefix
     else:
         xmlns = ""
 
     try:
         xml = "<%s %s/>" % (string, xmlns)
-        element = etree.XML(xml)
+        etree.XML(xml)
     except etree.XMLSyntaxError:
         return False
 
