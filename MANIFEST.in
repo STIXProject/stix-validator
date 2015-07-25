@@ -1,1 +1,1 @@
-recursive-include sdv/resouces/xsd *.xsd
+recursive-include sdv/resources/xsd *.xsd
