@@ -232,7 +232,7 @@ class Profile(collections.MutableSequence):
             rule = schematron.make_rule(ctx)
             rule.extend(x.as_etree() for x in profile_rules)
 
-            if "@xsi:type=" in ctx:
+            if "@xsi:type=" in utils.strip_whitespace(ctx):
                 typed.append(rule)
             else:
                 notype.append(rule)
@@ -392,7 +392,8 @@ class RequiredRule(_BaseProfileRule):
 
     @_BaseProfileRule.test.getter
     def message(self):
-        return "{0} is required by this profile.".format(self.path)
+        msg = "{parent}/{field} is required by this profile."
+        return msg.format(parent=NAME, field=self.field)
 
 
 class ProhibitedRule(_BaseProfileRule):
