@@ -5,7 +5,7 @@
 
 """
 STIX profile to XSLT
-This script takes a STIX profile to XSLT and prints to stdout
+This script takes a STIX profile, converts it to xslt, then prints to stdout
 """
 
 import sys
@@ -22,8 +22,8 @@ def _convert_profile(options):
 
     profile = options.in_profile
 
-    XSLT = sdv.profile_to_xslt(profile)
-    XSLT.write(
+    xslt = sdv.profile_to_xslt(profile)
+    xslt.write(
         sys.stdout,
         pretty_print=True,
         xml_declaration=True,
@@ -43,7 +43,7 @@ def _get_arg_parser():
     )
 
     parser.add_argument(
-        "profile", help="Path to STIX Profile .xlsx file."
+        "profile", help="Valid .xlsx profile to be converted to xslt"
     )
 
     return parser

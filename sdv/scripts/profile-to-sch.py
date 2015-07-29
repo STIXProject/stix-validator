@@ -5,7 +5,7 @@
 
 """
 STIX profile to Schematron
-This script takes a STIX profile to Schematron and prints to stdout
+This script takes a STIX profile, converts it to Schematron, then prints to stdout
 """
 
 import sys
@@ -43,7 +43,7 @@ def _get_arg_parser():
     )
 
     parser.add_argument(
-        "profile", help="Path to STIX Profile .xlsx file."
+        "profile", help="Valid .xlsx profile to be converted to schematron"
     )
 
     return parser

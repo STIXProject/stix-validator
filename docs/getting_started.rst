@@ -47,7 +47,6 @@ Running :code:`stix_validator.py -h` displays the following:
     usage: stix_validator.py [-h] [--stix-version STIX_VERSION]
                              [--schema-dir SCHEMA_DIR] [--use-schemaloc]
                              [--best-practices] [--profile PROFILE]
-                             [--schematron-out SCHEMATRON] [--xslt-out XSLT]
                              [--quiet] [--json-results]
                              [FILES [FILES ...]]
 
@@ -69,11 +68,62 @@ Running :code:`stix_validator.py -h` displays the following:
       --best-practices      Check that the document follows authoring best
                             practices
       --profile PROFILE     Path to STIX profile in excel
-      --schematron-out SCHEMATRON
-                            Path to converted STIX profile schematron file output.
-      --xslt-out XSLT       Path to converted STIX profile schematron xslt output.
       --quiet               Only print results and errors if they occur.
       --json-results        Print results as raw JSON. This also sets --quiet.
+
+Profile Converter
+~~~~~~~~~~~~~~~~~
+
+The ``profile-to-sch.py`` and ``profile-to-xslt.py`` scripts can be used to convert
+a valid profile to sch or xslt formatting. This output is sent to stdout.
+
+Schematron Options
+^^^^^^^^^^^^^^^^^^
+
+Running ``profile-to-sch.py -h`` displays the following:
+
+.. code-block:: bash
+
+    $ profile-to-sch.py -h
+    usage: profile-to-sch.py [-h] profile
+
+    STIX Profile to Schematron v2.4.0dev0
+
+    positional arguments:
+      profile               Valid .xlsx profile to be converted to schematron
+
+    optional arguments:
+      -h, --help            Show this help message and exit
+
+Extensible Stylesheet Options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running ``profile-to-xslt.py -h`` displays the following:
+
+.. code-block:: bash
+
+    $ profile-to-xslt.py -h
+    usage: profile-to-xslt.py [-h] profile
+
+    STIX Profile to XSLT v2.4.0dev0
+
+    positional arguments:
+      profile               Valid .xlsx profile to be converted to xslt
+
+    optional arguments:
+      -h, --help            Show this help message and exit
+
+Example Profile Conversion
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+To perform a conversion, pass in the path to the STIX profile,
+the conversion will be displayed to stdout.
+
+.. code-block:: bash
+
+    $ profile-to-sch.py valid-stix-profile.xlsx
+.. code-block:: bash
+
+    $ profile-to-xslt.py valid-stix-profile.xlsx
 
 Example STIX Schema Validation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
