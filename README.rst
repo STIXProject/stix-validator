@@ -88,8 +88,8 @@ This will install the ``sdv`` package into your Python installation's
 How To Use
 ----------
 
-The **STIX Document Validator** bundles two scripts: ``stix_validator.py``
-and ``cybox_validator.py``.
+The **STIX Document Validator** bundles four scripts: ``stix_validator.py``, ``profile-to-sch.py``,
+``profile-to-xslt.py``, and ``cybox_validator.py``,
 
 STIX Validation
 """""""""""""""
@@ -97,8 +97,7 @@ STIX Validation
 The ``stix_validator.py`` script  can can validate a STIX XML document against
 STIX schemas, STIX Best Practices, and STIX Profiles.
 
-**NOTE:** The STIX Profile validation and conversion capabilities should be
-considered **experimental.**
+**NOTE:** The STIX Profile validation should be considered **experimental.**
 
 **Validate using bundled schemas**
 
@@ -146,12 +145,27 @@ schema submodule with ``git submodule init`` and ``git submodule update``.
  
   $ stix_validator.py --profile <stix_profile.xlsx> <stix_document.xml>
 
-**Translate STIX Profile to XSLT/Schematron**  
+STIX Profile to Schematron Conversion
+"""""""""""""""""""""""""""""""""""""
+
+The ``profile-to-sch.py`` script performs a conversion from a valid STIX profile to schematron.
 
 ::
 
-  $ stix_validator.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>
+  $ profile-to-sch.py <valid_stix_profile.xlsx>
 
+Schematron output is sent to stdout.
+
+STIX Profile to xslt Conversion
+"""""""""""""""""""""""""""""""
+
+The ``profile-to-xslt.py`` script performs a conversion from a valid STIX profile to xslt.
+
+::
+
+  $ profile-to-xslt.py <valid_stix_profile.xlsx>
+
+Xslt output is sent to stdout.
 
 CybOX Validation
 """"""""""""""""
