@@ -14,7 +14,6 @@ import argparse
 
 import sdv
 import sdv.codes as codes
-import sdv.errors as errors
 import sdv.scripts as scripts
 
 def _convert_profile(options):
