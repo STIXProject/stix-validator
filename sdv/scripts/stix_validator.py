@@ -96,7 +96,6 @@ def _validate_args(args):
     """
     schema_validate = False
     profile_validate = False
-    profile_convert = False
 
     if len(sys.argv) == 1:
         raise scripts.ArgumentError("Invalid arguments", show_help=True)
@@ -112,7 +111,7 @@ def _validate_args(args):
             "Cannot set both --stix-version and --use-schemalocs"
         )
 
-    if args.profile and not any((profile_validate, profile_convert)):
+    if args.profile and not profile_validate:
         raise scripts.ArgumentError(
             "Profile specified but no validation options specified."
         )
