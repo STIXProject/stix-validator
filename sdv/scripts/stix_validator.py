@@ -216,7 +216,6 @@ def main():
 
     * Validates instance document against schema/best practices/profile and
       prints results to stdout.
-    * Converts a STIX profile into xslt and/or schematron formats
     * Prints an error to stderr and exit(1)
 
     """
