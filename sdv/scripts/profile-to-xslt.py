@@ -42,7 +42,8 @@ def _get_arg_parser():
     )
 
     parser.add_argument(
-        "profile", help="Valid .xlsx profile to be converted to xslt"
+        "profile",
+        help="STIX profile filename to be converted to XSLT"
     )
 
     return parser

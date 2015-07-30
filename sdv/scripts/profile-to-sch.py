@@ -42,7 +42,8 @@ def _get_arg_parser():
     )
 
     parser.add_argument(
-        "profile", help="Valid .xlsx profile to be converted to schematron"
+        "profile",
+        help="STIX Profile filename to be converted to Schematron."
     )
 
     return parser

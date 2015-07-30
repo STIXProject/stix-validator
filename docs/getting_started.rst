@@ -50,7 +50,7 @@ Running :code:`stix_validator.py -h` displays the following:
                              [--quiet] [--json-results]
                              [FILES [FILES ...]]
 
-    STIX Document Validator v2.1
+    STIX Document Validator v2.4.0
 
     positional arguments:
       FILES                 A whitespace separated list of STIX files or
@@ -71,14 +71,17 @@ Running :code:`stix_validator.py -h` displays the following:
       --quiet               Only print results and errors if they occur.
       --json-results        Print results as raw JSON. This also sets --quiet.
 
-Profile Converter
-~~~~~~~~~~~~~~~~~
+Profile Conversion
+~~~~~~~~~~~~~~~~~~
 
 The ``profile-to-sch.py`` and ``profile-to-xslt.py`` scripts can be used to convert
-a valid profile to sch or xslt formatting. This output is sent to stdout.
+a valid STIX profile to `ISO Schematron`_ and XSLT respectively. This output is
+sent to stdout.
 
-Schematron Options
-^^^^^^^^^^^^^^^^^^
+.. _ISO Schematron: http://www.schematron.com/spec.html
+
+Schematron Conversion Options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Running ``profile-to-sch.py -h`` displays the following:
 
@@ -87,16 +90,17 @@ Running ``profile-to-sch.py -h`` displays the following:
     $ profile-to-sch.py -h
     usage: profile-to-sch.py [-h] profile
 
-    STIX Profile to Schematron v2.4.0dev0
+    STIX Profile to Schematron v2.4.0
 
     positional arguments:
-      profile               Valid .xlsx profile to be converted to schematron
+      profile               STIX profile filename to be converted to XSLT
 
     optional arguments:
       -h, --help            Show this help message and exit
 
-Extensible Stylesheet Options
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+XSLT Conversion Options
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Running ``profile-to-xslt.py -h`` displays the following:
 
@@ -105,25 +109,33 @@ Running ``profile-to-xslt.py -h`` displays the following:
     $ profile-to-xslt.py -h
     usage: profile-to-xslt.py [-h] profile
 
-    STIX Profile to XSLT v2.4.0dev0
+    STIX Profile to XSLT v2.4.0
 
     positional arguments:
-      profile               Valid .xlsx profile to be converted to xslt
+      profile               STIX profile filename to be converted to XSLT
 
     optional arguments:
       -h, --help            Show this help message and exit
 
+
 Example Profile Conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-To perform a conversion, pass in the path to the STIX profile,
-the conversion will be displayed to stdout.
+The following code snippet demonstrates the conversion of a STIX profile
+document to Schematron.
 
 .. code-block:: bash
 
     $ profile-to-sch.py valid-stix-profile.xlsx
+
+
+To save the conversion output, just redirect ``stdout`` to a file using the
+``>`` operator. The following snippet shows how to convert a STIX profile
+and save the output to the file ``schematron-profile.sch``.
+
 .. code-block:: bash
 
-    $ profile-to-xslt.py valid-stix-profile.xlsx
+    $ profile-to-sch.py valid-stix-profile.xlsx > schematron-profile.sch
+
 
 Example STIX Schema Validation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -171,7 +183,7 @@ capabilities to your command line.
                               [--quiet] [--json-results] [--recursive]
                               [FILES [FILES ...]]
 
-    CybOX Document Validator v2.1
+    CybOX Document Validator v2.4.0
 
     positional arguments:
       FILES                 A whitespace separated list of CybOX files or
