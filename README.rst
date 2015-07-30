@@ -82,41 +82,40 @@ The recommended method for installing the **STIX Document Validator** is via
   $ pip install stix-validator
 
 This will install the ``sdv`` package into your Python installation's
-``site-packages`` and a ``stix_validator.py`` script on your ``PATH``.
+``site-packages`` and a ``stix-validator.py`` script on your ``PATH``.
 
 
 How To Use
 ----------
 
-The **STIX Document Validator** bundles two scripts: ``stix_validator.py``
-and ``cybox_validator.py``.
+The **STIX Document Validator** bundles four scripts: ``stix-validator.py``, ``profile-to-sch.py``,
+``profile-to-xslt.py``, and ``cybox-validator.py``,
 
 STIX Validation
 """""""""""""""
 
-The ``stix_validator.py`` script  can can validate a STIX XML document against
+The ``stix-validator.py`` script  can can validate a STIX XML document against
 STIX schemas, STIX Best Practices, and STIX Profiles.
 
-**NOTE:** The STIX Profile validation and conversion capabilities should be
-considered **experimental.**
+**NOTE:** The STIX Profile validation should be considered **experimental.**
 
 **Validate using bundled schemas**
 
 ::
 
-  $ stix_validator.py <stix_document.xml>
+  $ stix-validator.py <stix_document.xml>
 
 **Validate using schemaLocation**  
 
 ::
 
-  $ stix_validator.py --use-schemaloc <stix_document.xml>
+  $ stix-validator.py --use-schemaloc <stix_document.xml>
 
 **Validate using non-bundled schemas**
 
 ::
 
-  $ stix_validator.py --schema-dir </path/to/schemas> <stix_document.xml>
+  $ stix-validator.py --schema-dir </path/to/schemas> <stix_document.xml>
   
 **NOTE:** If you are trying to validate a STIX document from a checked-out
 copy of STIX schema repository, make sure you have also cloned the CybOX 
@@ -126,67 +125,82 @@ schema submodule with ``git submodule init`` and ``git submodule update``.
 
 ::
 
-  $ stix_validator.py </path/to/stix_dir>
+  $ stix-validator.py </path/to/stix_dir>
 
 **Validate multiple files and/or directories**  
 
 ::
 
-  $ stix_validator.py <one.xml> <two.xml> <directory_of_files> ...
+  $ stix-validator.py <one.xml> <two.xml> <directory_of_files> ...
 
 **Check "best practice" guidance**  
 
 :: 
 
-  $ stix_validator.py --best-practices <stix_document.xml>
+  $ stix-validator.py --best-practices <stix_document.xml>
 
 **Validate using STIX Profile**  
 
 ::
  
-  $ stix_validator.py --profile <stix_profile.xlsx> <stix_document.xml>
+  $ stix-validator.py --profile <stix_profile.xlsx> <stix_document.xml>
 
-**Translate STIX Profile to XSLT/Schematron**  
+STIX Profile to Schematron Conversion
+"""""""""""""""""""""""""""""""""""""
+
+The ``profile-to-sch.py`` script performs a conversion from a valid STIX profile to schematron.
 
 ::
 
-  $ stix_validator.py --profile <stix_profile.xlsx> --xslt-out <stix_profile.xslt> --schematron-out <stix_profile.sch>
+  $ profile-to-sch.py <valid_stix_profile.xlsx>
 
+Schematron output is sent to stdout.
+
+STIX Profile to xslt Conversion
+"""""""""""""""""""""""""""""""
+
+The ``profile-to-xslt.py`` script performs a conversion from a valid STIX profile to xslt.
+
+::
+
+  $ profile-to-xslt.py <valid_stix_profile.xlsx>
+
+Xslt output is sent to stdout.
 
 CybOX Validation
 """"""""""""""""
 
-The ``cybox_validator.py`` script can perform CybOX XML Schema validation.
+The ``cybox-validator.py`` script can perform CybOX XML Schema validation.
 
 **Validate using bundled schemas**
 
 ::
 
-  $ cybox_validator.py <cybox_document.xml>
+  $ cybox-validator.py <cybox_document.xml>
 
 **Validate using schemaLocation**
 
 ::
 
-  $ cybox_validator.py --use-schemaloc <cybox_document.xml>
+  $ cybox-validator.py --use-schemaloc <cybox_document.xml>
 
 **Validate using non-bundled schemas**
 
 ::
 
-  $ cybox_validator.py --schema-dir </path/to/schemas> <cybox_document.xml>
+  $ cybox-validator.py --schema-dir </path/to/schemas> <cybox_document.xml>
 
 **Validate a directory of CybOX documents**
 
 ::
 
-  $ cybox_validator.py </path/to/cybox_dir>
+  $ cybox-validator.py </path/to/cybox_dir>
 
 **Validate multiple files and/or directories**
 
 ::
 
-  $ cybox_validator.py <one.xml> <two.xml> <directory_of_files> ...
+  $ cybox-validator.py <one.xml> <two.xml> <directory_of_files> ...
 
 
 All STIX and CybOX Documents?

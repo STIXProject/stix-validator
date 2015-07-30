@@ -31,17 +31,12 @@ class ValidationOptions(object):
         profile_validate: True if profile validation should be performed.
         best_practice_validate: True if STIX best practice validation should
             be performed.
-        profile_convert: True if a STIX Profile should be converted into
-            schematron or xslt.
-        xslt_out: The filename for the output profile xslt.
-        schematron_out: The filename for the output profile schematron.
         json_results: True if results should be printed in JSON format.
         quiet_output: True if only results and fatal errors should be printed
             to stdout/stderr.
         in_files: A list of input files and directories of files to be
             validated.
-        in_profile: A filename/path for a STIX Profile to validate against or
-            convert.
+        in_profile: A filename/path for a STIX Profile to validate against.
         recursive: Recursively descend into input directories.
 
     """
@@ -58,11 +53,6 @@ class ValidationOptions(object):
         self.xml_validation_class = None
         self.best_practice_validation_class = None
         self.profile_validation_class = None
-
-        # conversion options
-        self.profile_convert = False
-        self.xslt_out = None
-        self.schematron_out = None
 
         # output options
         self.json_results = False
@@ -358,51 +348,6 @@ def print_results(results, options):
             print_fatal_results(result.fatal, level)
 
 
-def convert_profile(options):
-    """Converts a STIX Profile to XSLT and/or Schematron formats.
-
-    This converts a STIX Profile document and writes the results to output
-    schematron and/or xslt files to the output file names.
-
-    The output file names are defined by
-    ``output.xslt_out`` and ``options.schematron_out``.
-
-    Args:
-        validator: An instance of STIXProfileValidator
-        options: ValidationOptions instance with validation options for this
-            validation run.
-
-    """
-    profile = options.in_profile
-    xslt_out_fn = options.xslt_out
-    schematron_out_fn = options.schematron_out
-
-    if schematron_out_fn:
-        info(
-            "Writing schematron conversion of profile to %s" %
-            schematron_out_fn
-        )
-
-        schematron = sdv.profile_to_schematron(profile)
-        schematron.write(
-            schematron_out_fn,
-            pretty_print=True,
-            xml_declaration=True,
-            encoding="UTF-8"
-        )
-
-    if xslt_out_fn:
-        info("Writing xslt conversion of profile to %s" % xslt_out_fn)
-
-        xslt = sdv.profile_to_xslt(profile)
-        xslt.write(
-            xslt_out_fn,
-            pretty_print=True,
-            xml_declaration=True,
-            encoding="UTF-8"
-        )
-
-
 def profile_validate(fn, options):
     """Performs STIX Profile validation against the input filename.
     Args:
@@ -551,9 +496,6 @@ def run_validation(options):
     results = {}
     for fn in files:
         results[fn] = validate_file(fn, options)
-
-    if options.profile_convert:
-        convert_profile(options)
 
     return results
 

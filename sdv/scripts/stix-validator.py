@@ -41,7 +41,6 @@ import sdv.errors as errors
 import sdv.scripts as scripts
 import sdv.validators as validators
 
-
 def _set_validation_options(args):
     """Populates an instance of ``ValidationOptions`` from the `args` param.
 
@@ -61,9 +60,6 @@ def _set_validation_options(args):
     if options.schema_validate and args.profile:
         options.profile_validate = True
 
-    if args.profile and any((args.schematron, args.xslt)):
-        options.profile_convert = True
-
     # best practice options
     options.best_practice_validate = args.best_practices
 
@@ -77,8 +73,6 @@ def _set_validation_options(args):
     options.huge_tree = args.huge_tree
 
     # output options
-    options.xslt_out = args.xslt
-    options.schematron_out = args.schematron
     options.json_results = args.json
     options.quiet_output = args.quiet
 
@@ -86,7 +80,6 @@ def _set_validation_options(args):
     options.xml_validation_class = validators.STIXSchemaValidator
 
     return options
-
 
 def _validate_args(args):
     """Checks that valid and compatible command line arguments were passed into
@@ -103,7 +96,6 @@ def _validate_args(args):
     """
     schema_validate = False
     profile_validate = False
-    profile_convert = False
 
     if len(sys.argv) == 1:
         raise scripts.ArgumentError("Invalid arguments", show_help=True)
@@ -114,26 +106,15 @@ def _validate_args(args):
     if schema_validate and args.profile:
         profile_validate = True
 
-    if args.profile and any((args.schematron, args.xslt)):
-        profile_convert = True
-
     if all((args.lang_version, args.use_schemaloc)):
         raise scripts.ArgumentError(
             "Cannot set both --stix-version and --use-schemalocs"
         )
 
-    if any((args.xslt, args.schematron)) and not args.profile:
+    if args.profile and not profile_validate:
         raise scripts.ArgumentError(
-            "Profile filename is required when profile conversion options "
-            "are set."
+            "Profile specified but no validation options specified."
         )
-
-    if (args.profile and not any((profile_validate, profile_convert))):
-        raise scripts.ArgumentError(
-            "Profile specified but no conversion options or validation "
-            "options specified."
-        )
-
 
 def _get_arg_parser():
     """Initializes and returns an argparse.ArgumentParser instance for this
@@ -186,20 +167,6 @@ def _get_arg_parser():
     )
 
     parser.add_argument(
-        "--schematron-out",
-        dest="schematron",
-        default=None,
-        help="Path to converted STIX profile schematron file output."
-    )
-
-    parser.add_argument(
-        "--xslt-out",
-        dest="xslt",
-        default=None,
-        help="Path to converted STIX profile schematron xslt output."
-    )
-
-    parser.add_argument(
         "--quiet",
         dest="quiet",
         action="store_true",
@@ -241,7 +208,6 @@ def _get_arg_parser():
 
     return parser
 
-
 def main():
     """Entry point for sdv.py.
 
@@ -250,7 +216,6 @@ def main():
 
     * Validates instance document against schema/best practices/profile and
       prints results to stdout.
-    * Converts a STIX profile into xslt and/or schematron formats
     * Prints an error to stderr and exit(1)
 
     """
