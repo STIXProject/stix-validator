@@ -135,20 +135,22 @@ schema submodule with ``git submodule init`` and ``git submodule update``.
 
 **Check "best practice" guidance**  
 
-:: 
+::
 
-  $ stix-validator.py --best-practices <stix_document.xml>
+    $ stix-validator.py --best-practices <stix_document.xml>
 
 **Validate using STIX Profile**  
 
 ::
- 
-  $ stix-validator.py --profile <stix_profile.xlsx> <stix_document.xml>
+
+    $ stix-validator.py --profile <stix_profile.xlsx> <stix_document.xml>
+
 
 STIX Profile to Schematron Conversion
 """""""""""""""""""""""""""""""""""""
 
-The ``profile-to-sch.py`` script performs a conversion from a valid STIX profile to schematron.
+The ``profile-to-sch.py`` script performs a conversion from a valid STIX profile
+to schematron.
 
 ::
 
@@ -156,16 +158,17 @@ The ``profile-to-sch.py`` script performs a conversion from a valid STIX profile
 
 Schematron output is sent to stdout.
 
-STIX Profile to xslt Conversion
+STIX Profile to XSLT Conversion
 """""""""""""""""""""""""""""""
 
-The ``profile-to-xslt.py`` script performs a conversion from a valid STIX profile to xslt.
+The ``profile-to-xslt.py`` script performs a conversion from a valid STIX profile
+to XSLT.
 
 ::
 
   $ profile-to-xslt.py <valid_stix_profile.xlsx>
 
-Xslt output is sent to stdout.
+XSLT output is sent to stdout.
 
 CybOX Validation
 """"""""""""""""
