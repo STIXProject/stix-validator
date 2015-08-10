@@ -42,8 +42,9 @@ class XmlSchemaError(base.ValidationError):
 
         try:
             # libxml2 schema validation errors are tokenized by colons
-            tokenized = self.message.split(":")
-            return int(tokenized[1])
+            tokenized = self.message.split(":ERROR:", 1)
+            tokenized = tokenized[0].split(":")
+            return int(tokenized[-2])
         except (IndexError, TypeError, ValueError):
             return None
 
