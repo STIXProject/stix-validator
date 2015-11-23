@@ -3,14 +3,14 @@ STIX Document Validator
 
 A Python tool and API that validates STIX and CybOX XML instance documents.
 
-.. _STIX XML Schema: http://stix.mitre.org/language/
-.. _CybOX XML Schema: http://cybox.mitre.org/language/
+.. _STIX XML Schema: https://stixproject.github.io/releases/1.2/
+.. _CybOX XML Schema: https://cyboxproject.github.io/releases/2.1/
 .. _STIX Profiles: http://stixproject.github.io/documentation/profiles/
 .. _STIX Best Practices: http://stixproject.github.io/documentation/suggested-practices/
 
 :Source: https://github.com/STIXProject/stix-validator
 :Documentation: http://stix-validator.readthedocs.org
-:Information: http://stix.mitre.org http://cybox.mitre.org
+:Information: https://stixproject.github.io | https://cyboxproject.github.io
 
 |travis badge| |health badge| |version badge| |downloads badge|
 
