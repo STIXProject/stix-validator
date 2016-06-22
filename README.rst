@@ -20,9 +20,9 @@ A Python tool and API that validates STIX and CybOX XML instance documents.
 .. |health badge| image:: https://landscape.io/github/STIXProject/stix-validator/master/landscape.svg
    :target: https://landscape.io/github/STIXProject/stix-validator/master
    :alt: Code Health
-.. |version badge| image:: https://pypip.in/v/stix-validator/badge.png
+.. |version badge| image:: https://img.shields.io/pypi/v/stix-validator.png?maxAge=2592000
    :target: https://pypi.python.org/pypi/stix-validator/
-.. |downloads badge| image:: https://pypip.in/d/stix-validator/badge.png
+.. |downloads badge| image:: https://img.shields.io/pypi/dm/stix-validator.png?maxAge=2592000 
    :target: https://pypi.python.org/pypi/stix-validator/
 
 Validation
