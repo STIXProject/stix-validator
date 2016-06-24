@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:PortObj="http://docs.oasis-open.org/cti/ns/cybox/objects/port-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/port-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Port_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="Port" type="PortObj:PortObjectType">
+		<xs:annotation>
+			<xs:documentation>The Port object is intended to characterize networking ports.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="PortObjectType">
+		<xs:annotation>
+			<xs:documentation>The PortObjectType type is intended to characterize networking ports.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element name="Port_Value" type="cyboxCommon:PositiveIntegerObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The required Port_Value field specifies the actual value of the port.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Layer4_Protocol" type="cyboxCommon:Layer4ProtocolType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Layer4_Protocol field specifies the Layer 4 Protocol (OSI Model) associated with the port.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

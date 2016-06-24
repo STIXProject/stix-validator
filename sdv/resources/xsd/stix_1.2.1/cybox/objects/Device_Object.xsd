@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:DeviceObj="http://docs.oasis-open.org/cti/ns/cybox/objects/device-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/device-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Device_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="Device" type="DeviceObj:DeviceObjectType">
+		<xs:annotation>
+			<xs:documentation>The Device_Object object is intended to characterize a specific Device.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="DeviceObjectType">
+		<xs:annotation>
+			<xs:documentation>The DeviceObjectType type is intended to characterize a specific Device.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element name="Description" type="cyboxCommon:StructuredTextType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Description field is intended for use in providing a brief description of the Device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Device_Type" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Device_Type field specifies the type of the device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Manufacturer" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Manufacturer field specifies the manufacturer of the device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Model" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Model field specifies the model identifier of the device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Serial_Number" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Serial_Number field specifies the serial number of the Device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Firmware_Version" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Firmware_Version field specifies the version of the firmware running on the device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="System_Details" type="cyboxCommon:ObjectPropertiesType">
+						<xs:annotation>
+							<xs:documentation>The System_Details field captures the details of the system that may be present on the device. It uses the abstract ObjectPropertiesType which permits the specification of any Object; however, it is strongly recommended that the System Object or one of its subtypes be used in this context.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:NetworkRouteObj="http://docs.oasis-open.org/cti/ns/cybox/objects/network-route-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns:NetworkRouteEntryObj="http://docs.oasis-open.org/cti/ns/cybox/objects/network-route-entry-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/network-route-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Network_Route_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/network-route-entry-2" schemaLocation="Network_Route_Entry_Object.xsd"/>
+	<xs:element name="Network_Route_Object" type="NetworkRouteObj:NetRouteObjectType">
+		<xs:annotation>
+			<xs:documentation>The Network_Route_Object object is intended to specify a single network route.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="NetRouteObjectType">
+		<xs:annotation>
+			<xs:documentation>The NetRouteObjectType type is intended to characterize a specific network route.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element name="Description" type="cyboxCommon:StructuredTextType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Description field is intended for use in providing a brief description of the network route.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Network_Route_Entries" type="NetworkRouteObj:NetworkRouteEntriesType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Network_Route_Entries field is optional and characterizes a set of network route segment entries.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Preferred_Lifetime" type="cyboxCommon:DurationObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Preferred_Lifetime field is intended to specify the preferred time, in seconds, that the IP route entry is valid. A value of 0xffffffff is considered to be infinite.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Valid_Lifetime" type="cyboxCommon:DurationObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Valid_Lifetime field is intended to specify the maximum time, in seconds, that the IP route entry is valid. A value of 0xffffffff is considered to be infinite.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Route_Age" type="cyboxCommon:DurationObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Route_Age field is intended to characterize the number of seconds since the route was added or modified in the network routing table.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="is_ipv6" type="xs:boolean">
+					<xs:annotation>
+						<xs:documentation>The is_ipv6 field specifies whether or not the route uses IPv6 addresses.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="is_autoconfigure_address" type="xs:boolean">
+					<xs:annotation>
+						<xs:documentation>The is_autoconfigure_address field specifies if the IP address is autoconfigured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="is_immortal" type="xs:boolean">
+					<xs:annotation>
+						<xs:documentation>The is_immortal field specifies if the route is immortal.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="is_loopback" type="xs:boolean">
+					<xs:annotation>
+						<xs:documentation>The is_loopback field specifies if the route is a loopback route (the gateway is on the local host).</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="is_publish" type="xs:boolean">
+					<xs:annotation>
+						<xs:documentation>The is_publish field specifies if the route is published.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="NetworkRouteEntriesType">
+		<xs:annotation>
+			<xs:documentation>The NetworkRouteEntriesType type is intended to characterize the set of network route segments for this route.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Network_Route_Entry" type="NetworkRouteEntryObj:NetworkRouteEntryObjectType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Network_Route field is optional and characterizes a single network route segment entry.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

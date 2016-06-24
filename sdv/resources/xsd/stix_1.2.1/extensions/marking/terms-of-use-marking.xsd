@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:marking="http://docs.oasis-open.org/cti/ns/stix/data-marking-1" xmlns:TOUMarking="http://docs.oasis-open.org/cti/ns/stix/extensions/data-marking/terms-of-use-1" targetNamespace="http://docs.oasis-open.org/cti/ns/stix/extensions/data-marking/terms-of-use-1" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.2.1" xml:lang="en">
+	<xs:annotation>
+		<xs:documentation> STIX[TM] Version 1.2.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Data Marking Extension - Terms Of Use Marking Instance</schema>
+			<version>1.2.1</version>
+			<date>12/15/2015 9:00:00 AM</date>
+			<short_description>Data Marking Extension - Terms Of Use Marking Instance - Schematic implementation for attaching a Terms Of Use statement to an idendified XML structure.</short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/stix/v1.2.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/stix/data-marking-1" schemaLocation="../../data-marking.xsd"/>
+	<xs:complexType name="TermsOfUseMarkingStructureType">
+		<xs:annotation>
+			<xs:documentation>The TermsOfUseMarkingStructureType extends the Data Marking MarkingStructureType and is a basic implementation of the Data Marking data model that allows for a string statement describing the Terms of Use to be associated with the data being marked.  It is contained in the TOUMarking namespace.</xs:documentation>
+			<xs:documentation>Nodes may be marked by multiple Terms of Use Marking statements. When this occurs, all of the multiple Terms of Use Marking statements apply. It is up to the organization adding an additional Terms of Use Marking statement to ensure that the addition does not conflict with any previously applied Terms of Use Marking statements.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="marking:MarkingStructureType">
+				<xs:sequence>
+					<xs:element name="Terms_Of_Use" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>The Terms_Of_Use property specifies the terms of use statement to apply to the structure for which the marking is to be applied.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

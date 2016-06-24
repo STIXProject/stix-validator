@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ASObj="http://docs.oasis-open.org/cti/ns/cybox/objects/as-1" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/as-1" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>AS Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="AS" type="ASObj:ASObjectType">
+		<xs:annotation>
+			<xs:documentation>The AS element is intended to characterize a single autonomous system (AS).</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="ASObjectType">
+		<xs:annotation>
+			<xs:documentation>The ASObjectType type is intended to characterize an autonomous system (AS).</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="Number" type="cyboxCommon:NonNegativeIntegerObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Number field specifies the number assigned to the autonomous system (AS). Such assignments are typically performed by a regional internet registry (RIR).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Name" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Name field specifies the name of the autonomous system (AS).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Handle" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Handle field specifies the handle for the autonomous system (AS), which is typically the AS number prepended with the string 'AS'.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Regional_Internet_Registry" type="cyboxCommon:RegionalRegistryType">
+						<xs:annotation>
+							<xs:documentation>The Regional_Internet_Registry field specifies the name of the regional internet registry (RIR) that assigned the number to the autonomous system (AS).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

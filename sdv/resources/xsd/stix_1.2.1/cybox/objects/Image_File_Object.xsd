@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ImageFileObj="http://docs.oasis-open.org/cti/ns/cybox/objects/image-file-1" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns:FileObj="http://docs.oasis-open.org/cti/ns/cybox/objects/file-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/image-file-1" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Image_File_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/file-2" schemaLocation="File_Object.xsd"/>
+	<xs:element name="Image_File" type="ImageFileObj:ImageFileObjectType">
+		<xs:annotation>
+			<xs:documentation>The Image_File object is intended to characterize image files.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="ImageFileObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The ImageFileObjectType type is intended to characterize image files.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="FileObj:FileObjectType">
+				<xs:sequence minOccurs="1">
+					<xs:element minOccurs="0" name="Image_File_Format" type="ImageFileObj:ImageFileFormatType">
+						<xs:annotation>
+							<xs:documentation>The Image_File_Format field specifies the name of the file format used in the image file. It is strongly recommended that the values provided in the ImageFileFormatEnum are used for describing common image formats, but other formats may also be specified as a custom string.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Image_Height" type="cyboxCommon:IntegerObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Image_Height field specifies the height of the image in the image file, in pixels.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Image_Width" type="cyboxCommon:IntegerObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Image_Width field specifies the width of the image in the image file, in pixels.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Bits_Per_Pixel" type="cyboxCommon:PositiveIntegerObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Bits_Per_Pixel field specifies the sum of bits used for each color channel in the image in the image file, and thus the total number of pixels used for expressing the color depth of the image.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Compression_Algorithm" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Compression_Algorithm field specifies the name of the compression algorithm used to compress the image, if applicable. Note that for many popular image formats, such as JPEG, the compression algorithm is inherent to the file format and so does need to be captured here as long as the format itself is identified in the Image_File_Format field.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="image_is_compressed" type="xs:boolean">
+					<xs:annotation>
+						<xs:documentation>The image_is_compressed field specifies whether the image in the image file is compressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ImageFileFormatType">
+		<xs:annotation>
+			<xs:documentation>The ImageFileFormatType specifies image file formats via a union of the ImageFileFormatEnum type and the atomic xs:string type. Its base type is the CybOX Core BaseObjectPropertyType, for permitting complex (i.e. regular-expression based) specifications.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:restriction base="cyboxCommon:BaseObjectPropertyType">
+				<xs:simpleType>
+					<xs:union memberTypes="ImageFileObj:ImageFileFormatEnum xs:string"/>
+				</xs:simpleType>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="ImageFileFormatEnum">
+		<xs:annotation>
+			<xs:documentation>The ImageFileFormatEnum type is a non-exhaustive enumeration of common image file formats.</xs:documentation>
+		</xs:annotation>
+		<xs:list>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="JPEG/JFIF">
+						<xs:annotation>
+							<xs:documentation>Specifies the Joint Photographic Experts Group (JPEG) JPEG File Interchange Format (JFIF).</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="JPEG 2000">
+						<xs:annotation>
+							<xs:documentation>Specifies the Joint Photographic Experts Group (JPEG) 2000 format.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Exif">
+						<xs:annotation>
+							<xs:documentation>Specifies the Exchangeable image file format (Exif).</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="TIFF">
+						<xs:annotation>
+							<xs:documentation>Specifies the Tagged Image File Format (TIFF).</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="DNG">
+						<xs:annotation>
+							<xs:documentation>Specifies the Digital Negative (DNG) image file format.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="GIF">
+						<xs:annotation>
+							<xs:documentation>Specifies the Graphics Interchange Format (GIF).</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="BMP">
+						<xs:annotation>
+							<xs:documentation>Specifies the Windows bitmap (BMP) image file format.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="PNG">
+						<xs:annotation>
+							<xs:documentation>Specifies the Portable Network Graphics (PNG) image file format.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:list>
+	</xs:simpleType>
+</xs:schema>

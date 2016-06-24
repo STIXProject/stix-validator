@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://docs.oasis-open.org/cti/ns/cybox/platform/cpe-2.3-1" xmlns:cpe23="http://cpe.mitre.org/language/2.0" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/platform/cpe-2.3-1" elementFormDefault="qualified" version="2.1.1">
+    <xs:annotation>
+        <xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+        <xs:appinfo>
+            <schema>CPE2.3</schema>
+            <version>2.1.1</version>
+            <date>01/22/2014</date>            
+            <short_description>Cyber Observable eXpression (CybOX) Extension - CPE 2.3 Platform Instance - Schematic implementation for using the CPE 2.3 Applicability Language to describe a Platform within the CybOX observable expression language. It extends the PlatformSpecificationType defined in the CybOX common schema. (cybox_common.xsd) For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML.</short_description>
+            <terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+            <reference>http://scap.nist.gov/specifications/cpe/</reference>
+        </xs:appinfo>
+    </xs:annotation>
+    
+    <xs:import namespace="http://cpe.mitre.org/language/2.0" schemaLocation="../../external/cpe_2.3/cpe-language_2.3.xsd"/>
+    <xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../../cybox_common.xsd"/>
+    
+    <xs:complexType name="CPE23PlatformSpecificationType">
+        <xs:annotation>
+            <xs:documentation>The CPE23PlatformSpecificationType provides an extension of the PlatformSpecificationType that imports and leverages the CPE 2.3 applicability language schema for structured characterization of a platform or platform combination.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent> 
+            <xs:extension base="cyboxCommon:PlatformSpecificationType"> 
+                <xs:sequence> 
+                    <xs:element ref="cpe23:platform-specification">
+                        <xs:annotation>
+                            <xs:documentation>The platform-specification element, defined in the CPE 2.3 Applicability Language schema, supports a structured characterization of a platform or combination of platforms.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element> 
+                </xs:sequence> 
+            </xs:extension> 
+        </xs:complexContent> 
+    </xs:complexType>
+</xs:schema>

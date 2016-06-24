@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:WinUserAccountObj="http://docs.oasis-open.org/cti/ns/cybox/objects/win-user-account-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns:UserAccountObj="http://docs.oasis-open.org/cti/ns/cybox/objects/user-account-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/win-user-account-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Win_User_Account_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/user-account-2" schemaLocation="User_Account_Object.xsd"/>
+	<xs:element name="Windows_User_Account" type="WinUserAccountObj:WindowsUserAccountObjectType">
+		<xs:annotation>
+			<xs:documentation>Windows_User_Account object is intended to characterize Windows user accounts.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="WindowsUserAccountObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The WinUserAccountObjectType type is intended to characterize Windows user accounts.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="UserAccountObj:UserAccountObjectType">
+				<xs:sequence>
+					<xs:element name="Security_ID" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Security ID represents the Security ID (SID) of a windows user.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Security_Type" type="cyboxCommon:SIDType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Security Type represents the type of the Security ID (SID).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="WindowsGroupType">
+		<xs:annotation>
+			<xs:documentation>Windows Group represents a single windows group.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="UserAccountObj:GroupType">
+				<xs:sequence>
+					<xs:element name="Name" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>Identifies the name of the windows group.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="WindowsPrivilegeType">
+		<xs:annotation>
+			<xs:documentation>Windows Privilege represents a single privilege that a user may have within Windows.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="UserAccountObj:PrivilegeType">
+				<xs:sequence>
+					<xs:element name="User_Right" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>User Right represents one right that a user may have.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>
