@@ -34,6 +34,7 @@ class _XmlSchemaValidator(xml_schema.XmlSchemaValidator):
 
 class STIXSchemaValidator(base.BaseSchemaValidator):
     _SCHEMAS = {
+        'stix-1.2.1': os.path.join(XSD_ROOT, 'stix_1.2.1'),
         '1.2': os.path.join(XSD_ROOT, 'stix_1.2'),
         '1.1.1': os.path.join(XSD_ROOT, 'stix_1.1.1'),
         '1.1': os.path.join(XSD_ROOT, 'stix_1.1'),

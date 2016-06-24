@@ -243,24 +243,28 @@ def get_namespace(node):
 def is_stix(doc):
     """Attempts to determine if the input `doc` is a STIX XML instance document.
     If the root-level element falls under a namespace which starts with
-    ``http://stix.mitre.org``, this will return True.
+    ``http://stix.mitre.org`` or ``http://docs.oasis-open.org/cti/ns/stix``,
+    this will return True.
 
     """
     root = get_etree_root(doc)
     namespace = get_namespace(root)
-    return namespace.startswith("http://stix.mitre.org")
+    return (namespace.startswith("http://stix.mitre.org")
+        or namespace.startswith("http://docs.oasis-open.org/cti/ns/stix"))
 
 
 def is_cybox(doc):
     """Attempts to determine if the input `doc` is a CybOX XML instance
     document. If the root-level element falls under a namespace which starts
-    with ``http://cybox.mitre.org``, this will return True.
+    with ``http://cybox.mitre.org`` or
+    ``http://docs.oasis-open.org/cti/ns/cybox``, this will return True.
 
     """
 
     root = get_etree_root(doc)
     namespace = get_namespace(root)
-    return namespace.startswith("http://cybox.mitre.org")
+    return (namespace.startswith("http://cybox.mitre.org")
+        or namespace.startswith("http://docs.oasis-open.org/cti/ns/cybox"))
 
 
 def is_version_equal(x, y):
@@ -319,7 +323,6 @@ def is_leaf(node):
     """
     child = next(iterchildren(node), None)
     return child is None
-
 
 
 def has_content(node):
@@ -485,3 +488,12 @@ def union(selectors):
         A new selector string.
     """
     return " | ".join(x.strip() for x in selectors)
+
+def remove_version_prefix(version):
+    """Strips the 'stix-' prefix from a version number string so it can be
+    compared with older version strings which do not have the prefix.
+
+    """
+    if version.startswith('stix-'):
+        version = version.partition('stix-')[2]
+    return version
