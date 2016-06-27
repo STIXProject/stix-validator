@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns:NetworkRouteEntryObj="http://docs.oasis-open.org/cti/ns/cybox/objects/network-route-entry-2" xmlns:UnixNetworkRouteEntryObj="http://docs.oasis-open.org/cti/ns/cybox/objects/unix-network-route-entry-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/unix-network-route-entry-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Unix_Network_Route_Entry_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/network-route-entry-2" schemaLocation="Network_Route_Entry_Object.xsd"/>
+	<xs:element name="Unix_Network_Route_Entry" type="UnixNetworkRouteEntryObj:UnixNetworkRouteEntryObjectType">
+		<xs:annotation>
+			<xs:documentation>The Unix_Network_Route_Entry object is intended to characterize entries in the network routing table of a Unix system.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="UnixNetworkRouteEntryObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The UnixNetworkRouteEntryObjectType type is intended to characterize entries in the network routing table of a Unix system.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="NetworkRouteEntryObj:NetworkRouteEntryObjectType">
+				<xs:sequence>
+					<xs:element name="Flags" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Flags field specifies any flags used for the network route, such as G (use gateway).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="MSS" type="cyboxCommon:UnsignedIntegerObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The MSS field specifies the maximum segment size for TCP connections over this network route, in bytes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Ref" type="cyboxCommon:UnsignedLongObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Ref field specifies the number of references to this network route.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Use" type="cyboxCommon:UnsignedLongObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Use field specifies the number of lookups that were performed for this network route.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Window" type="cyboxCommon:UnsignedIntegerObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Window field specifies the default window size for TCP connections over this network route, in bytes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

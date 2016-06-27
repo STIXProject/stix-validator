@@ -1,0 +1,181 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:WinFilemappingObj="http://docs.oasis-open.org/cti/ns/cybox/objects/win-filemapping-1" xmlns:WinHandleObj="http://docs.oasis-open.org/cti/ns/cybox/objects/win-handle-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/win-filemapping-1" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Win_Filemapping_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/win-handle-2" schemaLocation="Win_Handle_Object.xsd"/>
+	<xs:element name="Windows_Filemapping" type="WinFilemappingObj:WindowsFilemappingObjectType">
+		<xs:annotation>
+			<xs:documentation>The Windows_Filemapping object is intended to characterize Windows file mappings.</xs:documentation>
+			<xs:documentation>For more information, please see http://msdn.microsoft.com/en-us/library/windows/desktop/aa366537(v=vs.85).aspx.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="WindowsFilemappingObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The WindowsFilemappingObjectType type is intended to characterize Windows file mapping objects.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="Name" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Name field specifies the name of the file mapping.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="File_Handle" type="WinHandleObj:WindowsHandleObjectType">
+						<xs:annotation>
+							<xs:documentation>The File_Handle field specifies the Windows handle to the file from which the file mapping was created. It uses the WindowsHandleObjectType from the imported CybOX Windows Handle Object.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Handle" type="WinHandleObj:WindowsHandleObjectType">
+						<xs:annotation>
+							<xs:documentation>The Handle field specifies the Windows handle to the file mapping. It uses the WindowsHandleObjectType from the imported CybOX Windows Handle Object.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Page_Protection_Value" type="WinFilemappingObj:PageProtectionValueType">
+						<xs:annotation>
+							<xs:documentation>The Page_Protection field specifies the page protection value (i.e. PAGE_) specified for the file mapping.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element maxOccurs="unbounded" minOccurs="0" name="Page_Protection_Attribute" type="WinFilemappingObj:PageProtectionAttributeType">
+						<xs:annotation>
+							<xs:documentation>The Page_Protection_Attribute field specifies a page protection attribute (i.e. SEC_) to be used in combination with the page protection value captured in the Page_Protection_Value field. One or more such attributes can be specified using this field.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Maximum_Size" type="cyboxCommon:UnsignedLongObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Maximum_Size field specifies the maximum allowed size for the file mapping, in bytes. This value is typically initialized upon creation of the file mapping.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Actual_Size" type="cyboxCommon:UnsignedLongObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Actual_Size field captures the actual size of the file mapping, in bytes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Security_Attributes" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Security_Attributes field specifies the Windows security attributes for the file mapping.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="PageProtectionValueType">
+		<xs:annotation>
+			<xs:documentation>The PageProtectionValueType specifies Windows file mapping page protection value types (i.e. PAGE_) via a union of the PageProtectionValueEnum type and the atomic xs:string type. Its base type is the CybOX Core BaseObjectPropertyType, for permitting complex (i.e. regular-expression based) specifications.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:restriction base="cyboxCommon:BaseObjectPropertyType">
+				<xs:simpleType>
+					<xs:union memberTypes="WinFilemappingObj:PageProtectionValueEnum xs:string"/>
+				</xs:simpleType>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="PageProtectionValueEnum">
+		<xs:annotation>
+			<xs:documentation>The PageProtectionValueEnum is an enumeration of Windows file mapping page protection value types.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="PAGE_EXECUTE_READ">
+				<xs:annotation>
+					<xs:documentation>Specifies that the mapped view of the file represented by the file mapping can be mapped for read-only, copy-on-write, or execute access.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="PAGE_EXECUTE_READWRITE">
+				<xs:annotation>
+					<xs:documentation>Specifies that the mapped view of the file represented by the file mapping can be mapped for read-only, copy-on-write, read/write, or execute access.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="PAGE_EXECUTE_WRITECOPY">
+				<xs:annotation>
+					<xs:documentation>Specifies that the mapped view of the file represented by the file mapping can be mapped for read-only, copy-on-write, or execute access. This value is equivalent to PAGE_EXECUTE_READ.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="PAGE_READONLY">
+				<xs:annotation>
+					<xs:documentation>Specifies that the mapped view of the file represented by the file mapping can be mapped for read-only or copy-on-write access.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="PAGE_READWRITE">
+				<xs:annotation>
+					<xs:documentation>Specifies that the mapped view of the file represented by the file mapping can be mapped for read-only, copy-on-write, or read/write access.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="PAGE_WRITECOPY">
+				<xs:annotation>
+					<xs:documentation>Specifies that the mapped view of the file represented by the file mapping can be mapped for read-only or copy-on-write access. This value is equivalent to PAGE_READONLY.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="PageProtectionAttributeType">
+		<xs:annotation>
+			<xs:documentation>The PageProtectionValueType specifies the optional Windows file mapping page protection attribute types (i.e. SEC_) via a union of the PageProtectionAttributeEnum type and the atomic xs:string type. Its base type is the CybOX Core BaseObjectPropertyType, for permitting complex (i.e. regular-expression based) specifications.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:restriction base="cyboxCommon:BaseObjectPropertyType">
+				<xs:simpleType>
+					<xs:union memberTypes="WinFilemappingObj:PageProtectionAttributeEnum xs:string"/>
+				</xs:simpleType>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="PageProtectionAttributeEnum">
+		<xs:annotation>
+			<xs:documentation>The PageProtectionAttributeEnum is an enumeration of Windows file mapping page protection attribute types.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SEC_COMMIT">
+				<xs:annotation>
+					<xs:documentation>Specifies that if the file mapping is backed by the operating system paging file, that when a view of the file is mapped into a process address space, the entire range of pages is committed rather than reserved.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="SEC_IMAGE">
+				<xs:annotation>
+					<xs:documentation>Specifies that the file mapped by the file mapping is an executable image file.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="SEC_IMAGE_NO_EXECUTE">
+				<xs:annotation>
+					<xs:documentation>Specifies that the file mapped by the file mapping is an executable image file that will not be executed and the loaded image file will have no forced integrity checks run.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="SEC_LARGE_PAGES">
+				<xs:annotation>
+					<xs:documentation>Enables large pages to be used for file mapping objects that are backed by the operating system paging file.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="SEC_NOCACHE">
+				<xs:annotation>
+					<xs:documentation>Sets all pages to be non-cachable.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="SEC_RESERVE">
+				<xs:annotation>
+					<xs:documentation>Specifies that when a view of the file is mapped into a process address space, the entire range of pages is reserved for later use by the process rather than committed. Only valid if the file mapping is backed by the operating system paging file.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="SEC_WRITECOMBINE">
+				<xs:annotation>
+					<xs:documentation>Sets all pages to be write-combined.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

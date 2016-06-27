@@ -35,14 +35,15 @@ PREFIX_CYBOX_CORE = 'cybox-core'
 PREFIX_CYBOX_COMMON = 'cybox-common'
 PREFIX_CYBOX_VOCABS = 'cybox-vocabs'
 
-STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1', '1.2')
+STIX_VERSIONS = ('1.0', '1.0.1', '1.1', '1.1.1', '1.2', 'stix-1.2.1')
 
 STIX_TO_CYBOX_VERSIONS = {
     '1.0': '2.0',
     '1.0.1': '2.0.1',
     '1.1': '2.1',
     '1.1.1': '2.1',
-    '1.2': '2.1'
+    '1.2': '2.1',
+    'stix-1.2.1': '2.1'
 }
 
 STIX_COMPONENT_VERSIONS = {
@@ -134,6 +135,25 @@ STIX_COMPONENT_VERSIONS = {
         '{0}:TTP'.format(PREFIX_STIX_CORE): '1.2',
         '{0}:TTP'.format(PREFIX_STIX_COMMON): '1.2',
         '{0}:Report'.format(PREFIX_STIX_CORE): '1.0'
+    },
+    'stix-1.2.1': {
+        '{0}:STIX_Package'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Package'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Campaign'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Campaign'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Course_Of_Action'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Exploit_Target'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Incident'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Incident'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Indicator'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:Indicator'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Threat_Actor'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:TTP'.format(PREFIX_STIX_CORE): 'stix-1.2.1',
+        '{0}:TTP'.format(PREFIX_STIX_COMMON): 'stix-1.2.1',
+        '{0}:Report'.format(PREFIX_STIX_CORE): 'stix-1.2.1'
     }
 }
 
@@ -214,6 +234,8 @@ STIX_VOCAB_VERSIONS = {
     '1.2': {
         'DiscoveryMethodVocab': '2.0',
         'ReportIntentVocab': '1.0'
+    },
+    'stix-1.2.1': {
     }
 }
 
@@ -277,7 +299,8 @@ def _get_cybox_vocab_version(name, version):
 
 def _get_stix_vocab_version(name, version):
     versions = STIX_VOCAB_VERSIONS.iterkeys()
-    descending = sorted(versions, key=StrictVersion, reverse=True)
+    descending = sorted(versions, key=lambda v:
+        StrictVersion(utils.remove_version_prefix(v)), reverse=True)
     idx = descending.index
 
     for key in descending[idx(version):]:
@@ -309,11 +332,13 @@ def get_vocab_version(doc, version, typename):
     namespace = utils.get_type_ns(doc, typename)
     name = parse_vocab_name(typename)
 
-    if namespace == 'http://cybox.mitre.org/default_vocabularies-2':
+    if namespace in ['http://cybox.mitre.org/default_vocabularies-2',
+           'http://docs.oasis-open.org/cti/ns/cybox/vocabularies-2']:
         cybox_version = STIX_TO_CYBOX_VERSIONS[version]
         return _get_cybox_vocab_version(name, cybox_version)
 
-    if namespace == 'http://stix.mitre.org/default_vocabularies-1':
+    if namespace in ['http://stix.mitre.org/default_vocabularies-1',
+            'http://docs.oasis-open.org/cti/ns/stix/vocabularies-1']:
         return _get_stix_vocab_version(name, version)
 
     raise errors.UnknownNamespaceError(
@@ -425,27 +450,44 @@ def get_stix_namespaces(version):
             found=version
         )
 
-    # At the moment, all STIX core-constructs have retained their namespaces
-    # between revisions of STIX. There is no need to look up specific sets
-    # of namespaces for a given version of STIX.
-    nsmap = {
-        PREFIX_XSI: xmlconst.NS_XSI,
-        PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',
-        PREFIX_STIX_COMMON: 'http://stix.mitre.org/common-1',
-        PREFIX_STIX_CAMPAIGN: 'http://stix.mitre.org/Campaign-1',
-        PREFIX_STIX_COA: 'http://stix.mitre.org/CourseOfAction-1',
-        PREFIX_STIX_EXPLOIT_TARGET: 'http://stix.mitre.org/ExploitTarget-1',
-        PREFIX_STIX_INDICATOR: 'http://stix.mitre.org/Indicator-2',
-        PREFIX_STIX_INCIDENT: 'http://stix.mitre.org/Incident-1',
-        PREFIX_STIX_REPORT: 'http://stix.mitre.org/Report-1',
-        PREFIX_STIX_THREAT_ACTOR: 'http://stix.mitre.org/ThreatActor-1',
-        PREFIX_STIX_TTP: 'http://stix.mitre.org/TTP-1',
-        PREFIX_STIX_VOCABS: 'http://stix.mitre.org/default_vocabularies-1',
-        PREFIX_DATA_MARKING: 'http://data-marking.mitre.org/Marking-1',
-        PREFIX_CYBOX_CORE: 'http://cybox.mitre.org/cybox-2',
-        PREFIX_CYBOX_COMMON: 'http://cybox.mitre.org/common-2',
-        PREFIX_CYBOX_VOCABS: 'http://cybox.mitre.org/default_vocabularies-2'
-    }
+    if StrictVersion(utils.remove_version_prefix(version)) < '1.2.1':
+        nsmap = {
+            PREFIX_XSI: xmlconst.NS_XSI,
+            PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',
+            PREFIX_STIX_COMMON: 'http://stix.mitre.org/common-1',
+            PREFIX_STIX_CAMPAIGN: 'http://stix.mitre.org/Campaign-1',
+            PREFIX_STIX_COA: 'http://stix.mitre.org/CourseOfAction-1',
+            PREFIX_STIX_EXPLOIT_TARGET: 'http://stix.mitre.org/ExploitTarget-1',
+            PREFIX_STIX_INDICATOR: 'http://stix.mitre.org/Indicator-2',
+            PREFIX_STIX_INCIDENT: 'http://stix.mitre.org/Incident-1',
+            PREFIX_STIX_REPORT: 'http://stix.mitre.org/Report-1',
+            PREFIX_STIX_THREAT_ACTOR: 'http://stix.mitre.org/ThreatActor-1',
+            PREFIX_STIX_TTP: 'http://stix.mitre.org/TTP-1',
+            PREFIX_STIX_VOCABS: 'http://stix.mitre.org/default_vocabularies-1',
+            PREFIX_DATA_MARKING: 'http://data-marking.mitre.org/Marking-1',
+            PREFIX_CYBOX_CORE: 'http://cybox.mitre.org/cybox-2',
+            PREFIX_CYBOX_COMMON: 'http://cybox.mitre.org/common-2',
+            PREFIX_CYBOX_VOCABS: 'http://cybox.mitre.org/default_vocabularies-2'
+        }
+    else:
+        nsmap = {
+            PREFIX_XSI: xmlconst.NS_XSI,
+            PREFIX_STIX_CORE: 'http://docs.oasis-open.org/cti/ns/stix/core-1',
+            PREFIX_STIX_COMMON: 'http://docs.oasis-open.org/cti/ns/stix/common-1',
+            PREFIX_STIX_CAMPAIGN: 'http://docs.oasis-open.org/cti/ns/stix/campaign-1',
+            PREFIX_STIX_COA: 'http://docs.oasis-open.org/cti/ns/stix/course-of-action-1',
+            PREFIX_STIX_EXPLOIT_TARGET: 'http://docs.oasis-open.org/cti/ns/stix/exploit-target-1',
+            PREFIX_STIX_INDICATOR: 'http://docs.oasis-open.org/cti/ns/stix/indicator-1',
+            PREFIX_STIX_INCIDENT: 'http://docs.oasis-open.org/cti/ns/stix/incident-1',
+            PREFIX_STIX_REPORT: 'http://docs.oasis-open.org/cti/ns/stix/report-1',
+            PREFIX_STIX_THREAT_ACTOR: 'http://docs.oasis-open.org/cti/ns/stix/threat-actor-1',
+            PREFIX_STIX_TTP: 'http://docs.oasis-open.org/cti/ns/stix/ttp-1',
+            PREFIX_STIX_VOCABS: 'http://docs.oasis-open.org/cti/ns/stix/vocabularies-1',
+            PREFIX_DATA_MARKING: 'http://docs.oasis-open.org/cti/ns/stix/data-marking-1',
+            PREFIX_CYBOX_CORE: 'http://docs.oasis-open.org/cti/ns/cybox/core-2',
+            PREFIX_CYBOX_COMMON: 'http://docs.oasis-open.org/cti/ns/cybox/common-2',
+            PREFIX_CYBOX_VOCABS: 'http://docs.oasis-open.org/cti/ns/cybox/vocabularies-2'
+        }
 
     return nsmap
 

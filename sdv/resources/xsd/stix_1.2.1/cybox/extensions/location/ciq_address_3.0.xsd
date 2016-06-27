@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:a="urn:oasis:names:tc:ciq:xal:3" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns="http://docs.oasis-open.org/cti/ns/cybox/address/ciq-address-3.0-1" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/address/ciq-address-3.0-1" elementFormDefault="qualified" version="2.1.1" xml:lang="English">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>CybOX Extension - CIQ Address 3.0 Instance</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>Cyber Observable eXpression (CybOX) Extension - CIQ Address 3.0 Instance - Schematic implementation for the using version 3.0 of CIQ to describe an Location within the CybOX cyber observable expression language.</short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../../cybox_common.xsd"/>
+	<xs:import namespace="urn:oasis:names:tc:ciq:xal:3" schemaLocation="../../external/oasis_ciq_3.0/xAL.xsd"/>
+	<xs:complexType name="CIQAddress3.0InstanceType">
+		<xs:annotation>
+			<xs:documentation>The CIQAddress3.0InstanceType provides an extension to the AddressAbstractType which imports and leverages version 3.0 of the OASIS CIQ-PIL schema for structured characterization of Addresses.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:LocationType">
+				<xs:sequence>
+					<xs:element name="Specification" type="a:AddressType" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

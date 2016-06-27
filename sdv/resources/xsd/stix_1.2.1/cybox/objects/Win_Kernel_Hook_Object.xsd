@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:WinKernelHookObj="http://docs.oasis-open.org/cti/ns/cybox/objects/win-kernel-hook-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/win-kernel-hook-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Win_Kernel_Hook_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="Windows_Kernel_Hook" type="WinKernelHookObj:WindowsKernelHookObjectType">
+		<xs:annotation>
+			<xs:documentation>The Windows_Kernel_Hook object is intended to characterize Windows kernel function hooks.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="WindowsKernelHookObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The WindowsKernelHookObjectType type is intended to characterize Windows kernel function hooks.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element name="Digital_Signature_Hooking" type="cyboxCommon:DigitalSignatureInfoType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Digital_Signature_Hooked field is optional and specifies the digital signature of the hooking code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Digital_Signature_Hooked" type="cyboxCommon:DigitalSignatureInfoType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Digital_Signature_Hooked field is optional and specifies the digital signature of the hooked code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Hooking_Address" type="cyboxCommon:UnsignedLongObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Hooking_Address field is optional and specifies the address from where the hooking occurs.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Hook_Description" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Hook_Description field is optional and provides a description of the nature of the hook.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Hooked_Function" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Hooked_Function field specifies the name of the function that is hooked.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Hooked_Module" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Hooked_Module field specifies the name of the module that is hooked.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Hooking_Module" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Hooking_Module field specifies the name of the module that is doing the hooking.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Type" type="WinKernelHookObj:KernelHookType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Type field specifies the type of hook being characterized.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="KernelHookType">
+		<xs:annotation>
+			<xs:documentation>KernelHookType specifies Windows kernel hook types via a union of the KernelHookTypeEnum type and the atomic xs:string type. Its base type is the CybOX Core BaseObjectPropertyType, for permitting complex (i.e. regular-expression based) specifications.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:restriction base="cyboxCommon:BaseObjectPropertyType">
+				<xs:simpleType>
+					<xs:union memberTypes="WinKernelHookObj:KernelHookTypeEnum xs:string"/>
+				</xs:simpleType>
+				<xs:attribute name="datatype" type="cyboxCommon:DatatypeEnum" fixed="string">
+					<xs:annotation>
+						<xs:documentation>This attribute is optional and specifies the expected type for the value of the specified property.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="KernelHookTypeEnum">
+		<xs:annotation>
+			<xs:documentation>The KernelHookTypeEnum type is a non-exhaustive enumeration of Windows kernel hook types.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="IAT_API">
+				<xs:annotation>
+					<xs:documentation>Specifies a kernel hook type of IAT_API.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Inline_Function">
+				<xs:annotation>
+					<xs:documentation>Specifies an inline function type of kernel hook.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Instruction_Hooking">
+				<xs:annotation>
+					<xs:documentation>Specifies an instruction hooking type of kernel hook.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

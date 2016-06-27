@@ -16,6 +16,7 @@ from sdv import utils, xmlconst
 # relative
 from . import common
 from .. import base
+from ...utils import remove_version_prefix
 
 
 # Python 2.6 doesn't have collections.OrderedDict :(
@@ -1191,11 +1192,11 @@ class STIXBestPracticeValidator(object):
             if not rule_min:
                 return True
 
-            doc_ver = StrictVersion(stix_version)
-            min_ver = StrictVersion(rule_min)
+            doc_ver = StrictVersion(remove_version_prefix(stix_version))
+            min_ver = StrictVersion(remove_version_prefix(rule_min))
 
             if rule_max:
-                max_ver = StrictVersion(rule_max)
+                max_ver = StrictVersion(remove_version_prefix(rule_max))
                 return (min_ver <= doc_ver <= max_ver)
 
             return min_ver <= doc_ver
@@ -1233,7 +1234,7 @@ class STIXBestPracticeValidator(object):
         """Checks that a STIX document aligns with `suggested authoring
         practices`_.
 
-        .. _suggested authoring practices: http://common.roject.github.io/documentation/suggested-practices/
+        .. _suggested authoring practices: http://stixproject.github.io/documentation/suggested-practices/
 
         Args:
             doc: The STIX document. Can be a filename, file-like object,

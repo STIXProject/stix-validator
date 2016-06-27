@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cybox="http://docs.oasis-open.org/cti/ns/cybox/core-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns:stixCommon="http://docs.oasis-open.org/cti/ns/stix/common-1" xmlns:ttp="http://docs.oasis-open.org/cti/ns/stix/ttp-1" xmlns:marking="http://docs.oasis-open.org/cti/ns/stix/data-marking-1" targetNamespace="http://docs.oasis-open.org/cti/ns/stix/ttp-1" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.2.1" xml:lang="en">
+	<xs:annotation>
+		<xs:documentation> STIX[TM] Version 1.2.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>STIX TTP</schema>
+			<version>1.2.1</version>
+			<date>12/15/2015 9:00:00 AM</date>
+			<short_description>Structured Threat Information eXpression (STIX) - TTP - Schematic implementation for the TTP construct within the STIX structured cyber threat expression language architecture.</short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/stix/v1.2.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/core-2" schemaLocation="cybox/core.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="cybox/common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/stix/common-1" schemaLocation="common.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/stix/data-marking-1" schemaLocation="data-marking.xsd"/>
+	<xs:element name="TTP" type="ttp:TTPType">
+		<xs:annotation>
+			<xs:documentation>The TTP field characterizes specific details of observed or potential attacker Tactics, Techniques and Procedures.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<!---->
+	<xs:complexType name="TTPType">
+		<xs:annotation>
+			<xs:documentation>Represents a single STIX TTP.</xs:documentation>
+			<xs:documentation>TTPs are representations of the behavior or modus operandi of cyber adversaries. It is a term taken from the traditional military sphere and is used to characterize what an adversary does and how they do it in increasing levels of detail. For instance, to give a simple example, a tactic may be to use malware to steal credit card credentials. A related technique (at a lower level of detail) may be to send targeted emails to potential victims, which have documents attached containing malicious code which executes upon opening, captures credit card information from keystrokes, and uses http to communicate with a command and control server to transfer information. A related procedure (at a lower level of detail) may be to perform open source research to identify potentially gullible individuals, craft a convincing socially engineered email and document, create malware/exploit that will bypass current antivirus detection, establish a command and control server by registering a domain called mychasebank.org, and send mail to victims from a Gmail account called accounts-mychasebank@gmail.com.</xs:documentation>
+			<xs:documentation>TTPs consist of the specific adversary behavior (attack patterns, malware, exploits) exhibited, resources leveraged (tools, infrastructure, personas), information on the victims targeted (who, what or where), relevant ExploitTargets being targeted, intended effects, relevant kill chain phases, handling guidance, source of the TTP information, etc.</xs:documentation>
+			<xs:documentation>TTPs play a central role in cyber threat information and cyber threat intelligence. They are relevant for Indicators, Incidents, Campaigns, and ThreatActors. In addition, they hold a close relationship with ExploitTargets that characterize the specific targets that the TTPs seek to exploit.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="stixCommon:TTPBaseType">
+				<xs:sequence>
+					<xs:element name="Title" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Title property captures a title for the TTP and reflects what the content producer thinks the TTP as a whole should be called.  The Title property is typically used by humans to reference a particular TTP; however, it is not suggested for correlation. </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>The Description property captures a textual description of the TTP.  Any length is permitted.  Optional formatting is supported via the structuring_format property.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Short_Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>The Short_Description property captures a short textual description of the TTP.   This property is secondary and should only be used if the Description property is already populated and another, shorter description is available.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Intended_Effect" type="stixCommon:StatementType" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>The Intended_Effect property characterizes the suspected intended effect of the TTP, which includes a Value property that specifies the type of the effect. Examples of potential types include theft, disruption, and unauthorized access (these specific values are only provided to help explain the Value property: they are neither recommended values nor necessarily part of any existing vocabulary).  </xs:documentation>
+							<xs:documentation>It is implemented through the StatementType, which allows for the expression of a statement in a vocabulary (Value), a description of the statement (Description), a confidence in the statement (Confidence), and the source of the statement (Source). The default vocabulary type for the Value is IntendedEffectVocab-1.0 in the http://docs.oasis-open.org/cti/ns/stix/vocabularies-1 namespace. Note: this is different than the default vocabulary provided for StatementType. This type is defined in the vocabularies.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/vocabularies.xsd.</xs:documentation>
+							<xs:documentation>Users may also define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a string.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Behavior" type="ttp:BehaviorType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Behavior property characterizes forms of adversarial behavior by capturing the attack patterns, malware, and/or exploits that the adversary may leverage.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Resources" type="ttp:ResourceType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Resources property characterizes adversarial resources by capturing the tools, infrastructure, or personas that the adversary may leverage.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Victim_Targeting" type="ttp:VictimTargetingType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Victim_Targeting property characterizes the sort of victims that an adversary may target including details of identity, systems, and/or information types targeted.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Exploit_Targets" type="ttp:ExploitTargetsType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Exploit_Targets property specifies a set of one or more Exploit Targets potentially targeted by the TTP.  </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Related_TTPs" type="ttp:RelatedTTPsType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Related_TTPs property specifies a set of one or more other TTPs related to this TTP.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Kill_Chain_Phases" type="stixCommon:KillChainPhasesReferenceType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A cyber kill chain is a phase-based model to describe the stages of an attack, and a cyber kill chain phase is an individual phase within a kill chain definition. The Kill_Chain_Phases property specifies a set of one or more kill chain phases (from one or more kill chains defined elsewhere) for which the TTP is asserted to be representative.  The kill chain property is further defined in the Common data model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Information_Source" type="stixCommon:InformationSourceType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Information_Source property characterizes the source of the TTP information.  Examples of details captured include identitifying characteristics, time-related attributes, and a list of the tools used to collect the information.  </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Kill_Chains" type="stixCommon:KillChainsType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A cyber kill chain is a phase-based model to describe the stages of an attack. The Kill_Chains property specifies a set of one or more specific kill chain definitions.  The kill chain property is further defined in the Common domain model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Handling" type="marking:MarkingType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Handling property specifies data handling markings for the properties of this TTP. The marking scope is limited to the TTP and the content is contains. Note that data handling markings can also be specified at a higher level.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Related_Packages" type="stixCommon:RelatedPackageRefsType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Related_Packages property identifies or characterizes relationships to set of related Packages.</xs:documentation>
+							<xs:documentation>DEPRECATED: This property is deprecated and will be removed in the next major version of STIX. Its use is strongly discouraged except for legacy applications.</xs:documentation>
+							<xs:appinfo>
+								<deprecated>true</deprecated>
+							</xs:appinfo>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="version" type="ttp:TTPVersionType">
+					<xs:annotation>
+						<xs:documentation>The version property specifies the version identifier of the STIX TTP data model for STIX v1.2.1 used to capture the information associated with the TTP.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!---->
+	<xs:simpleType name="TTPVersionType">
+		<xs:annotation>
+			<xs:documentation>An enumeration of all versions of the TTP type valid in the current release of STIX.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="stix-1.2.1" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="AttackPatternType">
+		<xs:annotation>
+			<xs:documentation>The AttackPatternType characterizes an individual attack pattern  through the capture of information such as a textual description and a Common Attack Pattern Enumeration and Classification (CAPEC) reference.  </xs:documentation>
+			<xs:documentation>In addition to capturing basic information, this type is intended to be extended to enable the structured description of an attack pattern instance using the XML Schema extension feature. The STIX default extension uses the Common Attack Pattern Enumeration and Classification (CAPEC) schema to do so. The extension that defines this is captured in the CAPEC2.7InstanceType in the http://docs.oasis-open.org/cti/ns/stix/extensions/attack-pattern/capec-2.7-1 namespace. This type is defined in the extensions/attack-pattern/capec-2.7-attack-pattern.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/extensions/attack-pattern/capec-2.7-attack-pattern.xsd.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Title" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Title property captures a title for the attack pattern and reflects what the content producer thinks the attack pattern as a whole should be called.  The Title property is typically used by humans to reference a particular attack pattern; however, it is not suggested for correlation. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Description property captures a textual description of the attack pattern.  Any length is permitted.  Optional formatting is supported via the structuring_format property.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Short_Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Short_Description property captures a short textual description of the attack pattern.   This property is secondary and should only be used if the Description property is already populated and another, shorter description is available.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The id property specifies a globally unique identifier for the attack pattern.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="idref" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The idref property specifies an identifier reference to an attack pattern specified elsewhere. When the idref property is used, the id property MUST NOT also be specified and the other properties of the AttackPatternType SHOULD NOT hold any content.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="capec_id">
+			<xs:annotation>
+				<xs:documentation>The capec_id property specifies a particular attack pattern (via identifier) in the Common Attack Pattern Enumeration and Classification (CAPEC) registry.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="CAPEC-\d+"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="MalwareInstanceType">
+		<xs:annotation>
+			<xs:documentation>The MalwareInstanceType characterizes a malware instance through the capture of basic information such as the type, name, and description of the malware.  A malware instance may characterize anything from a specific malware sample to an entire family.</xs:documentation>
+			<xs:documentation>In addition to capturing basic information, this type is intended to be extended to enable the structured description of a malware instance using the XML Schema extension feature. The STIX default extension uses the Malware Attribute Enumeration and Classification (MAEC) schema to do so. The extension that defines this is captured in the MAEC4.1InstanceType in the http://docs.oasis-open.org/cti/ns/stix/extensions/malware/maec-4.1-1 namespace. This type is defined in the extensions/malware/maec-4.1-malware.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/extensions/malware/maec-4.1-malware.xsd.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Type" type="stixCommon:ControlledVocabularyStringType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Type property specifies the type of the malware instance being characterized. Examples of potential types include bot, exploit kit, and ransomware (these specific values are only provided to help explain the property: they are neither recommended types nor necessarily part of any existing vocabulary).  </xs:documentation>
+					<xs:documentation>This property is implemented through the xsi:type controlled vocabulary extension mechanism. The default vocabulary type is MalwareTypeVocab-1.0 in the http://docs.oasis-open.org/cti/ns/stix/vocabularies-1 namespace. This type is defined in the vocabularies.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/vocabularies.xsd.</xs:documentation>
+					<xs:documentation>Users may also define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a string.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Name" type="stixCommon:ControlledVocabularyStringType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Name property is used to specify a single name or alias that identifies the malware instance. </xs:documentation>
+					<xs:documentation>This property is implemented through the xsi:type controlled vocabulary extension mechanism. No default vocabulary type has been defined for STIX. Users may either define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a free string.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Title" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Title property captures a title for the malware instance and reflects what the content producer thinks the malware instance as a whole should be called.  The Title property is typically used by humans to reference a particular malware instance; however, it is not suggested for correlation. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Description property captures a textual description of the malware instance.  Any length is permitted.  Optional formatting is supported via the structuring_format property.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Short_Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Short_Description property captures a short textual description of the malware instance.   This property is secondary and should only be used if the Description property is already populated and another, shorter description is available.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The id property specifies a globally unique identifier for the malware instance.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="idref" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The idref property specifies an identifier reference to a malware instance specified elsewhere. When the idref property is used, the id property MUST NOT also be specified and the other properties of the MalwareInstanceType SHOULD NOT hold any content.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="ExploitType">
+		<xs:annotation>
+			<xs:documentation>The ExploitType characterizes an individual exploit instance through the capture of basic information such as the title and description of the exploit.</xs:documentation>
+			<xs:documentation>In addition to capturing basic information, this type is intended to be extended to enable the structured description of an exploit using the XML Schema extension feature. No extension is provided by STIX to support this, however those wishing to represent structured exploit information may develop such an extension.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Title" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Title property captures a title for the exploit instance and reflects what the content producer thinks the exploit instance as a whole should be called.  The Title property is typically used by humans to reference a particular exploit instance; however, it is not suggested for correlation. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Description property captures a textual description of the exploit instance.  Any length is permitted.  Optional formatting is supported via the structuring_format property.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Short_Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Short_Description property captures a short textual description of the exploit instance.   This property is secondary and should only be used if the Description property is already populated and another, shorter description is available.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The id property specifies a globally unique identifier for the exploit instance.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="idref" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The idref property specifies an identifier reference to an exploit instance specified elsewhere. When the idref property is used, the id property MUST NOT also be specified and the other properties of the ExploitType SHOULD NOT hold any content.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="RelatedTTPsType">
+		<xs:annotation>
+			<xs:documentation>The RelatedTTPsType specifies a set of one or more other TTPs asserted to be related to this TTP and therefore is a self-referential relationship.  It extends GenericRelationshipListType defined in the STIX Common data model, which specifies the scope (whether the elements of the set are related individually or as a group).</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="stixCommon:GenericRelationshipListType">
+				<xs:sequence>
+					<xs:element name="Related_TTP" type="stixCommon:RelatedTTPType" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>The Related_TTP property specifies another TTP associated with this TTP and characterizes the relationship between the TTPs by capturing information such as the level of confidence that the TTPs are related, the source of the relationship information, and type of the relationship.  A relationship between TTPs may represent assertions of general associativity or different versions of the same TTP.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="InfrastructureType">
+		<xs:annotation>
+			<xs:documentation>The InfrastructureType characterizes adversarial infrastructure that an adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Title" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Title property captures a title for the infrastructure and reflects what the content producer thinks the infrastructure as a whole should be called.  The Title property is typically used by humans to reference a particular infrastructure; however, it is not suggested for correlation. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Type" type="stixCommon:ControlledVocabularyStringType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Type property specifies the type of infrastructure being characterized. Examples of potential types include anonymization, domain registration, and hosting (these specific values are only provided to help explain the property: they are neither recommended values nor necessarily part of any existing vocabulary).  </xs:documentation>
+					<xs:documentation>This property is implemented through the xsi:type controlled vocabulary extension mechanism. The default vocabulary type is AttackerInfrastructureTypeVocab-1.0 in the http://docs.oasis-open.org/cti/ns/stix/vocabularies-1 namespace. This type is defined in the vocabularies.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/vocabularies.xsd.</xs:documentation>
+					<xs:documentation>Users may also define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a string.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Description property captures a textual description of the infrastructure.  Any length is permitted.  Optional formatting is supported via the structuring_format property.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Short_Description" type="stixCommon:StructuredTextType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Short_Description property captures a short textual description of the infrastructure. This property is secondary and should only be used if the Description property is already populated and another, shorter description is available</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Observable_Characterization" type="cybox:ObservablesType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Observable_Characterization property characterizes the adversarial infrastructure through specification of a structured cyber Observables pattern.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The id property specifies a globally unique identifier for the infrastructure.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="idref" type="xs:QName">
+			<xs:annotation>
+				<xs:documentation>The idref property specifies an identifier reference to an infrastructure specified elsewhere. When the idref property is used, the id property MUST NOT also be specified and the other properties of the InfrastructureType SHOULD NOT hold any content.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="ToolsType">
+		<xs:annotation>
+			<xs:documentation>The ToolsType specifies a set of one or more tools that an adversary may leverage. Tools specified may cover a wide range of types (DDOS tools, exploit kits, packers, communications tools, etc.). While ToolsType may be appropriate for characterizing the use of a particular malware as an attack tool including details of specific version or configuration, it is not appropriate for characterizing the structure or behavior of malware which is more appropriately characterized using MalwareInstanceType.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Tool" type="stixCommon:ToolInformationType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Tool property characterizes a single adversarial tool. Note that the STIX Common ToolInformationType includes a Type property that specifies the type of the tool.  Examples of potential tool types include pentester, port scanner, and password cracker (these specific values are only provided to help explain the Type property: they are neither recommended types nor necessarily part of any existing vocabulary).  </xs:documentation>
+					<xs:documentation>The Tool property under this property is implemented through the xsi:type controlled vocabulary extension mechanism. The default vocabulary type is AttackerToolTypeVocab-1.0 in the http://docs.oasis-open.org/cti/ns/stix/vocabularies-1 namespace. This type is defined in the vocabularies.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/vocabularies.xsd.</xs:documentation>
+					<xs:documentation>Users may also define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a string.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ExploitsType">
+		<xs:annotation>
+			<xs:documentation>The ExploitsType specifies a set of one or more exploits that an adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Exploit" type="ttp:ExploitType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Exploit property specifies a single exploit that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ExploitTargetsType">
+		<xs:annotation>
+			<xs:documentation>The ExploitTargetsType specifies a set of one or more Exploit Targets potentially targeted by the TTP.  It extends GenericRelationshipListType defined in the STIX Common data model, which specifies the scope (whether the elements of the set are related individually or as a group).</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="stixCommon:GenericRelationshipListType">
+				<xs:sequence>
+					<xs:element name="Exploit_Target" type="stixCommon:RelatedExploitTargetType" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>The Exploit_Target property specifies an Exploit Target potentially targetd by the TTP and characterizes the relationship between the Exploit Target and the TTP by capturing information such as the level of confidence that the Exploit Target and the TTP are related, the source of the relationship information, and the type of relationship.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="MalwareType">
+		<xs:annotation>
+			<xs:documentation>The MalwareType characterizes a set of one or more malware instances that an adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Malware_Instance" type="ttp:MalwareInstanceType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Malware_Instance property characterizes a single malware instance that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AttackPatternsType">
+		<xs:annotation>
+			<xs:documentation>The AttackPatternsType specifies a set of one or more attack patterns that an adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Attack_Pattern" type="ttp:AttackPatternType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Attack_Pattern property specifies a single Attack Pattern that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ResourceType">
+		<xs:annotation>
+			<xs:documentation>The ResourceType characterizes resources the adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Tools" type="ttp:ToolsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Tools property specifies a set of one or more tools that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Infrastructure" type="ttp:InfrastructureType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Infrastructure property characterizes infrastructure that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Personas" type="ttp:PersonasType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Personas property specifies a set of one or more personas that an adversary may leverage.  Different personas are often used as a method of masquerade.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="BehaviorType">
+		<xs:annotation>
+			<xs:documentation>The BehaviorType characterizes adversarial behavior by capturing details of cyber attack patterns, malware or exploits that the adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Attack_Patterns" type="ttp:AttackPatternsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Attack_Patterns property specifies a set of one or more attack patterns that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Malware" type="ttp:MalwareType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Malware property specifies a set of one or more instances of malware that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Exploits" type="ttp:ExploitsType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Exploits property specifies a set of one or more exploits that an adversary may leverage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="VictimTargetingType">
+		<xs:annotation>
+			<xs:documentation>The VictimTargetingType characterizes victim targeting information by capturing information about the people, organizations, systems and/or data potentially targeted by the adversary.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Identity" type="stixCommon:IdentityType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Identity property characterizes traits common to the people or organizations that are targeted.  </xs:documentation>
+					<xs:documentation>This property is implemented through the xsi:type extension mechanism. The default type is CIQIdentity3.0InstanceType in the http://docs.oasis-open.org/cti/ns/stix/extensions/identity/ciq-3.0-identity-1 namespace. This type is defined in the extensions/identity/ciq_identity_3.0.xsd file or at the URL http://stix.mitre.org/XMLSchema/extensions/identity/ciq_identity_3.0/1.1/ciq_identity_3.0.xsd.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Targeted_Systems" type="stixCommon:ControlledVocabularyStringType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Targeted_Systems property specifies a type of system that may be targeted by the adversary.  Examples of potential types include web layer, third-party services, and user workstations (these specific values are only provided to help explain the property: they are neither recommended values nor necessarily part of any existing vocabulary).  </xs:documentation>
+					<xs:documentation>This property is implemented through the xsi:type controlled vocabulary extension mechanism. The default vocabulary type is SystemTypeVocab-1.0 in the http://docs.oasis-open.org/cti/ns/stix/vocabularies-1 namespace. This type is defined in the vocabularies.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/vocabularies.xsd.</xs:documentation>
+					<xs:documentation>Users may also define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a string.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Targeted_Information" type="stixCommon:ControlledVocabularyStringType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Targeted_Information property specifies a type of information that may be targeted by the adversary.  Examples of potential types include customer PII, mobile phone contacts, and authentication cookies (these specific values are only provided to help explain the property: they are neither recommended values nor necessarily part of any existing vocabulary).  </xs:documentation>
+					<xs:documentation>This property is implemented through the xsi:type controlled vocabulary extension mechanism. The default vocabulary type is InformationTypeVocab-1.0 in the http://docs.oasis-open.org/cti/ns/stix/vocabularies-1 namespace. This type is defined in the vocabularies.xsd file or at the URL http://docs.oasis-open.org/cti/stix-1.2.1-xml-binding/v1.0/csd01/schemas/vocabularies.xsd.</xs:documentation>
+					<xs:documentation>Users may also define their own vocabulary using the type extension mechanism, specify a vocabulary name and reference using the attributes, or simply use a string.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Targeted_Technical_Details" type="cybox:ObservablesType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Targeted_Technical_Details property characterizes details of specific technologies targeted by the adversary.  It is implemented through specification of a structured cyber Observables pattern using the CybOX ObservablesType.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PersonasType">
+		<xs:annotation>
+			<xs:documentation>The PersonasType specifies a set of one or more personas that an adversary may leverage.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Persona" type="stixCommon:IdentityType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The Persona property characterizes a persona identity potentially used in malicious activity. Personas are typically used to masquerade as another party. For situations calling for more than a simple name, the underlying type may be extended using a more complete structure such as CIQIdentity3.0InstanceType as defined in the Extensions data model.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ProductObj="http://docs.oasis-open.org/cti/ns/cybox/objects/product-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/product-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Product_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="Product" type="ProductObj:ProductObjectType">
+		<xs:annotation>
+			<xs:documentation>The Product object is intended to characterize software or hardware products.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="ProductObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The ProductObjectType type is intended to characterize software or hardware products.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element name="Edition" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Edition field specifies the edition of the product, if applicable.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Language" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Language field specifies the language of the product, if applicable.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Product" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Product field specifies the name of the product. This field is required.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Update" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Update field specifies the update/revision of the product, if applicable.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Vendor" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Vendor field specifies the name of the product vendor. This field is required.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Version" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Version field specifies the version of the product, if applicable.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Device_Details" type="cyboxCommon:ObjectPropertiesType">
+						<xs:annotation>
+							<xs:documentation>The Device_Details field captures the device-specific properties of a device product. It uses the abstract ObjectPropertiesType which permits the specification of any Object; however, it is strongly recommended that the Device Object or one of its subtypes be used in this context.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

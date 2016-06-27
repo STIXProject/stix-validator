@@ -1,0 +1,120 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:LibraryObj="http://docs.oasis-open.org/cti/ns/cybox/objects/library-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/library-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Library_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="Library" type="LibraryObj:LibraryObjectType">
+		<xs:annotation>
+			<xs:documentation>The Library object is intended to characterize software libraries.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="LibraryObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The LibraryObjectType type is intended to characterize software libraries.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="cyboxCommon:ObjectPropertiesType">
+				<xs:sequence>
+					<xs:element name="Name" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Name field specifies the full file name of the library. Example: abcd.dll.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Path" type="cyboxCommon:StringObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Path field specifies the fully-qualified path to the library.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Size" type="cyboxCommon:UnsignedLongObjectPropertyType" minOccurs="0" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>The Size field specifies the size of the library, in bytes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Type" type="LibraryObj:LibraryType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Type field specifies the type of library being characterized.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Version" type="cyboxCommon:StringObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Version field specifies the library version.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Base_Address" type="cyboxCommon:HexBinaryObjectPropertyType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Base_Address field specifies the default virtual address into which the library is loaded.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Extracted_Features" type="cyboxCommon:ExtractedFeaturesType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A description of features extracted from this file.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="LibraryType">
+		<xs:annotation>
+			<xs:documentation>LibraryType specifies library types, via a union of the LibraryTypeEnum type and the atomic xs:string type. Its base type is the CybOX Core BaseObjectPropertyType, for permitting complex (i.e. regular-expression based) specifications.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:restriction base="cyboxCommon:BaseObjectPropertyType">
+				<xs:simpleType>
+					<xs:union memberTypes="LibraryObj:LibraryTypeEnum xs:string"/>
+				</xs:simpleType>
+				<xs:attribute name="datatype" type="cyboxCommon:DatatypeEnum" fixed="string">
+					<xs:annotation>
+						<xs:documentation>This attribute is optional and specifies the expected type for the value of the specified property.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="LibraryTypeEnum">
+		<xs:annotation>
+			<xs:documentation>The LibraryTypeEnum type is an enumeration of library types.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Dynamic">
+				<xs:annotation>
+					<xs:documentation>Indicates a dynamic library.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Static">
+				<xs:annotation>
+					<xs:documentation>Indicates a static library.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Remote">
+				<xs:annotation>
+					<xs:documentation>Indicates a remote library.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Shared">
+				<xs:annotation>
+					<xs:documentation>Indicates a shared library.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Other">
+				<xs:annotation>
+					<xs:documentation>Indicates a different type of library than those listed above.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

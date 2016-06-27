@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:WinSemaphoreObj="http://docs.oasis-open.org/cti/ns/cybox/objects/win-semaphore-2" xmlns:cyboxCommon="http://docs.oasis-open.org/cti/ns/cybox/common-2" xmlns:WinHandleObj="http://docs.oasis-open.org/cti/ns/cybox/objects/win-handle-2" xmlns:SemaphoreObj="http://docs.oasis-open.org/cti/ns/cybox/objects/semaphore-2" targetNamespace="http://docs.oasis-open.org/cti/ns/cybox/objects/win-semaphore-2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<xs:annotation>		
+		<xs:documentation> CybOX[TM] Version 2.1.1. Committee Specification Draft 01 / Public Review Draft 01</xs:documentation>
+		<xs:appinfo>
+			<schema>Win_Semaphore_Object</schema>
+			<version>2.1.1</version>
+			<date>01/22/2014</date>			
+			<short_description>The following specifies the fields and types that compose this defined CybOX Object type. Each defined object is an extension of the abstract ObjectPropertiesType, defined in CybOX Common. For more information on this extension mechanism, please see the CybOX Specification. This document is intended for developers and assumes some familiarity with XML. </short_description>
+			<terms_of_use>Copyright (c) OASIS Open 2016. All Rights Reserved.
+			Distributed under the terms of the OASIS IPR Policy, [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.</terms_of_use>
+			<terms_of_use> Portions copyright (c) United States Government 2012-2016.  All Rights Reserved.
+			 Source: http://docs.oasis-open.org/cti/cybox/v2.1.1/csprd01/schemas/
+			 Latest version of the specification: REPLACE_WITH_SPECIFICATION_URL
+			 TC IPR Statement: https://www.oasis-open.org/committees/cti/ipr.php
+            </terms_of_use>
+		</xs:appinfo>
+	</xs:annotation>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/win-handle-2" schemaLocation="Win_Handle_Object.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/objects/semaphore-2" schemaLocation="Semaphore_Object.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/cti/ns/cybox/common-2" schemaLocation="../cybox_common.xsd"/>
+	<xs:element name="Win_Semaphore" type="WinSemaphoreObj:WindowsSemaphoreObjectType">
+		<xs:annotation>
+			<xs:documentation>Windows_Semaphore object is intended to characterize Windows Semaphore (synchronization) objects. See also: http://msdn.microsoft.com/en-us/library/windows/desktop/ms685129(v=vs.85).aspx.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="WindowsSemaphoreObjectType" mixed="false">
+		<xs:annotation>
+			<xs:documentation>The WindowsSemaphoreObjectType is intended to characterize Windows semaphore (synchronization) objects.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent mixed="false">
+			<xs:extension base="SemaphoreObj:SemaphoreObjectType">
+				<xs:sequence>
+					<xs:element name="Handle" minOccurs="0" type="WinHandleObj:WindowsHandleObjectType">
+						<xs:annotation>
+							<xs:documentation>The Handle field specifies the open Windows handle to the semaphore. It imports and uses the WindowsHandleObjectType from the CybOX Windows Handle Object.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element minOccurs="0" name="Security_Attributes" type="cyboxCommon:StringObjectPropertyType">
+						<xs:annotation>
+							<xs:documentation>The Security_Attributes field specifies the Windows security attributes for the semaphore.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>
