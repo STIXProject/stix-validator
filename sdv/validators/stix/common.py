@@ -233,7 +233,8 @@ STIX_VOCAB_VERSIONS = {
     },
     '1.2': {
         'DiscoveryMethodVocab': '2.0',
-        'ReportIntentVocab': '1.0'
+        'ReportIntentVocab': '1.0',
+        'VersioningVocab': '1.0'
     },
     'stix-1.2.1': {
     }
