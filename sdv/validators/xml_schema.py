@@ -4,7 +4,6 @@
 # builtin
 import os
 import collections
-from builtins import str
 
 # external
 from lxml import etree

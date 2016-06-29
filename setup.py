@@ -22,11 +22,8 @@ def get_version():
 
 py_maj, py_minor = sys.version_info[:2]
 
-if py_maj != 2:
-    raise Exception('stix-validator required Python 2.6/2.7')
-
 if (py_maj, py_minor) < (2, 6):
-    raise Exception('stix-validator requires Python 2.6/2.7')
+    raise Exception('stix-validator requires at least Python 2.6/2.7')
 
 fn_readme = join(BASE_DIR, "README.rst")
 with open(fn_readme) as f:
@@ -36,6 +33,7 @@ install_requires = [
     'lxml>=3.3.5',
     'xlrd>=0.9.2',
     'ordereddict',
+    'mixbox>=0.0.11',
     'python-dateutil'
 ]
 

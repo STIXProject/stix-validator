@@ -7,6 +7,7 @@ import itertools
 import collections
 import functools
 from mixbox.vendor.six import StringIO, string_types, iteritems
+from mixbox.vendor.six.moves import range
 
 # external
 import xlrd
@@ -776,7 +777,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                 )
 
         all_rules = []
-        for i in xrange(1, worksheet.nrows):
+        for i in range(1, worksheet.nrows):
             if is_empty_row(i):
                 continue
 
@@ -830,7 +831,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                    "worksheet")
             raise errors.ProfileParseError(err)
 
-        for row in xrange(1, worksheet.nrows):  # skip the first row
+        for row in range(1, worksheet.nrows):  # skip the first row
             if is_empty(row):
                 continue
 
@@ -871,7 +872,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
                    "'{label}'")
             raise errors.ProfileParseError(err.format(label=label))
 
-        for row in xrange(1, worksheet.nrows):
+        for row in range(1, worksheet.nrows):
             if is_empty(row):
                 continue
 
@@ -960,7 +961,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         in any columns.
 
         """
-        cols = xrange(worksheet.ncols)
+        cols = range(worksheet.ncols)
         return not any(self._get_value(worksheet, row, col) for col in cols)
 
     def _get_value(self, worksheet, row, col):

@@ -9,7 +9,7 @@ import distutils.version
 
 # external
 from lxml import etree
-from mixbox.vendor.six import iteritems, itervalues
+from mixbox.vendor.six import iteritems, itervalues, with_metaclass
 
 # internal
 from sdv import utils, xmlconst
@@ -337,10 +337,8 @@ class BestPracticeValidationResults(base.ValidationResults, collections.MutableS
         return d
 
 
-class STIXBestPracticeValidator(object):
+class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
     """Performs STIX Best Practice validation."""
-
-    __metaclass__ = BestPracticeMeta
 
     @rule('1.0')
     def _check_id_presence(self, root, namespaces, version):  # noqa

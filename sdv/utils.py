@@ -10,6 +10,7 @@ from distutils.version import StrictVersion
 # external
 import dateutil.parser
 from lxml import etree
+from mixbox.vendor.six import StringIO, BytesIO
 
 # relative
 from . import errors, xmlconst
@@ -102,7 +103,10 @@ def get_etree_root(doc):
             root = doc.getroot()
         else:
             parser = get_xml_parser()
-            tree = etree.parse(doc, parser=parser)
+            if isinstance(doc, StringIO):
+                tree = etree.parse(BytesIO(doc.getvalue().encode()), parser=parser)
+            else:
+                tree = etree.parse(doc, parser=parser)
             root = tree.getroot()
     except Exception as ex:
         raise errors.ValidationError(str(ex))

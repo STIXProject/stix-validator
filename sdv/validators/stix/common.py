@@ -283,7 +283,7 @@ def is_idref_content_exception(node):
 
 
 def _get_cybox_vocab_version(name, version):
-    versions = CYBOX_VOCAB_VERSIONS.iterkeys()
+    versions = CYBOX_VOCAB_VERSIONS
     descending = sorted(versions, key=StrictVersion, reverse=True)
     idx = descending.index
 
@@ -299,7 +299,7 @@ def _get_cybox_vocab_version(name, version):
 
 
 def _get_stix_vocab_version(name, version):
-    versions = STIX_VOCAB_VERSIONS.iterkeys()
+    versions = STIX_VOCAB_VERSIONS
     descending = sorted(versions, key=lambda v:
         StrictVersion(utils.remove_version_prefix(v)), reverse=True)
     idx = descending.index
