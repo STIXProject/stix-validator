@@ -9,6 +9,7 @@ import distutils.version
 
 # external
 from lxml import etree
+from mixbox.vendor.six import iteritems, itervalues
 
 # internal
 from sdv import utils, xmlconst
@@ -60,7 +61,7 @@ class BestPracticeMeta(type):
         ruledict = collections.defaultdict(list)
 
         # Find all @rule marked functions in the class dict_
-        rulefuncs = (x for x in dict_.itervalues() if hasattr(x, 'is_rule'))
+        rulefuncs = (x for x in itervalues(dict_) if hasattr(x, 'is_rule'))
 
         # Build the rule function dict.
         for rule in rulefuncs:
@@ -172,7 +173,7 @@ class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
         are not found in the :attr:`core_keys`.
 
         """
-        return tuple(x for x in self.iterkeys() if x not in self.core_keys)
+        return tuple(x for x in self if x not in self.core_keys)
 
     def as_dict(self):
         """Returns a dictionary representation of this class instance. This
@@ -183,7 +184,7 @@ class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
         necessary.
 
         """
-        return dict(self.iteritems())
+        return dict(iteritems(self))
 
 
 class BestPracticeWarningCollection(collections.MutableSequence):
@@ -449,7 +450,7 @@ class STIXBestPracticeValidator(object):
             idnodes[node.attrib.get('id')].append(node)
 
         # Find all nodes that have duplicate IDs
-        dups = [x for x in idnodes.itervalues() if len(x) > 1]
+        dups = [x for x in itervalues(idnodes) if len(x) > 1]
 
         # Build warnings for all nodes that have conflicting id/timestamp pairs.
         for nodeset in dups:
@@ -469,7 +470,7 @@ class STIXBestPracticeValidator(object):
             id_nodes[node.attrib['id']].append(node)
 
         results = BestPracticeWarningCollection('Duplicate IDs')
-        for nodes in id_nodes.itervalues():
+        for nodes in itervalues(id_nodes):
             if len(nodes) > 1:
                 results.extend(BestPracticeWarning(node=x) for x in nodes)
 
@@ -611,7 +612,7 @@ class STIXBestPracticeValidator(object):
                 return True
             return node.attrib['version'] == expected
 
-        for selector, expected in to_check.iteritems():
+        for selector, expected in iteritems(to_check):
             xpath = "//%s" % selector
 
             for node in root.xpath(xpath, namespaces=namespaces):
@@ -1202,7 +1203,7 @@ class STIXBestPracticeValidator(object):
             return min_ver <= doc_ver
 
         StrictVersion = distutils.version.StrictVersion
-        all_rules = self._rules.iteritems()  # noqa
+        all_rules = iteritems(self._rules)  # noqa
 
         # Get a generator which yields all best practice methods that are
         # assigned a version number <= the input STIX document version number.

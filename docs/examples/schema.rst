@@ -156,7 +156,7 @@ If a version is not passed in nor found on the document, one of the following
 Invalid Versions
 ~~~~~~~~~~~~~~~~
 
-If an invalid version is passed in nor found on the document, one of the
+If an invalid version is passed in or found on the document, one of the
 following :class:`.InvalidVersionError` implementations are raised:
 
 * :class:`.InvalidSTIXVersionError` if validating a STIX document.

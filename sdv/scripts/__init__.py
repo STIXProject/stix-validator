@@ -182,7 +182,7 @@ def info(msg):
     if _QUIET:
         return
 
-    print "[-] %s" % msg
+    print("[-] %s" % msg)
 
 
 def print_level(fmt, level, *args):
@@ -207,7 +207,7 @@ def print_level(fmt, level, *args):
     """
     msg = fmt % args
     spaces = '    ' * level
-    print "%s%s" % (spaces, msg)
+    print("%s%s" % (spaces, msg))
 
 
 def print_fatal_results(results, level=0):
@@ -315,7 +315,7 @@ def print_json_results(results):
 
         json_results[fn] = d
 
-    print json.dumps(json_results)
+    print(json.dumps(json_results))
 
 
 def print_results(results, options):
@@ -335,7 +335,7 @@ def print_results(results, options):
 
     level = 0
     for fn, result in sorted(results.iteritems()):
-        print "=" * 80
+        print("=" * 80)
         print_level("[-] Results: %s", level, fn)
 
         if result.schema_results is not None:

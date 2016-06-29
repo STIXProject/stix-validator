@@ -2,7 +2,7 @@
 # See LICENSE.txt for complete terms.
 import json
 import unittest
-from StringIO import StringIO
+from mixbox.vendor.six import StringIO
 
 from lxml import etree
 

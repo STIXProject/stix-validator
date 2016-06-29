@@ -5,6 +5,9 @@
 import abc
 import json
 
+# external
+from mixbox.vendor.six import iteritems
+
 # internal
 from .. import utils
 
@@ -90,7 +93,7 @@ class BaseSchemaValidator(object):
                 self._KEY_USER_DEFINED: self._get_validator_impl(schema_dir)
             }
         else:
-            for version, location in self._SCHEMAS.iteritems():
+            for version, location in iteritems(self._SCHEMAS):
                 validator = self._get_validator_impl(location)
                 validators[version] = validator
 

@@ -2,7 +2,7 @@
 # See LICENSE.txt for complete terms.
 
 import unittest
-from StringIO import StringIO
+from mixbox.vendor.six import StringIO
 
 import sdv
 import sdv.errors as errors

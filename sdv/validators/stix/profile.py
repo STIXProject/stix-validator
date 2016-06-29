@@ -6,7 +6,7 @@ import os
 import itertools
 import collections
 import functools
-import StringIO
+from mixbox.vendor.six import StringIO, string_types, iteritems
 
 # external
 import xlrd
@@ -101,7 +101,7 @@ class InstanceMapping(object):
         """
         if not value:
             self._selectors = []
-        elif isinstance(value, basestring):
+        elif isinstance(value, string_types):
             self._selectors = [x.strip().replace('"', "'") for x in value.split(",")]
         elif hasattr(value, "__iter__"):
             self._selectors = [str(x) for x in value]
@@ -228,7 +228,7 @@ class Profile(collections.MutableSequence):
         rules   = [notype, typed]
 
         collected = self._collect_rules()
-        for ctx, profile_rules in collected.iteritems():
+        for ctx, profile_rules in iteritems(collected):
             rule = schematron.make_rule(ctx)
             rule.extend(x.as_etree() for x in profile_rules)
 
@@ -247,7 +247,7 @@ class Profile(collections.MutableSequence):
         """
         namespaces = []
 
-        for ns, prefix in self._namespaces.iteritems():
+        for ns, prefix in iteritems(self._namespaces):
             ns = schematron.make_ns(prefix, ns)
             namespaces.append(ns)
 
@@ -454,7 +454,7 @@ class AllowedValuesRule(_BaseProfileRule):
         """
         if not value:
             self._values = []
-        elif isinstance(value, basestring):
+        elif isinstance(value, string_types):
             self._values = [x.strip() for x in value.split(',')]
         elif hasattr(value, "__getitem__"):
             self._values = [str(x) for x in value]
@@ -520,7 +520,7 @@ class AllowedImplsRule(_BaseProfileRule):
         """
         if not value:
             self._impls = []
-        elif isinstance(value, basestring):
+        elif isinstance(value, string_types):
             self._impls = [x.strip() for x in value.split(',')]
         elif hasattr(value, "__iter__"):
             self._impls = [str(x) for x in value]
@@ -1017,7 +1017,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         s = s.replace('<svrl:ns-prefix-in-attribute-values uri="http://icl.com/saxon" prefix="saxon"/>', '')
 
         parser = utils.get_xml_parser()
-        return etree.parse(StringIO.StringIO(s), parser=parser)
+        return etree.parse(StringIO(s), parser=parser)
 
     @schematron.SchematronValidator.schematron.getter
     def schematron(self):
@@ -1044,7 +1044,7 @@ class STIXProfileValidator(schematron.SchematronValidator):
         s = s.replace('<ns prefix="saxon" uri="http://icl.com/saxon"/>', '')
 
         parser = utils.get_xml_parser()
-        return etree.parse(StringIO.StringIO(s), parser=parser)
+        return etree.parse(StringIO(s), parser=parser)
 
     @common.check_stix
     def validate(self, doc):

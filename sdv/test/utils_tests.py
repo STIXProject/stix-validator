@@ -3,7 +3,7 @@
 
 import unittest
 import datetime
-from StringIO import StringIO
+from mixbox.vendor.six import StringIO
 
 from lxml import etree
 import dateutil.parser
@@ -67,7 +67,7 @@ class UtilsTests(unittest.TestCase):
         sio = StringIO(XML_SCHEMALOC)
         root = utils.get_etree_root(sio)
         pairs = utils.get_schemaloc_pairs(root)
-        self.assertEqual(2, len(pairs))
+        self.assertEqual(2, len(list(pairs)))
 
     def test_get_schemaloc_pairs_raises(self):
         sio = StringIO(XML)
