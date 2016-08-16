@@ -14,15 +14,15 @@ A Python tool and API that validates STIX and CybOX XML instance documents.
 
 |travis badge| |health badge| |version badge| |downloads badge|
 
-.. |travis badge| image:: https://api.travis-ci.org/STIXProject/stix-validator.png?branch=master
+.. |travis badge| image:: https://api.travis-ci.org/STIXProject/stix-validator.svg?branch=master
    :target: https://travis-ci.org/STIXProject/stix-validator
    :alt: Build Status
-.. |health badge| image:: https://landscape.io/github/STIXProject/stix-validator/master/landscape.svg
+.. |health badge| image:: https://landscape.io/github/STIXProject/stix-validator/master/landscape.svg?style=flat
    :target: https://landscape.io/github/STIXProject/stix-validator/master
    :alt: Code Health
-.. |version badge| image:: https://img.shields.io/pypi/v/stix-validator.png?maxAge=2592000
+.. |version badge| image:: https://img.shields.io/pypi/v/stix-validator.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/stix-validator/
-.. |downloads badge| image:: https://img.shields.io/pypi/dm/stix-validator.png?maxAge=2592000 
+.. |downloads badge| image:: https://img.shields.io/pypi/dm/stix-validator.svg?maxAge=3600 
    :target: https://pypi.python.org/pypi/stix-validator/
 
 Validation
