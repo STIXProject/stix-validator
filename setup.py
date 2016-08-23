@@ -49,8 +49,8 @@ extras_require = {
         'sphinx_rtd_theme==0.1.8',
     ],
     'test': [
-        "nose==1.3.0",
-        "tox==1.6.1"
+        "nose==1.3.7",
+        "tox==2.3.1"
     ],
 }
 
