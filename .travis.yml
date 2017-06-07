@@ -1,14 +1,12 @@
 language: python
 
 python:
-  - 3.5
-
-env:
-  - TOX_ENV=py26
-  - TOX_ENV=py27
-  - TOX_ENV=py33
-  - TOX_ENV=py34
-  - TOX_ENV=py35
+  - "2.6"
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.6"
 
 before_install:
   - sudo apt-get install -qq libxml2
@@ -16,7 +14,7 @@ before_install:
 install:
   - pip install -U tox
 
-script: tox -e $TOX_ENV
+script: tox
 
 branches:
   only:
