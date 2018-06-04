@@ -11,6 +11,7 @@ from setuptools import setup, find_packages
 BASE_DIR = dirname(abspath(__file__))
 VERSION_FILE = join(BASE_DIR, 'sdv', 'version.py')
 
+
 def get_version():
     with open(VERSION_FILE) as f:
         for line in f.readlines():
@@ -68,5 +69,19 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
     long_description=readme,
-    keywords="stix cybox xml validation validator stix-validator"
+    keywords='stix cybox xml validation validator stix-validator',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+    ]
 )
