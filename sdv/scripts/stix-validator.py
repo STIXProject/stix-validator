@@ -41,6 +41,7 @@ import sdv.errors as errors
 import sdv.scripts as scripts
 import sdv.validators as validators
 
+
 def _set_validation_options(args):
     """Populates an instance of ``ValidationOptions`` from the `args` param.
 
@@ -81,6 +82,7 @@ def _set_validation_options(args):
 
     return options
 
+
 def _validate_args(args):
     """Checks that valid and compatible command line arguments were passed into
     the application.
@@ -115,6 +117,7 @@ def _validate_args(args):
         raise scripts.ArgumentError(
             "Profile specified but no validation options specified."
         )
+
 
 def _get_arg_parser():
     """Initializes and returns an argparse.ArgumentParser instance for this
@@ -208,6 +211,7 @@ def _get_arg_parser():
 
     return parser
 
+
 def main():
     """Entry point for sdv.py.
 
@@ -254,6 +258,7 @@ def main():
     except Exception:
         logging.exception("Fatal error occurred")
         sys.exit(codes.EXIT_FAILURE)
+
 
 if __name__ == '__main__':
     main()

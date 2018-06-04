@@ -216,5 +216,6 @@ def main():
         logging.exception("Fatal error occurred")
         sys.exit(codes.EXIT_FAILURE)
 
+
 if __name__ == '__main__':
     main()

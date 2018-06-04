@@ -16,6 +16,7 @@ import sdv
 import sdv.codes as codes
 import sdv.scripts as scripts
 
+
 def _convert_profile(options):
     # Converts a STIX Profile Schematron format and prints to stdout.
 
@@ -28,6 +29,7 @@ def _convert_profile(options):
         xml_declaration=True,
         encoding="UTF-8"
     )
+
 
 def _get_arg_parser():
     """Initializes and returns an argparse.ArgumentParser instance for this
@@ -47,6 +49,7 @@ def _get_arg_parser():
     )
 
     return parser
+
 
 def main():
     # Main for profile-to-sch.py
@@ -72,6 +75,6 @@ def main():
         logging.exception("Fatal error occurred")
         sys.exit(codes.EXIT_FAILURE)
 
+
 if __name__ == '__main__':
     main()
-
