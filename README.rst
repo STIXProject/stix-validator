@@ -12,7 +12,7 @@ A Python tool and API that validates STIX and CybOX XML instance documents.
 :Documentation: http://stix-validator.readthedocs.org
 :Information: https://stixproject.github.io | https://cyboxproject.github.io
 
-|travis badge| |health badge| |version badge| |downloads badge|
+|travis badge| |health badge| |version badge|
 
 .. |travis badge| image:: https://api.travis-ci.org/STIXProject/stix-validator.svg?branch=master
    :target: https://travis-ci.org/STIXProject/stix-validator
@@ -22,8 +22,7 @@ A Python tool and API that validates STIX and CybOX XML instance documents.
    :alt: Code Health
 .. |version badge| image:: https://img.shields.io/pypi/v/stix-validator.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/stix-validator/
-.. |downloads badge| image:: https://img.shields.io/pypi/dm/stix-validator.svg?maxAge=3600 
-   :target: https://pypi.python.org/pypi/stix-validator/
+   :alt: PyPI Version Badge
 
 Validation
 ----------
