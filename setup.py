@@ -63,8 +63,14 @@ setup(
     url='http://stix.mitre.org/',
     version=get_version(),
     packages=find_packages(),
-    scripts=['sdv/scripts/stix-validator.py', 'sdv/scripts/cybox-validator.py',
-             'sdv/scripts/profile-to-sch.py', 'sdv/scripts/profile-to-xslt.py'],
+    entry_points={
+        'console_scripts': [
+            'stix-validator = sdv.scripts.stix_validator:main',
+            'cybox-validator = sdv.scripts.cybox_validator:main',
+            'profile-to-sch = sdv.scripts.profile_to_sch:main',
+            'profile-to-xslt = sdv.scripts.profile_to_xslt:main',
+        ],
+    },
     include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,
