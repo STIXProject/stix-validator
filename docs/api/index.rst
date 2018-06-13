@@ -10,8 +10,8 @@ For examples of how make use of all of this, check out the
 
 .. note::
 
-	The **stix-validator** APIs are currently under heavy development. Feel free
-	to check out our `issue tracker`_ to see what we're working on!
+    The **stix-validator** APIs are currently under heavy development. Feel free
+    to check out our `issue tracker`_ to see what we're working on!
 
 .. _issue tracker: https://github.com/STIXProject/stix-validator/issues
 

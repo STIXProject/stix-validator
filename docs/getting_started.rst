@@ -21,8 +21,8 @@ Scripts
 -------
 
 The **stix-validator** library comes with two scripts capable of performing
-the validation of STIX and CybOX documents: ``stix-validator.py`` and
-``cybox-validator.py``. These scripts can be found on your ``PATH`` after
+the validation of STIX and CybOX documents: ``stix_validator.py`` and
+``cybox_validator.py``. These scripts can be found on your ``PATH`` after
 installing the **stix-validator**.
 
 These instructions tell you how to validate STIX and CybOX content using the
@@ -32,23 +32,23 @@ scripts bundled with **stix-validator**.
 STIX Document Validator
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``stix-validator.py`` script can be used to validate STIX content in
+The ``stix_validator.py`` script can be used to validate STIX content in
 a number of ways. The following sections describe the validation options
-and expected behavior of the ``stix-validator.py`` script.
+and expected behavior of the ``stix_validator.py`` script.
 
 Options
 ^^^^^^^
 
-Running :code:`stix-validator.py -h` displays the following:
+Running :code:`stix-validator -h` displays the following:
 
 .. code-block:: bash
 
-    $ stix-validator.py -h
-    usage: stix-validator.py [-h] [--stix-version STIX_VERSION]
-                             [--schema-dir SCHEMA_DIR] [--use-schemaloc]
-                             [--best-practices] [--profile PROFILE]
-                             [--quiet] [--json-results]
-                             [FILES [FILES ...]]
+    $ stix-validator -h
+    usage: stix-validator [-h] [--stix-version STIX_VERSION]
+                          [--schema-dir SCHEMA_DIR] [--use-schemaloc]
+                          [--best-practices] [--profile PROFILE]
+                          [--quiet] [--json-results]
+                          [FILES [FILES ...]]
 
     STIX Document Validator v2.4.0
 
@@ -74,7 +74,7 @@ Running :code:`stix-validator.py -h` displays the following:
 Profile Conversion
 ~~~~~~~~~~~~~~~~~~
 
-The ``profile-to-sch.py`` and ``profile-to-xslt.py`` scripts can be used to convert
+The ``profile_to_sch.py`` and ``profile_to_xslt.py`` scripts can be used to convert
 a valid STIX profile to `ISO Schematron`_ and XSLT respectively. This output is
 sent to stdout.
 
@@ -83,12 +83,12 @@ sent to stdout.
 Schematron Conversion Options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Running ``profile-to-sch.py -h`` displays the following:
+Running ``profile-to-sch -h`` displays the following:
 
 .. code-block:: bash
 
-    $ profile-to-sch.py -h
-    usage: profile-to-sch.py [-h] profile
+    $ profile-to-sch -h
+    usage: profile-to-sch [-h] profile
 
     STIX Profile to Schematron v2.4.0
 
@@ -102,12 +102,12 @@ Running ``profile-to-sch.py -h`` displays the following:
 XSLT Conversion Options
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Running ``profile-to-xslt.py -h`` displays the following:
+Running ``profile-to-xslt -h`` displays the following:
 
 .. code-block:: bash
 
-    $ profile-to-xslt.py -h
-    usage: profile-to-xslt.py [-h] profile
+    $ profile-to-xslt -h
+    usage: profile-to-xslt [-h] profile
 
     STIX Profile to XSLT v2.4.0
 
@@ -125,7 +125,7 @@ document to Schematron.
 
 .. code-block:: bash
 
-    $ profile-to-sch.py valid-stix-profile.xlsx
+    $ profile-to-sch valid-stix-profile.xlsx
 
 
 To save the conversion output, just redirect ``stdout`` to a file using the
@@ -134,7 +134,7 @@ and save the output to the file ``schematron-profile.sch``.
 
 .. code-block:: bash
 
-    $ profile-to-sch.py valid-stix-profile.xlsx > schematron-profile.sch
+    $ profile-to-sch valid-stix-profile.xlsx > schematron-profile.sch
 
 
 Example STIX Schema Validation
@@ -145,9 +145,9 @@ filenames, and/or directories containing STIX content.
 
 .. code-block:: bash
 
-    $ stix-validator.py stix-content.xml another-stix-doc.xml
+    $ stix-validator stix-content.xml another-stix-doc.xml
 
-If these documents were valid, the ``stix-validator.py`` script would print
+If these documents were valid, the ``stix_validator.py`` script would print
 something like the following:
 
 .. code-block:: bash
@@ -165,23 +165,23 @@ something like the following:
 CybOX Document Validator
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``cybox-validator.py`` script can be used to perform XML Schema validation
+The ``cybox_validator.py`` script can be used to perform XML Schema validation
 on one or more input CybOX documents. The following sections describe the
-validation options and expected behavior of the ``cybox-validator.py`` script.
+validation options and expected behavior of the ``cybox_validator.py`` script.
 
 Options
 ^^^^^^^
 
-The ``cybox-validator.py`` script provides CybOX XML Schema validation
+The ``cybox_validator.py`` script provides CybOX XML Schema validation
 capabilities to your command line.
 
 .. code-block:: bash
 
-    $ cybox-validator.py -h
-    usage: cybox-validator.py [-h] [--cybox-version LANG_VERSION]
-                              [--schema-dir SCHEMA_DIR] [--use-schemaloc]
-                              [--quiet] [--json-results] [--recursive]
-                              [FILES [FILES ...]]
+    $ cybox-validator -h
+    usage: cybox-validator [-h] [--cybox-version LANG_VERSION]
+                           [--schema-dir SCHEMA_DIR] [--use-schemaloc]
+                           [--quiet] [--json-results] [--recursive]
+                           [FILES [FILES ...]]
 
     CybOX Document Validator v2.4.0
 
@@ -210,9 +210,9 @@ filenames, and/or directories containing CybOX content.
 
 .. code-block:: bash
 
-    $ cybox-validator.py cybox-content.xml another-cybox-doc.xml
+    $ cybox-validator cybox-content.xml another-cybox-doc.xml
 
-If these documents were valid, the ``cybox-validator.py`` script would print
+If these documents were valid, the ``cybox_validator.py`` script would print
 something like the following:
 
 .. code-block:: bash
@@ -233,13 +233,13 @@ Exit Codes
 Exit status codes for the **stix-validator** bundled scripts are
 defined within :mod:`sdv.codes` module.
 
-When invoking the ``stix-validator.py`` or ``cybox-validator.py`` scripts from
+When invoking the ``stix_validator.py`` or ``cybox_validator.py`` scripts from
 another process, developers can inspect the exit code after execution to
 determine the results of the validation attempt. Exit status codes can be
 combined via bitmasks to convey multiple results (multiple files validated
 and/or multiple validation methods selected).
 
-The following script demonstrates an example of invoking ``stix-validator.py``
+The following script demonstrates an example of invoking ``stix_validator.py``
 from another Python script.
 
 .. code-block:: python
@@ -250,7 +250,7 @@ from another Python script.
     import sdv.codes as codes # STIX Document Validator exit codes
 
     ARGS = [
-        'stix-validator.py',
+        'stix_validator',
         '--best-practices',
         '--profile',
         'stix-profile.xlsx',
@@ -282,7 +282,7 @@ from another Python script.
 
 .. note::
 
-    Invoking ``stix-validator.py`` or ``cybox-validator.py`` as a subprocess
+    Invoking ``stix_validator.py`` or ``cybox_validator.py`` as a subprocess
     may not always be the best method for validating STIX documents from a
     Python script. The :mod:`sdv` module contains methods for performing STIX
     and CybOX validation!
