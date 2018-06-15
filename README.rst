@@ -12,7 +12,7 @@ A Python tool and API that validates STIX and CybOX XML instance documents.
 :Documentation: http://stix-validator.readthedocs.org
 :Information: https://stixproject.github.io | https://cyboxproject.github.io
 
-|travis badge| |health badge| |version badge| |downloads badge|
+|travis badge| |health badge| |version badge|
 
 .. |travis badge| image:: https://api.travis-ci.org/STIXProject/stix-validator.svg?branch=master
    :target: https://travis-ci.org/STIXProject/stix-validator
@@ -22,8 +22,7 @@ A Python tool and API that validates STIX and CybOX XML instance documents.
    :alt: Code Health
 .. |version badge| image:: https://img.shields.io/pypi/v/stix-validator.svg?maxAge=3600
    :target: https://pypi.python.org/pypi/stix-validator/
-.. |downloads badge| image:: https://img.shields.io/pypi/dm/stix-validator.svg?maxAge=3600 
-   :target: https://pypi.python.org/pypi/stix-validator/
+   :alt: PyPI Version Badge
 
 Validation
 ----------
@@ -77,40 +76,40 @@ The recommended method for installing the **STIX Document Validator** is via
   $ pip install stix-validator
 
 This will install the ``sdv`` package into your Python installation's
-``site-packages`` and a ``stix-validator.py`` script on your ``PATH``.
+``site-packages`` and four scripts found under ``sdv/scripts`` on your ``PATH``.
 
 
 How To Use
 ----------
 
-The **STIX Document Validator** bundles four scripts: ``stix-validator.py``, ``profile-to-sch.py``,
-``profile-to-xslt.py``, and ``cybox-validator.py``,
+The **STIX Document Validator** bundles four scripts: ``stix_validator.py``,
+``profile_to_sch.py``, ``profile_to_xslt.py``, and ``cybox_validator.py``,
 
 STIX Validation
 """""""""""""""
 
-The ``stix-validator.py`` script  can can validate a STIX XML document against
+The ``stix_validator.py`` script  can can validate a STIX XML document against
 STIX schemas, STIX Best Practices, and STIX Profiles.
 
 **NOTE:** The STIX Profile validation should be considered **experimental.**
 
 **Validate using bundled schemas**
 
-::
+.. code-block:: bash
 
-  $ stix-validator.py <stix_document.xml>
+  $ stix-validator <stix_document.xml>
 
 **Validate using schemaLocation**  
 
-::
+.. code-block:: bash
 
-  $ stix-validator.py --use-schemaloc <stix_document.xml>
+  $ stix-validator --use-schemaloc <stix_document.xml>
 
 **Validate using non-bundled schemas**
 
-::
+.. code-block:: bash
 
-  $ stix-validator.py --schema-dir </path/to/schemas> <stix_document.xml>
+  $ stix-validator --schema-dir </path/to/schemas> <stix_document.xml>
   
 **NOTE:** If you are trying to validate a STIX document from a checked-out
 copy of STIX schema repository, make sure you have also cloned the CybOX 
@@ -118,87 +117,87 @@ schema submodule with ``git submodule init`` and ``git submodule update``.
 
 **Validate a directory of STIX documents**  
 
-::
+.. code-block:: bash
 
-  $ stix-validator.py </path/to/stix_dir>
+  $ stix-validator </path/to/stix_dir>
 
 **Validate multiple files and/or directories**  
 
-::
+.. code-block:: bash
 
-  $ stix-validator.py <one.xml> <two.xml> <directory_of_files> ...
+  $ stix-validator <one.xml> <two.xml> <directory_of_files> ...
 
 **Check "best practice" guidance**  
 
-::
+.. code-block:: bash
 
-    $ stix-validator.py --best-practices <stix_document.xml>
+    $ stix-validator --best-practices <stix_document.xml>
 
 **Validate using STIX Profile**  
 
-::
+.. code-block:: bash
 
-    $ stix-validator.py --profile <stix_profile.xlsx> <stix_document.xml>
+    $ stix-validator --profile <stix_profile.xlsx> <stix_document.xml>
 
 
 STIX Profile to Schematron Conversion
 """""""""""""""""""""""""""""""""""""
 
-The ``profile-to-sch.py`` script performs a conversion from a valid STIX profile
+The ``profile_to_sch.py`` script performs a conversion from a valid STIX profile
 to schematron.
 
-::
+.. code-block:: bash
 
-  $ profile-to-sch.py <valid_stix_profile.xlsx>
+  $ profile-to-sch <valid_stix_profile.xlsx>
 
 Schematron output is sent to stdout.
 
 STIX Profile to XSLT Conversion
 """""""""""""""""""""""""""""""
 
-The ``profile-to-xslt.py`` script performs a conversion from a valid STIX profile
+The ``profile_to_xslt.py`` script performs a conversion from a valid STIX profile
 to XSLT.
 
-::
+.. code-block:: bash
 
-  $ profile-to-xslt.py <valid_stix_profile.xlsx>
+  $ profile-to-xslt <valid_stix_profile.xlsx>
 
 XSLT output is sent to stdout.
 
 CybOX Validation
 """"""""""""""""
 
-The ``cybox-validator.py`` script can perform CybOX XML Schema validation.
+The ``cybox_validator.py`` script can perform CybOX XML Schema validation.
 
 **Validate using bundled schemas**
 
-::
+.. code-block:: bash
 
-  $ cybox-validator.py <cybox_document.xml>
+  $ cybox-validator <cybox_document.xml>
 
 **Validate using schemaLocation**
 
-::
+.. code-block:: bash
 
-  $ cybox-validator.py --use-schemaloc <cybox_document.xml>
+  $ cybox-validator --use-schemaloc <cybox_document.xml>
 
 **Validate using non-bundled schemas**
 
-::
+.. code-block:: bash
 
-  $ cybox-validator.py --schema-dir </path/to/schemas> <cybox_document.xml>
+  $ cybox-validator --schema-dir </path/to/schemas> <cybox_document.xml>
 
 **Validate a directory of CybOX documents**
 
-::
+.. code-block:: bash
 
-  $ cybox-validator.py </path/to/cybox_dir>
+  $ cybox-validator </path/to/cybox_dir>
 
 **Validate multiple files and/or directories**
 
-::
+.. code-block:: bash
 
-  $ cybox-validator.py <one.xml> <two.xml> <directory_of_files> ...
+  $ cybox-validator <one.xml> <two.xml> <directory_of_files> ...
 
 
 All STIX and CybOX Documents?

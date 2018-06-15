@@ -11,6 +11,7 @@ from setuptools import setup, find_packages
 BASE_DIR = dirname(abspath(__file__))
 VERSION_FILE = join(BASE_DIR, 'sdv', 'version.py')
 
+
 def get_version():
     with open(VERSION_FILE) as f:
         for line in f.readlines():
@@ -49,6 +50,7 @@ extras_require = {
         'sphinx_rtd_theme==0.1.8',
     ],
     'test': [
+        "bumpversion",
         "nose==1.3.7",
         "tox==2.3.1"
     ],
@@ -62,11 +64,31 @@ setup(
     url='http://stix.mitre.org/',
     version=get_version(),
     packages=find_packages(),
-    scripts=['sdv/scripts/stix-validator.py', 'sdv/scripts/cybox-validator.py',
-             'sdv/scripts/profile-to-sch.py', 'sdv/scripts/profile-to-xslt.py'],
+    entry_points={
+        'console_scripts': [
+            'stix-validator = sdv.scripts.stix_validator:main',
+            'cybox-validator = sdv.scripts.cybox_validator:main',
+            'profile-to-sch = sdv.scripts.profile_to_sch:main',
+            'profile-to-xslt = sdv.scripts.profile_to_xslt:main',
+        ],
+    },
     include_package_data=True,
     install_requires=install_requires,
     extras_require=extras_require,
     long_description=readme,
-    keywords="stix cybox xml validation validator stix-validator"
+    keywords='stix cybox xml validation validator stix-validator',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+    ]
 )

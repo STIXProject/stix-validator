@@ -4,8 +4,8 @@
 # See LICENSE.txt for complete terms.
 
 """
-STIX profile to Schematron
-This script takes a STIX profile, converts it to Schematron, then prints to stdout
+STIX profile to XSLT
+This script takes a STIX profile, converts it to xslt, then prints to stdout
 """
 
 import sys
@@ -16,18 +16,20 @@ import sdv
 import sdv.codes as codes
 import sdv.scripts as scripts
 
+
 def _convert_profile(options):
-    # Converts a STIX Profile Schematron format and prints to stdout.
+    # Converts a STIX Profile XSLT format and prints to stdout.
 
     profile = options.in_profile
 
-    schematron = sdv.profile_to_schematron(profile)
-    schematron.write(
+    xslt = sdv.profile_to_xslt(profile)
+    xslt.write(
         sys.stdout,
         pretty_print=True,
         xml_declaration=True,
         encoding="UTF-8"
     )
+
 
 def _get_arg_parser():
     """Initializes and returns an argparse.ArgumentParser instance for this
@@ -38,18 +40,19 @@ def _get_arg_parser():
 
     """
     parser = argparse.ArgumentParser(
-        description="STIX Profile to Schematron v%s" % sdv.__version__
+        description="STIX Profile to XSLT v%s" % sdv.__version__
     )
 
     parser.add_argument(
         "profile",
-        help="STIX Profile filename to be converted to Schematron."
+        help="STIX profile filename to be converted to XSLT"
     )
 
     return parser
 
+
 def main():
-    # Main for profile-to-sch.py
+    # Main for profile-to-xslt.py
     parser = _get_arg_parser()
     args = parser.parse_args()
 
@@ -72,6 +75,6 @@ def main():
         logging.exception("Fatal error occurred")
         sys.exit(codes.EXIT_FAILURE)
 
+
 if __name__ == '__main__':
     main()
-
