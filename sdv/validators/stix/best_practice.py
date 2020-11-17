@@ -10,6 +10,7 @@ import distutils.version
 # external
 from lxml import etree
 from mixbox.vendor.six import iteritems, itervalues, with_metaclass
+from mixbox import compat
 
 # internal
 from sdv import utils, xmlconst
@@ -73,7 +74,7 @@ class BestPracticeMeta(type):
         return obj
 
 
-class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
+class BestPracticeWarning(compat.MutableMapping, base.ValidationError):
     """Represents a best practice warning. These are built within best
     practice rule checking methods and attached to
     :class:`BestPracticeWarningCollection` instances.
@@ -187,7 +188,7 @@ class BestPracticeWarning(collections.MutableMapping, base.ValidationError):
         return dict(iteritems(self))
 
 
-class BestPracticeWarningCollection(collections.MutableSequence):
+class BestPracticeWarningCollection(compat.MutableSequence):
     """A collection of :class:`BestPracticeWarning` instances for a given
     type of STIX Best Practice.
 
@@ -256,7 +257,7 @@ class BestPracticeWarningCollection(collections.MutableSequence):
         return {self.name: [x.as_dict() for x in self]}
 
 
-class BestPracticeValidationResults(base.ValidationResults, collections.MutableSequence):
+class BestPracticeValidationResults(base.ValidationResults, compat.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
     like a ``list`` and accepts instances of
     :class:`BestPracticeWarningCollection`.
