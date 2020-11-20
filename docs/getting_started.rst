@@ -50,7 +50,7 @@ Running :code:`stix-validator -h` displays the following:
                           [--quiet] [--json-results]
                           [FILES [FILES ...]]
 
-    STIX Document Validator v2.5.0
+    STIX Document Validator v2.5.1
 
     positional arguments:
       FILES                 A whitespace separated list of STIX files or
@@ -90,7 +90,7 @@ Running ``profile-to-sch -h`` displays the following:
     $ profile-to-sch -h
     usage: profile-to-sch [-h] profile
 
-    STIX Profile to Schematron v2.5.0
+    STIX Profile to Schematron v2.5.1
 
     positional arguments:
       profile               STIX profile filename to be converted to XSLT
@@ -109,7 +109,7 @@ Running ``profile-to-xslt -h`` displays the following:
     $ profile-to-xslt -h
     usage: profile-to-xslt [-h] profile
 
-    STIX Profile to XSLT v2.5.0
+    STIX Profile to XSLT v2.5.1
 
     positional arguments:
       profile               STIX profile filename to be converted to XSLT
@@ -183,7 +183,7 @@ capabilities to your command line.
                            [--quiet] [--json-results] [--recursive]
                            [FILES [FILES ...]]
 
-    CybOX Document Validator v2.5.0
+    CybOX Document Validator v2.5.1
 
     positional arguments:
       FILES                 A whitespace separated list of CybOX files or
