@@ -8,6 +8,7 @@ import collections
 import functools
 from mixbox.vendor.six import StringIO, string_types, iteritems
 from mixbox.vendor.six.moves import range
+from mixbox import compat
 
 # external
 import xlrd
@@ -158,7 +159,7 @@ class InstanceMapping(object):
             raise errors.ProfileParseError(err.format(label=self.label))
 
 
-class Profile(collections.MutableSequence):
+class Profile(compat.MutableSequence):
     def __init__(self, namespaces):
         self.id = "STIX_Schematron_Profile"
         self._rules = [RootRule(namespaces)]
