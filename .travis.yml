@@ -1,24 +1,28 @@
+os: linux
 language: python
-
+cache: pip
+dist: xenial
 python:
-  - "2.6"
   - "2.7"
   - "3.4"
   - "3.5"
   - "3.6"
-
+  - "3.7"
+  - "3.8"
+jobs:
+  include:
+    # https://blog.travis-ci.com/2019-04-15-xenial-default-build-environment
+    # https://travis-ci.community/t/issue-with-python-2-6-on-linux/3861/2
+    - python: 2.6
+      dist: trusty
 before_install:
   - sudo apt-get install -qq libxml2
-
 install:
   - pip install -U tox-travis
-
 script: tox
-
 branches:
   only:
     - master
-
 notifications:
   email:
     - stix-commits-list@groups.mitre.org
