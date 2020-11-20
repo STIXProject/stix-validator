@@ -34,7 +34,7 @@ install_requires = [
     'lxml>=3.3.5',
     'xlrd>=0.9.2',
     'ordereddict',
-    'mixbox>=0.0.11',
+    'mixbox>=1.0.5',
     'python-dateutil'
 ]
 
