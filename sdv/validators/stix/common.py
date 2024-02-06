@@ -4,7 +4,8 @@
 # builtin
 import re
 import functools
-from distutils.version import StrictVersion
+# from distutils.version import StrictVersion
+from packaging.version import parse as parse_version
 
 # external
 from lxml import etree
@@ -284,7 +285,7 @@ def is_idref_content_exception(node):
 
 def _get_cybox_vocab_version(name, version):
     versions = CYBOX_VOCAB_VERSIONS
-    descending = sorted(versions, key=StrictVersion, reverse=True)
+    descending = sorted(versions, key=parse_version, reverse=True)
     idx = descending.index
 
     for key in descending[idx(version):]:
@@ -301,7 +302,7 @@ def _get_cybox_vocab_version(name, version):
 def _get_stix_vocab_version(name, version):
     versions = STIX_VOCAB_VERSIONS
     descending = sorted(versions, key=lambda v:
-        StrictVersion(utils.remove_version_prefix(v)), reverse=True)
+        parse_version(utils.remove_version_prefix(v)), reverse=True)
     idx = descending.index
 
     for key in descending[idx(version):]:
@@ -451,7 +452,7 @@ def get_stix_namespaces(version):
             found=version
         )
 
-    if StrictVersion(utils.remove_version_prefix(version)) < '1.2.1':
+    if parse_version(utils.remove_version_prefix(version)) < parse_version('1.2.1'):
         nsmap = {
             PREFIX_XSI: xmlconst.NS_XSI,
             PREFIX_STIX_CORE: 'http://stix.mitre.org/stix-1',

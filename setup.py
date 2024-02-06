@@ -34,7 +34,8 @@ install_requires = [
     'xlrd>=0.9.2',
     'ordereddict',
     'mixbox>=1.0.5',
-    'python-dateutil'
+    'python-dateutil',
+    'packaging'
 ]
 
 # lxml has dropped support for Python 2.6, 3.3 after version 4.2.6

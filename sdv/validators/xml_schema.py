@@ -7,7 +7,7 @@ import collections
 
 # external
 from lxml import etree
-from mixbox.vendor.six import iteritems, itervalues, python_2_unicode_compatible
+from mixbox.vendor.six import iteritems, itervalues
 
 # internal
 from sdv import errors, utils, xmlconst
@@ -16,7 +16,7 @@ from sdv import errors, utils, xmlconst
 from . import base
 
 
-@python_2_unicode_compatible
+#@python_2_unicode_compatible
 class XmlSchemaError(base.ValidationError):
     """Represents an XML Schema validation error.
 

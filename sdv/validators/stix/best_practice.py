@@ -5,7 +5,8 @@
 import re
 import itertools
 import collections
-import distutils.version
+#import distutils.version
+from packaging.version import parse as parse_version
 
 # external
 from lxml import etree
@@ -1192,16 +1193,16 @@ class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
             if not rule_min:
                 return True
 
-            doc_ver = StrictVersion(remove_version_prefix(stix_version))
-            min_ver = StrictVersion(remove_version_prefix(rule_min))
+            doc_ver = parse_version(remove_version_prefix(stix_version))
+            min_ver = parse_version(remove_version_prefix(rule_min))
 
             if rule_max:
-                max_ver = StrictVersion(remove_version_prefix(rule_max))
+                max_ver = parse_version(remove_version_prefix(rule_max))
                 return (min_ver <= doc_ver <= max_ver)
 
             return min_ver <= doc_ver
 
-        StrictVersion = distutils.version.StrictVersion
+        #StrictVersion = distutils.version.StrictVersion
         all_rules = iteritems(self._rules)  # noqa
 
         # Get a generator which yields all best practice methods that are
