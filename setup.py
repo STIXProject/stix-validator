@@ -31,6 +31,7 @@ install_requires = [
     'python-dateutil',
     'packaging',
     'lxml>=3.3.5',
+    'setuptools',
 ]
 
 
