@@ -1,8 +1,9 @@
 # Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
+
+from io import StringIO
 import json
 import unittest
-from mixbox.vendor.six import StringIO
 
 from lxml import etree
 

@@ -6,7 +6,8 @@ import os
 import itertools
 import collections
 import functools
-from mixbox.vendor.six import StringIO, string_types, iteritems
+from io import StringIO
+from mixbox.vendor.six import string_types, iteritems
 #from mixbox.vendor.six.moves import range
 from mixbox import compat
 

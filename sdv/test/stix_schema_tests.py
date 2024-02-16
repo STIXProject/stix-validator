@@ -1,8 +1,8 @@
 # Copyright (c) 2015, The MITRE Corporation. All rights reserved.
 # See LICENSE.txt for complete terms.
 
+from io import StringIO
 import unittest
-from mixbox.vendor.six import StringIO
 
 import sdv
 import sdv.errors as errors

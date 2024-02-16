@@ -6,11 +6,11 @@ import os
 import contextlib
 import datetime
 from distutils.version import StrictVersion
+from io import StringIO, BytesIO
 
 # external
 import dateutil.parser
 from lxml import etree
-from mixbox.vendor.six import StringIO, BytesIO
 
 # relative
 from . import errors, xmlconst
