@@ -7,7 +7,6 @@ import collections
 
 # external
 from lxml import etree
-from mixbox.vendor.six import iteritems, itervalues, python_2_unicode_compatible
 
 # internal
 from sdv import errors, utils, xmlconst
@@ -16,7 +15,7 @@ from sdv import errors, utils, xmlconst
 from . import base
 
 
-@python_2_unicode_compatible
+#@python_2_unicode_compatible
 class XmlSchemaError(base.ValidationError):
     """Represents an XML Schema validation error.
 
@@ -199,7 +198,7 @@ class XmlSchemaValidator(object):
         schemas in `graph`.
 
         """
-        return any(fp in includes for includes in itervalues(graph))
+        return any(fp in includes for includes in graph.values())
 
     def _get_include_root(self, ns, list_schemas):
         """Attempts to determine the "root" schema for a targetNamespace.
@@ -225,7 +224,7 @@ class XmlSchemaValidator(object):
         """
         graph = self._build_include_graph(list_schemas)
 
-        if all(not(x) for x in itervalues(graph)):
+        if all(not(x) for x in graph.values()):
             return list_schemas[0]
 
         for fp in graph:
@@ -267,7 +266,7 @@ class XmlSchemaValidator(object):
         """
         processed = {}
 
-        for ns, schemas in iteritems(imports):
+        for ns, schemas in imports.items():
             if len(schemas) > 1:
                 base_schema = self._get_include_root(ns, schemas)
                 processed[ns] = base_schema
@@ -312,7 +311,7 @@ class XmlSchemaValidator(object):
                 schemalocs[target_ns].append(fp)
                 seen.append((target_ns, fn))
 
-        for ns, loc in iteritems(self.OVERRIDE_SCHEMALOC):
+        for ns, loc in self.OVERRIDE_SCHEMALOC.items():
             schemalocs[ns] = [loc]
 
         return schemalocs
@@ -374,7 +373,7 @@ class XmlSchemaValidator(object):
         def _get_schemalocs(node):
             schemalocs = {}
 
-            for ns in itervalues(node.nsmap):
+            for ns in node.nsmap.values():
                 if ns not in self._schemalocs:
                     continue
 
@@ -432,7 +431,7 @@ class XmlSchemaValidator(object):
             """
         )
 
-        for ns, loc in iteritems(imports):
+        for ns, loc in imports.items():
             loc = loc.replace("\\", "/")
             attrib = {'namespace': ns, 'schemaLocation':loc}
             import_ = etree.Element(xmlconst.TAG_XS_IMPORT, attrib=attrib)

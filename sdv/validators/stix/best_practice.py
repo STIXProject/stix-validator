@@ -5,12 +5,10 @@
 import re
 import itertools
 import collections
-import distutils.version
+from packaging.version import parse as parse_version
 
 # external
 from lxml import etree
-from mixbox.vendor.six import iteritems, itervalues, with_metaclass
-from mixbox import compat
 
 # internal
 from sdv import utils, xmlconst
@@ -19,13 +17,6 @@ from sdv import utils, xmlconst
 from . import common
 from .. import base
 from ...utils import remove_version_prefix
-
-
-# Python 2.6 doesn't have collections.OrderedDict :(
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 
 
 # STIX ID Format: [ns prefix]:[construct type]-[GUID]
@@ -62,7 +53,7 @@ class BestPracticeMeta(type):
         ruledict = collections.defaultdict(list)
 
         # Find all @rule marked functions in the class dict_
-        rulefuncs = (x for x in itervalues(dict_) if hasattr(x, 'is_rule'))
+        rulefuncs = (x for x in dict_.values() if hasattr(x, 'is_rule'))
 
         # Build the rule function dict.
         for rule in rulefuncs:
@@ -74,7 +65,7 @@ class BestPracticeMeta(type):
         return obj
 
 
-class BestPracticeWarning(compat.MutableMapping, base.ValidationError):
+class BestPracticeWarning(collections.abc.MutableMapping, base.ValidationError):
     """Represents a best practice warning. These are built within best
     practice rule checking methods and attached to
     :class:`BestPracticeWarningCollection` instances.
@@ -102,7 +93,7 @@ class BestPracticeWarning(compat.MutableMapping, base.ValidationError):
     def __init__(self, node, message=None):
         base.ValidationError.__init__(self)
 
-        self._inner = OrderedDict()
+        self._inner = collections.OrderedDict()
         self._node = node
 
         self['line'] = node.sourceline
@@ -185,10 +176,10 @@ class BestPracticeWarning(compat.MutableMapping, base.ValidationError):
         necessary.
 
         """
-        return dict(iteritems(self))
+        return dict(self.items())
 
 
-class BestPracticeWarningCollection(compat.MutableSequence):
+class BestPracticeWarningCollection(collections.abc.MutableSequence):
     """A collection of :class:`BestPracticeWarning` instances for a given
     type of STIX Best Practice.
 
@@ -257,7 +248,7 @@ class BestPracticeWarningCollection(compat.MutableSequence):
         return {self.name: [x.as_dict() for x in self]}
 
 
-class BestPracticeValidationResults(base.ValidationResults, compat.MutableSequence):
+class BestPracticeValidationResults(base.ValidationResults, collections.abc.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
     like a ``list`` and accepts instances of
     :class:`BestPracticeWarningCollection`.
@@ -338,7 +329,7 @@ class BestPracticeValidationResults(base.ValidationResults, compat.MutableSequen
         return d
 
 
-class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
+class STIXBestPracticeValidator(object, metaclass=BestPracticeMeta):
     """Performs STIX Best Practice validation."""
 
     @rule('1.0')
@@ -449,7 +440,7 @@ class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
             idnodes[node.attrib.get('id')].append(node)
 
         # Find all nodes that have duplicate IDs
-        dups = [x for x in itervalues(idnodes) if len(x) > 1]
+        dups = [x for x in idnodes.values() if len(x) > 1]
 
         # Build warnings for all nodes that have conflicting id/timestamp pairs.
         for nodeset in dups:
@@ -469,7 +460,7 @@ class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
             id_nodes[node.attrib['id']].append(node)
 
         results = BestPracticeWarningCollection('Duplicate IDs')
-        for nodes in itervalues(id_nodes):
+        for nodes in id_nodes.values():
             if len(nodes) > 1:
                 results.extend(BestPracticeWarning(node=x) for x in nodes)
 
@@ -611,7 +602,7 @@ class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
                 return True
             return node.attrib['version'] == expected
 
-        for selector, expected in iteritems(to_check):
+        for selector, expected in to_check.items():
             xpath = "//%s" % selector
 
             for node in root.xpath(xpath, namespaces=namespaces):
@@ -1124,7 +1115,7 @@ class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
 
         warns = []
         seen = set()
-        
+
         for node in filtered:
             o = node.attrib.get('ordinality')
 
@@ -1192,17 +1183,17 @@ class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
             if not rule_min:
                 return True
 
-            doc_ver = StrictVersion(remove_version_prefix(stix_version))
-            min_ver = StrictVersion(remove_version_prefix(rule_min))
+            doc_ver = parse_version(remove_version_prefix(stix_version))
+            min_ver = parse_version(remove_version_prefix(rule_min))
 
             if rule_max:
-                max_ver = StrictVersion(remove_version_prefix(rule_max))
+                max_ver = parse_version(remove_version_prefix(rule_max))
                 return (min_ver <= doc_ver <= max_ver)
 
             return min_ver <= doc_ver
 
-        StrictVersion = distutils.version.StrictVersion
-        all_rules = iteritems(self._rules)  # noqa
+        #StrictVersion = distutils.version.StrictVersion
+        all_rules = self._rules.items()  # noqa
 
         # Get a generator which yields all best practice methods that are
         # assigned a version number <= the input STIX document version number.

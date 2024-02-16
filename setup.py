@@ -21,11 +21,6 @@ def get_version():
         raise AttributeError("Package does not have a __version__")
 
 
-py_maj, py_minor = sys.version_info[:2]
-
-if (py_maj, py_minor) < (2, 6) or (py_maj == 3 and py_minor < 3):
-    raise Exception('stix-validator requires Python 2.6, 2.7 or 3.3+')
-
 fn_readme = join(BASE_DIR, "README.rst")
 with open(fn_readme) as f:
     readme = f.read()
@@ -33,25 +28,12 @@ with open(fn_readme) as f:
 install_requires = [
     'xlrd>=0.9.2',
     'ordereddict',
-    'mixbox>=1.0.5',
-    'python-dateutil'
+    'python-dateutil',
+    'packaging',
+    'lxml>=3.3.5',
+    'setuptools',
 ]
 
-# lxml has dropped support for Python 2.6, 3.3 after version 4.2.6
-if (py_maj, py_minor) == (2, 6) or (py_maj, py_minor) == (3, 3):
-    install_requires.append('lxml>=3.3.5,<4.3.0')
-# lxml has dropped support for Python 2.6, 3.3, 3.4 after version 4.4.0
-elif (py_maj, py_minor) == (2, 6) or (py_maj, py_minor) == (3, 4):
-    install_requires.append('lxml>=3.3.5,<4.4.0')
-else:
-    install_requires.append('lxml>=3.3.5')
-
-
-# Python 2.6 does not come with argparse
-try:
-    import argparse
-except ImportError:
-    install_requires.append('argparse')
 
 extras_require = {
     'docs': [
@@ -60,8 +42,8 @@ extras_require = {
     ],
     'test': [
         "bumpversion",
-        "nose==1.3.7",
-        "tox==2.3.1"
+        "pytest",
+        "tox"
     ],
 }
 
@@ -91,15 +73,10 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ]
 )
