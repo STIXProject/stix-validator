@@ -50,19 +50,16 @@ The **STIX Document Validator** has the following dependencies:
   * `libxml2`_ >= v2.9.1: Required XML processing C 
     library for ``lxml``.
 * `xlrd`_ >= v0.9.2: XLSX library for parsing STIX Profiles.
-* `ordereddict`_ >= 1.1: A drop-in replacement for ``collections.OrderedDict``
-  on Python 2.6.
 
 .. _Python: http://python.org/download
 .. _lxml: http://lxml.de/index.html#download
 .. _libxml2: http://www.xmlsoft.org/downloads.html
 .. _xlrd: https://pypi.python.org/pypi/xlrd
-.. _ordereddict: https://pypi.python.org/pypi/ordereddict
 
 For a Windows installer of lxml, we recommend looking here: 
 http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
 
-The **STIX Document Validator** supports Python 2.6, 2.7, and 3.3+.
+The **STIX Document Validator** supports Python 3.8+.
 
 
 Installation
