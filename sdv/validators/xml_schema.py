@@ -15,7 +15,6 @@ from sdv import errors, utils, xmlconst
 from . import base
 
 
-#@python_2_unicode_compatible
 class XmlSchemaError(base.ValidationError):
     """Represents an XML Schema validation error.
 

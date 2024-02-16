@@ -1192,7 +1192,6 @@ class STIXBestPracticeValidator(object, metaclass=BestPracticeMeta):
 
             return min_ver <= doc_ver
 
-        #StrictVersion = distutils.version.StrictVersion
         all_rules = self._rules.items()  # noqa
 
         # Get a generator which yields all best practice methods that are

@@ -4,7 +4,6 @@
 # builtin
 import re
 import functools
-# from distutils.version import StrictVersion
 from packaging.version import parse as parse_version
 
 # external
