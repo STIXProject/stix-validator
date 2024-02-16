@@ -8,7 +8,6 @@ import collections
 
 # external
 import lxml.etree
-from mixbox.vendor.six import iteritems, itervalues
 
 # internal
 import sdv
@@ -290,7 +289,7 @@ def print_profile_results(results, level):
     for e in results.errors:
         errors_[e.message].append(e.line)
 
-    for msg, lines in iteritems(errors_):
+    for msg, lines in errors_.items():
         lines = ', '.join(str(x) for x in lines)
         print_level("[!] %s [%s]", level+1, msg, lines)
 
@@ -303,7 +302,7 @@ def print_json_results(results):
             results to print.
     """
     json_results = {}
-    for fn, result in iteritems(results):
+    for fn, result in results.items():
         d = {}
         if result.schema_results is not None:
             d['schema validation'] = result.schema_results.as_dict()
@@ -335,7 +334,7 @@ def print_results(results, options):
         return
 
     level = 0
-    for fn, result in sorted(iteritems(results)):
+    for fn, result in sorted(results.items()):
         print("=" * 80)
         print_level("[-] Results: %s", level, fn)
 
@@ -511,7 +510,7 @@ def status_code(results):
     """
     status = codes.EXIT_SUCCESS
 
-    for result in itervalues(results):
+    for result in results.values():
         schema = result.schema_results
         best_practice = result.best_practice_results
         profile = result.profile_results

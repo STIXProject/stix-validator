@@ -7,8 +7,7 @@ import itertools
 import collections
 import functools
 from io import StringIO
-from mixbox.vendor.six import string_types, iteritems
-#from mixbox.vendor.six.moves import range
+from mixbox.vendor.six import string_types
 from mixbox import compat
 
 # external
@@ -231,7 +230,7 @@ class Profile(compat.MutableSequence):
         rules   = [notype, typed]
 
         collected = self._collect_rules()
-        for ctx, profile_rules in iteritems(collected):
+        for ctx, profile_rules in collected.items():
             rule = schematron.make_rule(ctx)
             rule.extend(x.as_etree() for x in profile_rules)
 
@@ -250,7 +249,7 @@ class Profile(compat.MutableSequence):
         """
         namespaces = []
 
-        for ns, prefix in iteritems(self._namespaces):
+        for ns, prefix in self._namespaces.items():
             ns = schematron.make_ns(prefix, ns)
             namespaces.append(ns)
 
