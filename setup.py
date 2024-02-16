@@ -41,8 +41,8 @@ extras_require = {
     ],
     'test': [
         "bumpversion",
-        "nose==1.3.7",
-        "tox==2.3.1"
+        "pytest",
+        "tox"
     ],
 }
 
