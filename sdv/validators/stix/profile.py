@@ -7,8 +7,6 @@ import itertools
 import collections
 import functools
 from io import StringIO
-from mixbox.vendor.six import string_types
-from mixbox import compat
 
 # external
 import xlrd
@@ -103,7 +101,7 @@ class InstanceMapping(object):
         """
         if not value:
             self._selectors = []
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             self._selectors = [x.strip().replace('"', "'") for x in value.split(",")]
         elif hasattr(value, "__iter__"):
             self._selectors = [str(x) for x in value]
@@ -159,7 +157,7 @@ class InstanceMapping(object):
             raise errors.ProfileParseError(err.format(label=self.label))
 
 
-class Profile(compat.MutableSequence):
+class Profile(collections.abc.MutableSequence):
     def __init__(self, namespaces):
         self.id = "STIX_Schematron_Profile"
         self._rules = [RootRule(namespaces)]
@@ -456,7 +454,7 @@ class AllowedValuesRule(_BaseProfileRule):
         """
         if not value:
             self._values = []
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             self._values = [x.strip() for x in value.split(',')]
         elif hasattr(value, "__getitem__"):
             self._values = [str(x) for x in value]
@@ -522,7 +520,7 @@ class AllowedImplsRule(_BaseProfileRule):
         """
         if not value:
             self._impls = []
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             self._impls = [x.strip() for x in value.split(',')]
         elif hasattr(value, "__iter__"):
             self._impls = [str(x) for x in value]

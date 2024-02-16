@@ -28,7 +28,6 @@ with open(fn_readme) as f:
 install_requires = [
     'xlrd>=0.9.2',
     'ordereddict',
-    'mixbox>=1.0.5',
     'python-dateutil',
     'packaging',
     'lxml>=3.3.5',

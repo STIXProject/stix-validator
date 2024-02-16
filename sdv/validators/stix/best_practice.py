@@ -5,13 +5,10 @@
 import re
 import itertools
 import collections
-#import distutils.version
 from packaging.version import parse as parse_version
 
 # external
 from lxml import etree
-from mixbox.vendor.six import with_metaclass
-from mixbox import compat
 
 # internal
 from sdv import utils, xmlconst
@@ -68,7 +65,7 @@ class BestPracticeMeta(type):
         return obj
 
 
-class BestPracticeWarning(compat.MutableMapping, base.ValidationError):
+class BestPracticeWarning(collections.abc.MutableMapping, base.ValidationError):
     """Represents a best practice warning. These are built within best
     practice rule checking methods and attached to
     :class:`BestPracticeWarningCollection` instances.
@@ -182,7 +179,7 @@ class BestPracticeWarning(compat.MutableMapping, base.ValidationError):
         return dict(self.items())
 
 
-class BestPracticeWarningCollection(compat.MutableSequence):
+class BestPracticeWarningCollection(collections.abc.MutableSequence):
     """A collection of :class:`BestPracticeWarning` instances for a given
     type of STIX Best Practice.
 
@@ -251,7 +248,7 @@ class BestPracticeWarningCollection(compat.MutableSequence):
         return {self.name: [x.as_dict() for x in self]}
 
 
-class BestPracticeValidationResults(base.ValidationResults, compat.MutableSequence):
+class BestPracticeValidationResults(base.ValidationResults, collections.abc.MutableSequence):
     """Represents STIX best practice validation results. This class behaves
     like a ``list`` and accepts instances of
     :class:`BestPracticeWarningCollection`.
@@ -332,7 +329,7 @@ class BestPracticeValidationResults(base.ValidationResults, compat.MutableSequen
         return d
 
 
-class STIXBestPracticeValidator(with_metaclass(BestPracticeMeta, object)):
+class STIXBestPracticeValidator(object, metaclass=BestPracticeMeta):
     """Performs STIX Best Practice validation."""
 
     @rule('1.0')
